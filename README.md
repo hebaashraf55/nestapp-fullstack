@@ -24,7 +24,7 @@ The domain model and business flows are adapted from my earlier course project [
 
 ## Quick start
 
-Requires Node.js 20 or newer.
+Requires **Node.js 24 (Active LTS, recommended)** or Node.js 22 (Maintenance LTS). Node.js 20 reached end of life on 30 April 2026 and is not supported. `.nvmrc` pins 24.
 
 ```bash
 npm ci

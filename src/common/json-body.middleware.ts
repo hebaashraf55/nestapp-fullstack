@@ -18,7 +18,7 @@ export function jsonBody(limit = '100kb'): RequestHandler {
     parser(req, res, (error?: unknown) => {
       if (error === undefined) return next();
       const type = (error as BodyParserError | null)?.type;
-      if (type === 'entity.parse.failed') {
+      if (type === 'entity.parse.failed' || error instanceof SyntaxError) {
         return next(new BadRequestException('Malformed JSON body'));
       }
       if (type === 'entity.too.large') {

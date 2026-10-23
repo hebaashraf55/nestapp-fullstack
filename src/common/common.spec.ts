@@ -49,6 +49,18 @@ describe('HttpErrorFilter', () => {
   });
 
   it.each([
+    ['plain string', new HttpException('secret db host', 500)],
+    ['object with details', new HttpException({ message: 'secret', details: { a: 1 } }, 503)],
+    ['array message', new HttpException({ message: ['secret'] }, 502)],
+  ])('hides message and details of a developer-thrown 5xx (%s)', (_l, error) => {
+    const { status, body } = run(error);
+    expect(status).toBeGreaterThanOrEqual(500);
+    expect(body.error.details).toBeUndefined();
+    expect(JSON.stringify(body)).not.toContain('secret');
+    expect(body.error.message).toBe(status === 500 ? 'Internal server error' : body.error.message);
+  });
+
+  it.each([
     ['5xx from middleware', { status: 502, expose: true }],
     ['4xx that is not exposed', { status: 400, expose: false }],
     ['a string', 'boom'],

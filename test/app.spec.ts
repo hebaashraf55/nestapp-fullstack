@@ -1,4 +1,14 @@
-import { Controller, Get, INestApplication, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  HttpException,
+  INestApplication,
+  InternalServerErrorException,
+  NotFoundException,
+  Param,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -16,6 +26,37 @@ class BoomController {
   @Get('known')
   known(): never {
     throw new NotFoundException('Thing not found');
+  }
+
+  @Get('validation')
+  validation(): never {
+    throw new BadRequestException(['email must be an email', 'name should not be empty']);
+  }
+
+  @Get('dev-500')
+  dev500(): never {
+    throw new InternalServerErrorException('connection string mongodb-host-internal leaked');
+  }
+
+  @Get('dev-503')
+  dev503(): never {
+    throw new ServiceUnavailableException({
+      message: 'redis at 10.0.0.5 is down',
+      details: { host: '10.0.0.5', stack: 'at secret.ts:1' },
+    });
+  }
+
+  @Get('dev-502')
+  dev502(): never {
+    throw new HttpException(
+      { message: ['upstream token abc123 rejected'], details: 'abc123' },
+      502,
+    );
+  }
+
+  @Get('item/:id')
+  item(@Param('id') id: string): { id: string } {
+    return { id };
   }
 }
 
@@ -70,6 +111,40 @@ describe('HTTP application setup', () => {
         error: { statusCode: 500, message: 'Internal server error' },
       });
       expect(JSON.stringify(res.body)).not.toMatch(/pa55word|password|stack|\bat /);
+    });
+
+    it('developer-thrown 500 HttpException does not expose its message', async () => {
+      const res = await request(app.getHttpServer()).get('/api/boom/dev-500').expect(500);
+      expect(res.body.error).toMatchObject({ statusCode: 500, message: 'Internal server error' });
+      expect(res.body.error.details).toBeUndefined();
+      expect(JSON.stringify(res.body)).not.toMatch(/mongodb|leaked/);
+    });
+
+    it('developer-thrown 503 drops message and details', async () => {
+      const res = await request(app.getHttpServer()).get('/api/boom/dev-503').expect(503);
+      expect(res.body.error).toMatchObject({ statusCode: 503, message: 'Service Unavailable' });
+      expect(res.body.error.details).toBeUndefined();
+      expect(JSON.stringify(res.body)).not.toMatch(/redis|10\.0\.0\.5|secret/);
+    });
+
+    it('developer-thrown 502 with array message drops details', async () => {
+      const res = await request(app.getHttpServer()).get('/api/boom/dev-502').expect(502);
+      expect(res.body.error).toMatchObject({ statusCode: 502, message: 'Bad Gateway' });
+      expect(JSON.stringify(res.body)).not.toMatch(/abc123|token/);
+    });
+
+    it('safe 4xx validation errors keep their details', async () => {
+      const res = await request(app.getHttpServer()).get('/api/boom/validation').expect(400);
+      expect(res.body.error.details).toEqual([
+        'email must be an email',
+        'name should not be empty',
+      ]);
+    });
+
+    it('bad percent-encoding in a matched route param -> 400 that does not echo the input', async () => {
+      const res = await request(app.getHttpServer()).get('/api/boom/item/%FF').expect(400);
+      expect(res.body.success).toBe(false);
+      expect(JSON.stringify(res.body)).not.toMatch(/%FF|decode param/i);
     });
 
     it('malformed JSON body -> 400 without echoing the payload', async () => {

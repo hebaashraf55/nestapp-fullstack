@@ -71,5 +71,7 @@ Consequence: database-backed API tests will be **written and reported as "WRITTE
 
 ## 5. Known limits
 
+- Runtime: Node.js 24 (Active LTS, primary) and 22 (Maintenance LTS) are tested. Node 20 is end-of-life (30 April 2026) and unsupported. Node 26 is not tested and is not claimed.
+
 - Without a database in the sandbox, the most important integration tests need your machine or CI to execute.
 - No hosting, deployment or external account is involved in Phase 1.
