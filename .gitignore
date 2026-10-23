@@ -1,0 +1,20 @@
+# dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# secrets: never commit real environment files (the .example template is committed)
+.env
+.env.*
+!.env.example
+
+# runtime data that must never be committed
+uploads/
+logs/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
