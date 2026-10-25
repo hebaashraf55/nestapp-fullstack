@@ -20,7 +20,7 @@ The domain model and business flows are adapted from my earlier course project [
 | Validated configuration (`PORT`, `CORS_ORIGINS`, `PAYMENTS_MODE`, `NODE_ENV`) | Implemented and tested |
 | Helmet security headers, exact-match CORS allow-list | Implemented and tested |
 | `{ success, data, timestamp }` response envelope and safe error envelope | Implemented and tested |
-| React + TypeScript + Vite shell in `web/` (animated landing, live API status, reduced-motion support) | Implemented and tested; storefront pages `/shop` and `/shop/:id` plus a home-page new-arrivals row read the real catalogue API. **No cart or checkout yet** |
+| React + TypeScript + Vite shell in `web/` (animated landing, live API status, reduced-motion support) | Implemented and tested; storefront pages `/shop` and `/shop/:id` plus a home-page new-arrivals row read the real catalogue API. cart, checkout and order pages added in Step 6 |
 | MongoDB connection, `User` model with roles (`CUSTOMER`, `ADMIN`, `DEMO_VIEWER`), scrypt password hashing | Implemented. Mongoose-backed tests are written but have **not been run** (no MongoDB in the build sandbox) |
 | Global deny-by-default `AuthGuard`, `RolesGuard`, read-only enforcement for the demo viewer, demo-data scope helper | Implemented and tested (in-memory user store). Tokens can't be obtained yet: login is Step 3 |
 | Seed script (owner admin from env vars, synthetic demo accounts), `docker-compose.yml` | Implemented; seed logic tested in memory, real-database run pending on your machine |
@@ -28,6 +28,7 @@ The domain model and business flows are adapted from my earlier course project [
 | Catalogue: brands, categories, products with admin-only CRUD, public search / filter / sort / pagination, demo viewer limited to synthetic records | Implemented and tested over HTTP with in-memory stores. Mongoose repositories and the `seed:catalogue` script are written but **have not been run against a real MongoDB** |
 | Coupons (admin CRUD) and the cart: add / view / change quantity / remove / apply coupon, server-side pricing, stock checks, live recalculation | Implemented and tested over HTTP with in-memory stores. Mongoose repositories are written but **have not been run against a real MongoDB** |
 | Storefront sign-in, cart page and add-to-cart | Implemented and tested against mocked API responses; exercised in a real browser against an in-memory API |
+| Orders and simulated payments: place order from cart, 30-minute stock hold, one-click `simulate-payment`, expiry, owner history, admin status changes and simulated refunds. Storefront `/checkout`, `/orders`, `/orders/:id` | Implemented and tested over HTTP with in-memory stores and against mocked API responses; exercised in a real browser against an in-memory API. Mongoose order and stock code **has not been run against a real MongoDB** (6 new skipped DB tests) |
 | Orders, simulated payments, admin dashboards | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
 
 ## Quick start
@@ -91,7 +92,7 @@ Each resource has the same shape. Paths keep the original API's `create` convent
 
 `GET /api/product` accepts `q` (name search, literal text, max 80), `categoryId`, `brandId`, `minPrice` / `maxPrice` (cents, applied to the sale price), `inStock=true|false`, `sort=newest|price-asc|price-desc|name`, `page`, `limit` (1–50). Unknown query parameters are rejected with 400. The response is `{ items, page, limit, total, totalPages }`. Money is always integer cents in `USD`; `salePriceCents` is computed on the server and cannot be sent by a client. Images must be `https://` URLs or `/catalogue/<name>.svg|png|jpg|webp|avif` paths.
 
-**Known limits:** name search is an escaped, case-insensitive pattern match with no text index, so it scans the collection (fine for a demo catalogue, not for very large ones). The filter logic exists twice (MongoDB and the in-memory test double); only the skipped real-database tests would catch drift between them. There is no stock reservation yet: stock is shown, not decremented (checkout is a later step).
+**Known limits:** name search is an escaped, case-insensitive pattern match with no text index, so it scans the collection (fine for a demo catalogue, not for very large ones). The filter logic exists twice (MongoDB and the in-memory test double); only the skipped real-database tests would catch drift between them. Stock is reserved (decremented) when an order is placed and restored on cancel, expiry or refund; see Orders below.
 
 ## Coupons and cart (`/api/coupon`, `/api/cart`)
 
@@ -110,6 +111,23 @@ Each resource has the same shape. Paths keep the original API's `create` convent
 Only a product id and a quantity are stored. Unit prices, line totals, stock status, the coupon discount and the total are recomputed from the live catalogue and coupon on every read, so an admin price change or an expired coupon is reflected immediately. A line whose product was deleted appears as `unavailable` and is excluded from totals. Money is integer cents, the discount is rounded to whole cents, and unknown fields (a price, a total, a user id) are rejected with 400. Writes use optimistic concurrency (retry up to three times, then 409). Demo viewers get 403 on every cart write.
 
 **Known limits:** stock is checked but not reserved or decremented (that is Step 6, orders); the coupon-guess throttle is per-process memory like the login throttle (hardening is Step 8); the browser keeps the session in `sessionStorage`, readable by any script on the page (an httpOnly refresh cookie would need a backend change). There is no account-creation screen yet: sign in with a seeded account.
+
+## Orders and simulated payments (`/api/order`)
+
+**No payment is ever taken.** There is no payment gateway; every order response carries `payment: { mode: "SIMULATED", notice }` and payment states are `SIMULATED_UNPAID`, `SIMULATED_PAID`, `SIMULATED_REFUNDED`. Card-like input is rejected with 400 (strict body: only `address` and `phone`, and an address containing a card-number-like digit run is refused).
+
+| Route | Behaviour |
+|---|---|
+| `POST /api/order` | `{ address, phone }`. Orders the caller's own cart (prices re-read server-side, snapshotted into the order), reserves stock, empties the cart. 409 on insufficient stock or too many open orders (3), 400 on an empty cart |
+| `GET /api/order` | The caller's orders, newest first (max 50) |
+| `GET /api/order/:orderId` | Owner or admin; anyone else gets 404 |
+| `POST /api/order/:orderId/simulate-payment` | Owner only, empty body. `PENDING_PAYMENT` → `PAID`. Repeating it is a 409, never a second payment. An overdue order becomes `EXPIRED` (409) and its stock is restored |
+| `PATCH /api/order/:orderId/status` | Admin. `{ status }`: `PENDING_PAYMENT`→`CANCELLED`, `PAID`→`SHIPPED`, `SHIPPED`→`DELIVERED`. Everything else is 409 |
+| `POST /api/order/:orderId/refund` | Admin. Only a `PAID`, not yet shipped order: → `CANCELLED` + `SIMULATED_REFUNDED`, stock restored |
+
+Every transition is a compare-and-set, so concurrent requests have exactly one winner and stock is restored once. Orders expire after 30 minutes (checked on read and payment, and by a 60-second sweeper when MongoDB is configured). Demo viewers get 403 on every order write, and their orders are only `isDemo` data.
+
+**Known limits:** stock is reserved with one conditional update per product and compensated on failure, not with a multi-document transaction (a standalone MongoDB cannot do one); a process crash between a status change and its stock restore could leak stock and there is no reconciliation job; the double-submit guard is per process; there is no admin order list yet (Step 7); the sweeper and Mongoose repositories are covered only by the skipped real-database tests.
 
 ## Scripts
 

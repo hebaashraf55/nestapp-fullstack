@@ -14,6 +14,8 @@ Ground rules (all phases)
 
 > **Update (Step 5):** admin coupons and the server-priced cart are implemented on branch `phase-1/step-5-cart`, with a minimal sign-in page, an add-to-cart control and a cart page in the storefront. Orders and simulated payment remain Step 6.
 
+> **Update (Step 6):** orders, the state machine, stock reservation/restore, expiry, `simulate-payment`, owner history, admin status changes and simulated refunds are implemented on branch `phase-1/step-6-orders`, with `/checkout`, `/orders` and `/orders/:id` in the storefront. The 36 real-MongoDB tests (30 before this step, 6 new) are still skipped and unverified. Admin and demo-viewer reporting remain Step 7.
+
 ## 1. Delivery steps (each is a separate, reviewable patch series)
 
 | Step | Contents | Needs a database to verify? |

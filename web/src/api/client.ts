@@ -286,3 +286,65 @@ export const removeCartItem = (productId: string) =>
 /** POST /api/cart/apply-coupon */
 export const applyCoupon = (code: string) =>
   cartCall(apiSend('POST', '/api/cart/apply-coupon', { code }));
+
+/* ---------- Orders (POST/GET /api/order, GET /api/order/:id, POST /api/order/:id/simulate-payment) ---------- */
+
+export type OrderStatus = 'PENDING_PAYMENT' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'EXPIRED';
+export type PaymentStatus = 'SIMULATED_UNPAID' | 'SIMULATED_PAID' | 'SIMULATED_REFUNDED';
+
+export interface OrderItem {
+  productId: string;
+  name: string;
+  unitPriceCents: number;
+  quantity: number;
+  lineTotalCents: number;
+}
+
+export interface Order {
+  id: string;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  items: OrderItem[];
+  subtotalCents: number;
+  coupon: { code: string; discountPercent: number } | null;
+  discountCents: number;
+  totalCents: number;
+  currency: string;
+  address: string;
+  phone: string;
+  expiresAt: string;
+  paidAt: string | null;
+  refundedAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  isDemo: boolean;
+  payment: { mode: 'SIMULATED'; notice: string };
+}
+
+const isOrder = (value: unknown): value is Order =>
+  isRecord(value) && typeof value.id === 'string' && typeof value.status === 'string' && Array.isArray(value.items);
+
+async function orderCall(promise: Promise<unknown>): Promise<Order> {
+  const data = await promise;
+  if (!isOrder(data)) throw new ApiError(200, 'Unexpected response from the server');
+  return data;
+}
+
+/** POST /api/order: turns the signed-in user's server-priced cart into an order. Only address and phone are sent. */
+export const createOrder = (address: string, phone: string) =>
+  orderCall(apiSend('POST', '/api/order', { address, phone }));
+
+/** GET /api/order */
+export async function getOrders(signal?: AbortSignal): Promise<Order[]> {
+  const data = await apiGet<unknown>('/api/order', signal);
+  if (!Array.isArray(data) || !data.every(isOrder)) throw new ApiError(200, 'Unexpected response from the server');
+  return data;
+}
+
+/** GET /api/order/:id */
+export const getOrder = async (id: string, signal?: AbortSignal) =>
+  orderCall(apiGet<unknown>(`/api/order/${encodeURIComponent(id)}`, signal));
+
+/** POST /api/order/:id/simulate-payment. No body: nothing about a card is ever sent. */
+export const simulatePayment = (id: string) =>
+  orderCall(apiSend('POST', `/api/order/${encodeURIComponent(id)}/simulate-payment`, {}));

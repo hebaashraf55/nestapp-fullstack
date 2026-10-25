@@ -83,7 +83,7 @@ export function ProductDetail() {
         {p.description && <p className="lede lede--small">{p.description}</p>}
         <AddToCart product={p} />
         <p className="notice">
-          Checkout is simulated and arrives in a later step. No payment is ever taken.
+          Checkout is simulated. No payment is ever taken.
         </p>
       </div>
     </div>

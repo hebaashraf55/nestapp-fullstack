@@ -296,7 +296,7 @@ describe('Cart page', () => {
     expect(within(summary).getByText('−$16.00')).toBeInTheDocument();
     expect(within(summary).getByText('$144.00')).toBeInTheDocument();
     expect(within(summary).getByText(/Checkout is simulated/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /checkout|pay/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /pay/i })).not.toBeInTheDocument();
   });
 
   it('shows an empty state', async () => {

@@ -27,6 +27,7 @@ export function Layout() {
           <NavLink to="/cart">
             Cart{itemCount > 0 && <span className="badge" aria-label={`${itemCount} items`}>{itemCount}</span>}
           </NavLink>
+          {user && <NavLink to="/orders">Orders</NavLink>}
           {user ? (
             <button type="button" className="link link--nav" onClick={() => void signOut()}>
               Sign out ({user.name})

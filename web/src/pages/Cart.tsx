@@ -166,9 +166,13 @@ export function Cart() {
                 {message}
               </p>
             )}
+            {!readOnly && (
+              <Link to="/checkout" className={`btn btn--block${cart.hasIssues ? ' btn--disabled' : ''}`} aria-disabled={cart.hasIssues}>
+                Continue to simulated checkout
+              </Link>
+            )}
             <p className="notice">
-              Checkout is simulated and arrives in a later step. No payment is taken and no card details are
-              collected.
+              Checkout is simulated. No payment is taken and no card details are collected.
             </p>
           </aside>
         </div>
