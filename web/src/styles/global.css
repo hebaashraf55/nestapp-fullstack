@@ -1,0 +1,73 @@
+:root {
+  --ivory: #faf6ef;
+  --paper: #fffdf8;
+  --ink: #1d1a16;
+  --muted: #6b645a;
+  --line: #e6dfd2;
+  --gold: #b8862b;
+  --gold-soft: #f1dfb4;
+  --ok: #2f7d4f;
+  --bad: #b3402a;
+  --serif: 'Fraunces', Georgia, serif;
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ivory: #14120f;
+    --paper: #1c1915;
+    --ink: #f3ece0;
+    --muted: #b0a794;
+    --line: #2e2a23;
+    --gold: #d9a948;
+    --gold-soft: #3a2f16;
+    --ok: #5cc088;
+    --bad: #f08a72;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ivory); color: var(--ink); font: 16px/1.6 var(--sans); }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.skip { position: absolute; left: -999px; }
+.skip:focus { left: 1rem; top: 1rem; background: var(--paper); padding: .5rem 1rem; z-index: 10; }
+
+.banner { background: var(--ink); color: var(--ivory); text-align: center; font-size: .8rem; padding: .45rem 1rem; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem clamp(1rem, 5vw, 4rem); border-bottom: 1px solid var(--line); }
+.brand { font: 600 1.5rem var(--serif); text-decoration: none; letter-spacing: .01em; }
+.brand em { color: var(--gold); font-style: italic; }
+.header nav { display: flex; gap: 1.5rem; }
+.header nav a { text-decoration: none; color: var(--muted); font-weight: 500; padding-bottom: 2px; border-bottom: 2px solid transparent; transition: color .2s, border-color .2s; }
+.header nav a:hover, .header nav a.active { color: var(--ink); border-color: var(--gold); }
+
+main { min-height: 70vh; overflow-x: clip; }
+.hero { position: relative; padding: clamp(4rem, 12vw, 9rem) clamp(1rem, 5vw, 4rem) clamp(3rem, 8vw, 6rem); max-width: 72rem; margin: 0 auto; }
+.hero__glow { position: absolute; inset: -20% -10% auto auto; width: 38rem; height: 38rem; border-radius: 50%; background: radial-gradient(circle, var(--gold-soft), transparent 65%); filter: blur(10px); animation: drift 14s ease-in-out infinite alternate; pointer-events: none; z-index: -1; }
+@keyframes drift { to { transform: translate(-6rem, 3rem) scale(1.15); } }
+.eyebrow { text-transform: uppercase; letter-spacing: .18em; font-size: .75rem; color: var(--gold); font-weight: 600; margin: 0 0 1rem; }
+h1 { font: 400 clamp(2.6rem, 7vw, 5.2rem)/1.05 var(--serif); margin: 0 0 1.5rem; max-width: 14ch; letter-spacing: -.01em; }
+h1 em { color: var(--gold); }
+.lede { max-width: 38rem; color: var(--muted); font-size: 1.15rem; margin: 0 0 2rem; }
+
+.status { display: inline-flex; align-items: center; gap: .6rem; padding: .55rem 1rem; border: 1px solid var(--line); background: var(--paper); border-radius: 999px; font-size: .9rem; }
+.status__dot { width: .6rem; height: .6rem; border-radius: 50%; background: var(--muted); }
+.status[data-phase='ready'] .status__dot { background: var(--ok); box-shadow: 0 0 0 0 var(--ok); animation: pulse 2s infinite; }
+.status[data-phase='down'] .status__dot { background: var(--bad); }
+@keyframes pulse { 70% { box-shadow: 0 0 0 .5rem transparent; } }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.25rem; max-width: 72rem; margin: 0 auto; padding: 0 clamp(1rem, 5vw, 4rem) 6rem; }
+.card { background: var(--paper); border: 1px solid var(--line); border-radius: 1rem; padding: 1.75rem; transition: transform .25s, box-shadow .25s; }
+.card:hover { transform: translateY(-4px); box-shadow: 0 14px 30px -18px rgb(0 0 0 / .35); }
+.card h2 { font: 600 1.3rem var(--serif); margin: 0 0 .5rem; }
+.card p { margin: 0; color: var(--muted); }
+
+.prose { max-width: 42rem; margin: 0 auto; padding: 4rem clamp(1rem, 5vw, 2rem); }
+.prose h1 { font-size: clamp(2rem, 5vw, 3rem); max-width: none; }
+.prose code { background: var(--gold-soft); padding: .1em .4em; border-radius: .3em; }
+
+.footer { display: flex; flex-wrap: wrap; gap: .5rem 2rem; justify-content: space-between; padding: 2rem clamp(1rem, 5vw, 4rem); border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
