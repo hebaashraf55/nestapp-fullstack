@@ -24,7 +24,8 @@ The domain model and business flows are adapted from my earlier course project [
 | MongoDB connection, `User` model with roles (`CUSTOMER`, `ADMIN`, `DEMO_VIEWER`), scrypt password hashing | Implemented. Mongoose-backed tests are written but have **not been run** (no MongoDB in the build sandbox) |
 | Global deny-by-default `AuthGuard`, `RolesGuard`, read-only enforcement for the demo viewer, demo-data scope helper | Implemented and tested (in-memory user store). Tokens can't be obtained yet: login is Step 3 |
 | Seed script (owner admin from env vars, synthetic demo accounts), `docker-compose.yml` | Implemented; seed logic tested in memory, real-database run pending on your machine |
-| Signup/login flows, catalog, cart, orders, admin endpoints | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
+| Authentication: signup, email code verification, login, rotating refresh tokens, logout, logout-all, forgot/reset password, profile | Implemented and tested over HTTP with in-memory stores. Mongoose-backed repositories are written but **their tests have not been run** |
+| Catalog, cart, orders, admin endpoints | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
 
 ## Quick start
 
@@ -54,6 +55,24 @@ npm run db:down          # stops the database (data stays in a Docker volume)
 ```
 
 Credentials come only from `.env` (git-ignored). `SEED_ADMIN_*` is your private owner account; the demo accounts hold synthetic data only. The seed never overwrites an existing password or promotes an existing account. Generate a secret with `openssl rand -base64 48`.
+
+## Authentication API (`/api/auth`)
+
+| Route | Access | Notes |
+|---|---|---|
+| `POST signup` | public | `{ email, password (12–128 chars), name }`. Unknown fields such as `role` are rejected with 400. Always answers 202 with the same body |
+| `POST verify-email` | public | `{ email, code }`, a 6-digit code valid 10 minutes, 5 attempts, single use |
+| `POST resend-otp` | public | same generic 202; at most one email a minute per account |
+| `POST login` | public | returns `{ Credentials: { accessToken, refreshToken }, user }`. Access token lives 15 minutes (`ACCESS_TOKEN_TTL_SECONDS`) |
+| `POST refresh` | public | rotates the refresh token; reusing an old one revokes that whole session |
+| `POST logout` | public | `{ refreshToken }` ends that one session. Works for demo viewers; changes nothing else |
+| `POST logout-all` | signed in | ends every session and invalidates all access tokens. **Blocked for demo viewers** |
+| `GET profile` | signed in | the safe user view, never the password hash |
+| `POST forgot-password`, `POST reset-password` | public | generic 202; reset also signs everyone out. Not available for demo accounts |
+
+Errors use the standard envelope. Login failures are always `401 Invalid email or password`. Too many attempts return `429` with `Retry-After`.
+
+**Brute-force protection today:** 5 failed logins per account and 30 per IP address per 15 minutes; 10 email-sending requests per IP per hour; 20 failed code checks per IP per 15 minutes; codes lock after 5 wrong attempts. **Deferred to Step 8:** these counters live in the server's memory (reset on restart, not shared between instances), `trust proxy` is not configured (behind a proxy every visitor shares one address), and a determined attacker can temporarily lock a known account by failing logins against it.
 
 ## Scripts
 
