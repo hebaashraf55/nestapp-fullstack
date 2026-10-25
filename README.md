@@ -21,7 +21,10 @@ The domain model and business flows are adapted from my earlier course project [
 | Helmet security headers, exact-match CORS allow-list | Implemented and tested |
 | `{ success, data, timestamp }` response envelope and safe error envelope | Implemented and tested |
 | React + TypeScript + Vite shell in `web/` (animated landing, live API status, reduced-motion support) | Implemented and tested; **no catalogue or checkout yet** — those need backend endpoints that do not exist |
-| Database, authentication, catalog, cart, orders, admin | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
+| MongoDB connection, `User` model with roles (`CUSTOMER`, `ADMIN`, `DEMO_VIEWER`), scrypt password hashing | Implemented. Mongoose-backed tests are written but have **not been run** (no MongoDB in the build sandbox) |
+| Global deny-by-default `AuthGuard`, `RolesGuard`, read-only enforcement for the demo viewer, demo-data scope helper | Implemented and tested (in-memory user store). Tokens can't be obtained yet: login is Step 3 |
+| Seed script (owner admin from env vars, synthetic demo accounts), `docker-compose.yml` | Implemented; seed logic tested in memory, real-database run pending on your machine |
+| Signup/login flows, catalog, cart, orders, admin endpoints | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
 
 ## Quick start
 
@@ -39,6 +42,18 @@ npm run start:dev        # http://localhost:5000/api/health
 npm run build && node dist/main.js     # API on http://localhost:5000
 cd web && npm ci && npm run dev        # http://localhost:5173 (proxies /api to :5000)
 ```
+
+### Local database and seed accounts (needs Docker Desktop, which is free for personal use)
+
+```bash
+cp .env.example .env     # then edit: set your own passwords and a JWT_SECRET (see comments in the file)
+npm run db:up            # starts MongoDB on 127.0.0.1:27017 only
+npm run seed             # creates the owner admin plus demo-customer / demo-viewer accounts
+npm run test:db          # optional: runs the MongoDB-backed tests (set MONGODB_TEST_URI in .env first)
+npm run db:down          # stops the database (data stays in a Docker volume)
+```
+
+Credentials come only from `.env` (git-ignored). `SEED_ADMIN_*` is your private owner account; the demo accounts hold synthetic data only. The seed never overwrites an existing password or promotes an existing account. Generate a secret with `openssl rand -base64 48`.
 
 ## Scripts
 

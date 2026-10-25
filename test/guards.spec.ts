@@ -43,10 +43,27 @@ describe('project guardrails', () => {
     expect(gitignore).toContain('!.env.example');
   });
 
-  it('.env.example contains only the simulated payments mode and no secrets', () => {
+  it('.env.example has the simulated payments mode, no gateway variables and only placeholder secrets', () => {
     const template = readFileSync(join(root, '.env.example'), 'utf8');
     expect(template).toMatch(/^PAYMENTS_MODE=simulated$/m);
-    // Looks at variable names only, so the explanatory comments may still say "secrets".
-    expect(template).not.toMatch(/^[A-Z0-9_]*(STRIPE|SECRET|PASSWORD|TOKEN|API_KEY)[A-Z0-9_]*=/m);
+    const assignments = template
+      .split('\n')
+      .filter((line) => /^[A-Z0-9_]+=/.test(line))
+      .map(
+        (line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)] as const,
+      );
+    // No payment-gateway variables, ever.
+    expect(assignments.filter(([name]) => /STRIPE|API_KEY|CARD|GATEWAY/.test(name))).toEqual([]);
+    // Anything that looks like a credential must carry the placeholder marker, never a real value.
+    const credentialLike = assignments.filter(
+      ([name]) => /SECRET|PASSWORD|MONGODB_URI/.test(name) && !/TTL/.test(name),
+    );
+    expect(credentialLike.length).toBeGreaterThan(0);
+    for (const [name, value] of credentialLike) {
+      expect({ name, isPlaceholder: value.includes('change-me') }).toEqual({
+        name,
+        isPlaceholder: true,
+      });
+    }
   });
 });

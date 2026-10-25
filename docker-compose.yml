@@ -1,0 +1,24 @@
+# Local development database only. Free, official image; no cloud account, no card.
+# Usage: copy .env.example to .env, set MONGO_ROOT_PASSWORD, then `npm run db:up`.
+services:
+  mongo:
+    image: mongo:8.0
+    container_name: nestapp-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: nestapp
+      # Required: compose refuses to start without it, so there is no default password.
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in .env}
+    ports:
+      # Bound to this computer only; the database is never exposed to your network.
+      - '127.0.0.1:27017:27017'
+    volumes:
+      - nestapp-mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  nestapp-mongo-data:
