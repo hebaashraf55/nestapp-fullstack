@@ -63,6 +63,10 @@ export class HttpErrorFilter implements ExceptionFilter {
       },
       timestamp: new Date().toISOString(),
     };
+    const retryAfter = (exception as { retryAfterSeconds?: unknown } | null)?.retryAfterSeconds;
+    if (statusCode === 429 && typeof retryAfter === 'number') {
+      response.setHeader('Retry-After', String(retryAfter));
+    }
     response.status(statusCode).json(body);
   }
 

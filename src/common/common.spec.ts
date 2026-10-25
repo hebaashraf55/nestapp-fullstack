@@ -1,5 +1,6 @@
 import { ArgumentsHost, BadRequestException, HttpException, StreamableFile } from '@nestjs/common';
 import { lastValueFrom, of } from 'rxjs';
+import { TooManyAttemptsException } from '../auth/too-many-attempts.exception';
 import { HttpErrorFilter } from './http-error.filter';
 import { ResponseEnvelopeInterceptor } from './response-envelope.interceptor';
 
@@ -80,6 +81,27 @@ describe('HttpErrorFilter', () => {
     expect(status).toBe(500);
     expect(body.error.message).toBe('Internal server error');
     expect(JSON.stringify(body)).not.toContain('hunter2');
+  });
+});
+
+describe('HttpErrorFilter: rate limiting', () => {
+  it('turns a 429 with retryAfterSeconds into a Retry-After header', () => {
+    const headers: Record<string, string> = {};
+    let status = 0;
+    const response = {
+      setHeader: (k: string, v: string) => (headers[k] = v),
+      status(code: number) {
+        status = code;
+        return this;
+      },
+      json: () => undefined,
+    };
+    const host = {
+      switchToHttp: () => ({ getResponse: () => response }),
+    } as unknown as ArgumentsHost;
+    new HttpErrorFilter().catch(new TooManyAttemptsException(42), host);
+    expect(status).toBe(429);
+    expect(headers['Retry-After']).toBe('42');
   });
 });
 
