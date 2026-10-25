@@ -88,6 +88,10 @@ export class InMemoryProductsRepository extends ProductsRepository {
     this.check();
     return this.records.get(id) ?? null;
   }
+  async findByIds(ids: string[]) {
+    this.check();
+    return ids.map((id) => this.records.get(id)).filter((r): r is ProductRecord => !!r);
+  }
   async findBySlug(slug: string) {
     this.check();
     return [...this.records.values()].find((r) => r.slug === slug) ?? null;

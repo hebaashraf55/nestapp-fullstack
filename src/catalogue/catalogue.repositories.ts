@@ -83,6 +83,7 @@ export interface ProductFilter {
 
 export abstract class ProductsRepository {
   abstract findById(id: string): Promise<ProductRecord | null>;
+  abstract findByIds(ids: string[]): Promise<ProductRecord[]>;
   abstract findBySlug(slug: string): Promise<ProductRecord | null>;
   abstract findPage(filter: ProductFilter): Promise<{ items: ProductRecord[]; total: number }>;
   abstract create(record: NewProduct): Promise<ProductRecord>;

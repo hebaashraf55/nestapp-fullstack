@@ -1,4 +1,4 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Global, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Env } from '../config/env';
 import {
@@ -27,6 +27,8 @@ import {
   UnavailableProductsRepository,
 } from './unavailable-catalogue.repositories';
 
+/** Global so the cart (and later orders) can read products without re-importing the module. */
+@Global()
 @Module({})
 export class CatalogueModule {
   static register(env: Env): DynamicModule {

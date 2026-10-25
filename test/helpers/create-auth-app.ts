@@ -11,6 +11,11 @@ import {
   CategoriesRepository,
   ProductsRepository,
 } from '../../src/catalogue/catalogue.repositories';
+import { CartModule } from '../../src/cart/cart.module';
+import { CartsRepository } from '../../src/cart/cart.repository';
+import { CouponAttemptLimiter } from '../../src/cart/cart.service';
+import { CouponsModule } from '../../src/coupons/coupons.module';
+import { CouponsRepository } from '../../src/coupons/coupons.repository';
 import { configureApp } from '../../src/app.setup';
 import { ENV, loadEnv } from '../../src/config/env';
 import { HealthController } from '../../src/health/health.controller';
@@ -29,6 +34,7 @@ import {
   InMemoryCategoriesRepository,
   InMemoryProductsRepository,
 } from './in-memory-catalogue.repositories';
+import { InMemoryCartsRepository, InMemoryCouponsRepository } from './in-memory-cart.repositories';
 import { InMemoryUsersRepository } from './in-memory-users.repository';
 
 export const TEST_SECRET = 't'.repeat(48);
@@ -57,6 +63,9 @@ export interface AuthTestApp {
   brands: InMemoryBrandsRepository;
   categories: InMemoryCategoriesRepository;
   products: InMemoryProductsRepository;
+  coupons: InMemoryCouponsRepository;
+  carts: InMemoryCartsRepository;
+  couponLimiter: CouponAttemptLimiter;
   mail: CapturingMailSender;
   limiter: RateLimiter;
   tokens: TokenService;
@@ -77,6 +86,8 @@ export async function createAuthApp(
   const brands = new InMemoryBrandsRepository();
   const categories = new InMemoryCategoriesRepository();
   const products = new InMemoryProductsRepository();
+  const coupons = new InMemoryCouponsRepository();
+  const carts = new InMemoryCartsRepository();
   const mail = new CapturingMailSender();
   const moduleRef = await Test.createTestingModule({
     imports: [
@@ -84,6 +95,8 @@ export async function createAuthApp(
       MailModule.register(env),
       AuthModule.register(env),
       CatalogueModule.register(env),
+      CouponsModule.register(env),
+      CartModule.register(env),
     ],
     controllers: [HealthController, ...controllers],
     providers: [{ provide: ENV, useValue: env }],
@@ -100,6 +113,10 @@ export async function createAuthApp(
     .useValue(categories)
     .overrideProvider(ProductsRepository)
     .useValue(products)
+    .overrideProvider(CouponsRepository)
+    .useValue(coupons)
+    .overrideProvider(CartsRepository)
+    .useValue(carts)
     .overrideProvider(MailSender)
     .useValue(mail)
     .compile();
@@ -119,6 +136,9 @@ export async function createAuthApp(
     brands,
     categories,
     products,
+    coupons,
+    carts,
+    couponLimiter: moduleRef.get(CouponAttemptLimiter),
     mail,
     limiter,
     tokens,

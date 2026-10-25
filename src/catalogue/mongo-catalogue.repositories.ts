@@ -173,6 +173,13 @@ export class MongoProductsRepository extends ProductsRepository {
     super();
   }
 
+  async findByIds(ids: string[]): Promise<ProductRecord[]> {
+    const valid = ids.filter((id) => isValidObjectId(id));
+    if (valid.length === 0) return [];
+    const docs = await this.model.find({ _id: { $in: valid } }).exec();
+    return docs.map((d) => toProduct(d as unknown as ProductDoc));
+  }
+
   async findById(id: string): Promise<ProductRecord | null> {
     if (!isValidObjectId(id)) return null;
     const doc = await this.model.findById(id).exec();

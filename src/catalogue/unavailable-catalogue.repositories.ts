@@ -35,6 +35,7 @@ export class UnavailableCategoriesRepository extends CategoriesRepository {
 @Injectable()
 export class UnavailableProductsRepository extends ProductsRepository {
   findById = fail;
+  findByIds = fail;
   findBySlug = fail;
   findPage = fail;
   create = fail;
