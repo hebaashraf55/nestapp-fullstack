@@ -4,9 +4,13 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
 
-const ok = () =>
+const envelope = (data: unknown) => new Response(JSON.stringify({ success: true, data, timestamp: 't' }));
+const emptyPage = { items: [], page: 1, limit: 4, total: 0, totalPages: 1 };
+const ok = (input?: RequestInfo | URL) =>
   Promise.resolve(
-    new Response(JSON.stringify({ success: true, data: { status: 'ok', paymentsMode: 'simulated' }, timestamp: 't' })),
+    String(input).includes('/api/product')
+      ? envelope(emptyPage)
+      : envelope({ status: 'ok', paymentsMode: 'simulated' }),
   );
 
 function renderAt(path: string) {
@@ -30,7 +34,7 @@ describe('App', () => {
     vi.stubGlobal('fetch', vi.fn(ok));
     renderAt('/');
     expect(await screen.findByText(/API online/)).toHaveTextContent('simulated');
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith('/api/health', expect.anything());
   });
 
   it('shows a clear message when the API is down', async () => {

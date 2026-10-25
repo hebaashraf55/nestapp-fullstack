@@ -18,6 +18,7 @@ export function Layout() {
           <NavLink to="/" end>
             Home
           </NavLink>
+          <NavLink to="/shop">Shop</NavLink>
           <NavLink to="/about">About this build</NavLink>
         </nav>
       </header>

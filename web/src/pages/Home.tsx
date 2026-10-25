@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ApiStatus } from '../components/ApiStatus';
+import { Featured } from '../components/Featured';
 
 const rise = {
   hidden: { opacity: 0, y: 24 },
@@ -22,18 +23,20 @@ export function Home() {
           Objects worth <em>lingering</em> over.
         </motion.h1>
         <motion.p className="lede" variants={rise} initial="hidden" animate="show" custom={2}>
-          Atelier Noor is a full-stack portfolio project: a NestJS API and this React storefront. The catalogue
-          opens when the backend catalogue endpoints land — nothing on this page is placeholder stock.
+          Atelier Noor is a full-stack portfolio project: a NestJS API and this React storefront. Browse the
+          catalogue below: every piece is read live from the API and is synthetic demo data.
         </motion.p>
         <motion.div variants={rise} initial="hidden" animate="show" custom={3}>
           <ApiStatus />
         </motion.div>
       </section>
 
+      <Featured />
+
       <section className="grid" aria-label="Project status">
         {[
-          ['Live now', 'Health check, security headers, CORS allow-list, safe error envelope.'],
-          ['Next', 'Accounts and roles, then the catalogue, cart and simulated checkout.'],
+          ['Live now', 'Accounts and roles, authentication, and the catalogue with search, filters and pagination.'],
+          ['Next', 'Cart and coupons, then simulated checkout and orders.'],
           ['Always', 'No payment gateway. No card fields. Demo data is synthetic.'],
         ].map(([title, body], i) => (
           <motion.article

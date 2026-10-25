@@ -20,12 +20,13 @@ The domain model and business flows are adapted from my earlier course project [
 | Validated configuration (`PORT`, `CORS_ORIGINS`, `PAYMENTS_MODE`, `NODE_ENV`) | Implemented and tested |
 | Helmet security headers, exact-match CORS allow-list | Implemented and tested |
 | `{ success, data, timestamp }` response envelope and safe error envelope | Implemented and tested |
-| React + TypeScript + Vite shell in `web/` (animated landing, live API status, reduced-motion support) | Implemented and tested; **no catalogue or checkout yet** — those need backend endpoints that do not exist |
+| React + TypeScript + Vite shell in `web/` (animated landing, live API status, reduced-motion support) | Implemented and tested; storefront pages `/shop` and `/shop/:id` plus a home-page new-arrivals row read the real catalogue API. **No cart or checkout yet** |
 | MongoDB connection, `User` model with roles (`CUSTOMER`, `ADMIN`, `DEMO_VIEWER`), scrypt password hashing | Implemented. Mongoose-backed tests are written but have **not been run** (no MongoDB in the build sandbox) |
 | Global deny-by-default `AuthGuard`, `RolesGuard`, read-only enforcement for the demo viewer, demo-data scope helper | Implemented and tested (in-memory user store). Tokens can't be obtained yet: login is Step 3 |
 | Seed script (owner admin from env vars, synthetic demo accounts), `docker-compose.yml` | Implemented; seed logic tested in memory, real-database run pending on your machine |
 | Authentication: signup, email code verification, login, rotating refresh tokens, logout, logout-all, forgot/reset password, profile | Implemented and tested over HTTP with in-memory stores. Mongoose-backed repositories are written but **their tests have not been run** |
-| Catalog, cart, orders, admin endpoints | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
+| Catalogue: brands, categories, products with admin-only CRUD, public search / filter / sort / pagination, demo viewer limited to synthetic records | Implemented and tested over HTTP with in-memory stores. Mongoose repositories and the `seed:catalogue` script are written but **have not been run against a real MongoDB** |
+| Cart, coupons, orders, admin dashboards | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
 
 ## Quick start
 
@@ -50,6 +51,7 @@ cd web && npm ci && npm run dev        # http://localhost:5173 (proxies /api to 
 cp .env.example .env     # then edit: set your own passwords and a JWT_SECRET (see comments in the file)
 npm run db:up            # starts MongoDB on 127.0.0.1:27017 only
 npm run seed             # creates the owner admin plus demo-customer / demo-viewer accounts
+npm run seed:catalogue   # 3 brands, 4 categories, 12 synthetic products (all flagged isDemo); safe to re-run
 npm run test:db          # optional: runs the MongoDB-backed tests (set MONGODB_TEST_URI in .env first)
 npm run db:down          # stops the database (data stays in a Docker volume)
 ```
@@ -74,6 +76,21 @@ Errors use the standard envelope. Login failures are always `401 Invalid email o
 
 **Brute-force protection today:** 5 failed logins per account and 30 per IP address per 15 minutes; 10 email-sending requests per IP per hour; 20 failed code checks per IP per 15 minutes; codes lock after 5 wrong attempts. **Deferred to Step 8:** these counters live in the server's memory (reset on restart, not shared between instances), `trust proxy` is not configured (behind a proxy every visitor shares one address), and a determined attacker can temporarily lock a known account by failing logins against it.
 
+## Catalogue API (`/api/brand`, `/api/category`, `/api/product`)
+
+Each resource has the same shape. Paths keep the original API's `create` convention for creation.
+
+| Route | Access | Notes |
+|---|---|---|
+| `GET /` and `GET /:id` | public | A signed-in demo viewer is recognised and sees **only synthetic (`isDemo`) records**; real ones answer 404, never 403 |
+| `POST /create` | admin only | Unknown fields (`isDemo`, `salePriceCents`, ...) are rejected with 400; the server sets `isDemo: false` |
+| `PATCH /:id` | admin only | at least one field; name changes regenerate the slug; the sale price is recomputed |
+| `DELETE /:id` | admin only | 409 if a brand or category is still used by products |
+
+`GET /api/product` accepts `q` (name search, literal text, max 80), `categoryId`, `brandId`, `minPrice` / `maxPrice` (cents, applied to the sale price), `inStock=true|false`, `sort=newest|price-asc|price-desc|name`, `page`, `limit` (1–50). Unknown query parameters are rejected with 400. The response is `{ items, page, limit, total, totalPages }`. Money is always integer cents in `USD`; `salePriceCents` is computed on the server and cannot be sent by a client. Images must be `https://` URLs or `/catalogue/<name>.svg|png|jpg|webp|avif` paths.
+
+**Known limits:** name search is an escaped, case-insensitive pattern match with no text index, so it scans the collection (fine for a demo catalogue, not for very large ones). The filter logic exists twice (MongoDB and the in-memory test double); only the skipped real-database tests would catch drift between them. There is no stock reservation yet: stock is shown, not decremented (checkout is a later step).
+
 ## Scripts
 
 | Command | What it does |
@@ -82,7 +99,7 @@ Errors use the standard envelope. Login failures are always `401 Invalid email o
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run format:check` | Prettier check |
 | `npm run build` | Compile to `dist/` |
-| `npm test` | Unit and HTTP tests (no database needed at this stage) |
+| `npm test` | Unit and HTTP tests (no database needed at this stage; the real-MongoDB specs are skipped unless `MONGODB_TEST_URI` is set) |
 | `npm run test:cov` | Tests with a measured coverage report in `coverage/` |
 
 The frontend has its own scripts in `web/` (`lint`, `typecheck`, `build`, `test`, `test:cov`).

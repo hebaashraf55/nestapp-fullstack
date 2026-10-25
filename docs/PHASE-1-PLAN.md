@@ -10,6 +10,8 @@ Ground rules (all phases)
 
 > **Update (2026-10-25):** Step 1 was approved at commit `fc69e05`. Frontend work (Phase 2) was then authorised to start on branch `phase-2/frontend-foundation` before backend Steps 2–8 exist. The frontend only calls endpoints that are implemented; catalogue, auth, cart and orders pages wait for their backend steps.
 
+> **Update (Step 4):** the catalogue (brands, categories, products, public reads with demo-viewer scoping, admin-only writes, `seed:catalogue`) and its storefront pages are implemented on branch `phase-1/step-4-catalogue`. Cart, coupons and checkout remain Step 5 onward.
+
 ## 1. Delivery steps (each is a separate, reviewable patch series)
 
 | Step | Contents | Needs a database to verify? |

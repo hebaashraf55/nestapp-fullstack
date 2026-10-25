@@ -69,3 +69,91 @@ export interface Health {
 
 /** GET /api/health */
 export const getHealth = (signal?: AbortSignal) => apiGet<Health>('/api/health', signal);
+
+/* ---------- Catalogue (GET /api/product, /api/category, /api/brand) ---------- */
+
+export interface NamedRef {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface Taxonomy extends NamedRef {
+  image: string | null;
+  isDemo: boolean;
+  createdAt: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  images: string[];
+  priceCents: number;
+  discountPercent: number;
+  salePriceCents: number;
+  currency: string;
+  stock: number;
+  inStock: boolean;
+  category: NamedRef | null;
+  brand: NamedRef | null;
+  isDemo: boolean;
+  createdAt: string;
+}
+
+export interface ProductPage {
+  items: Product[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export type ProductSort = 'newest' | 'price-asc' | 'price-desc' | 'name';
+
+export interface ProductQuery {
+  q?: string;
+  categoryId?: string;
+  brandId?: string;
+  minPrice?: number; // cents
+  maxPrice?: number; // cents
+  inStock?: boolean;
+  sort?: ProductSort;
+  page?: number;
+  limit?: number;
+}
+
+/** Builds a query string, leaving out unset values so the API only sees what the user chose. */
+export function toQueryString(params: ProductQuery): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === '' || value === null) continue;
+    search.set(key, String(value));
+  }
+  const text = search.toString();
+  return text ? `?${text}` : '';
+}
+
+const isPage = (value: unknown): value is ProductPage =>
+  typeof value === 'object' &&
+  value !== null &&
+  Array.isArray((value as ProductPage).items) &&
+  typeof (value as ProductPage).total === 'number';
+
+/** GET /api/product */
+export async function getProducts(query: ProductQuery = {}, signal?: AbortSignal): Promise<ProductPage> {
+  const data = await apiGet<unknown>(`/api/product${toQueryString(query)}`, signal);
+  if (!isPage(data)) throw new ApiError(200, 'Unexpected response from the server');
+  return data;
+}
+
+/** GET /api/product/:id */
+export const getProduct = (id: string, signal?: AbortSignal) =>
+  apiGet<Product>(`/api/product/${encodeURIComponent(id)}`, signal);
+
+/** GET /api/category */
+export const getCategories = (signal?: AbortSignal) => apiGet<Taxonomy[]>('/api/category', signal);
+
+/** GET /api/brand */
+export const getBrands = (signal?: AbortSignal) => apiGet<Taxonomy[]>('/api/brand', signal);
