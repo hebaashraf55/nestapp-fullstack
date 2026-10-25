@@ -5,6 +5,12 @@ import { OtpRepository } from '../../src/auth/otp.repository';
 import { RateLimiter } from '../../src/auth/rate-limiter';
 import { RefreshTokenRepository } from '../../src/auth/refresh-token.repository';
 import { TokenService } from '../../src/auth/token.service';
+import { CatalogueModule } from '../../src/catalogue/catalogue.module';
+import {
+  BrandsRepository,
+  CategoriesRepository,
+  ProductsRepository,
+} from '../../src/catalogue/catalogue.repositories';
 import { configureApp } from '../../src/app.setup';
 import { ENV, loadEnv } from '../../src/config/env';
 import { HealthController } from '../../src/health/health.controller';
@@ -18,6 +24,11 @@ import {
   InMemoryOtpRepository,
   InMemoryRefreshTokenRepository,
 } from './in-memory-auth.repositories';
+import {
+  InMemoryBrandsRepository,
+  InMemoryCategoriesRepository,
+  InMemoryProductsRepository,
+} from './in-memory-catalogue.repositories';
 import { InMemoryUsersRepository } from './in-memory-users.repository';
 
 export const TEST_SECRET = 't'.repeat(48);
@@ -43,6 +54,9 @@ export interface AuthTestApp {
   repo: InMemoryUsersRepository;
   otps: InMemoryOtpRepository;
   refreshTokens: InMemoryRefreshTokenRepository;
+  brands: InMemoryBrandsRepository;
+  categories: InMemoryCategoriesRepository;
+  products: InMemoryProductsRepository;
   mail: CapturingMailSender;
   limiter: RateLimiter;
   tokens: TokenService;
@@ -60,9 +74,17 @@ export async function createAuthApp(
   const repo = new InMemoryUsersRepository();
   const otps = new InMemoryOtpRepository();
   const refreshTokens = new InMemoryRefreshTokenRepository();
+  const brands = new InMemoryBrandsRepository();
+  const categories = new InMemoryCategoriesRepository();
+  const products = new InMemoryProductsRepository();
   const mail = new CapturingMailSender();
   const moduleRef = await Test.createTestingModule({
-    imports: [UsersModule.register(env), MailModule.register(env), AuthModule.register(env)],
+    imports: [
+      UsersModule.register(env),
+      MailModule.register(env),
+      AuthModule.register(env),
+      CatalogueModule.register(env),
+    ],
     controllers: [HealthController, ...controllers],
     providers: [{ provide: ENV, useValue: env }],
   })
@@ -72,6 +94,12 @@ export async function createAuthApp(
     .useValue(otps)
     .overrideProvider(RefreshTokenRepository)
     .useValue(refreshTokens)
+    .overrideProvider(BrandsRepository)
+    .useValue(brands)
+    .overrideProvider(CategoriesRepository)
+    .useValue(categories)
+    .overrideProvider(ProductsRepository)
+    .useValue(products)
     .overrideProvider(MailSender)
     .useValue(mail)
     .compile();
@@ -88,6 +116,9 @@ export async function createAuthApp(
     repo,
     otps,
     refreshTokens,
+    brands,
+    categories,
+    products,
     mail,
     limiter,
     tokens,
