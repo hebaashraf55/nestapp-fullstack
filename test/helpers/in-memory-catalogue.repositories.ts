@@ -155,4 +155,22 @@ export class InMemoryProductsRepository extends ProductsRepository {
     this.check();
     return [...this.records.values()].filter((p) => p.brandId === brandId).length;
   }
+  /** Number of upcoming reserveStock calls that succeed before one is refused (to test rollback). */
+  reserveBudget: number | null = null;
+  async reserveStock(productId: string, quantity: number) {
+    this.check();
+    const current = this.records.get(productId);
+    if (!current || current.stock < quantity) return false;
+    if (this.reserveBudget !== null) {
+      if (this.reserveBudget <= 0) return false;
+      this.reserveBudget -= 1;
+    }
+    this.records.set(productId, { ...current, stock: current.stock - quantity });
+    return true;
+  }
+  async restoreStock(productId: string, quantity: number) {
+    this.check();
+    const current = this.records.get(productId);
+    if (current) this.records.set(productId, { ...current, stock: current.stock + quantity });
+  }
 }

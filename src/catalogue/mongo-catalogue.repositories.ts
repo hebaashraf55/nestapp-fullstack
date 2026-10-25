@@ -248,4 +248,18 @@ export class MongoProductsRepository extends ProductsRepository {
     if (!isValidObjectId(brandId)) return Promise.resolve(0);
     return this.model.countDocuments({ brandId }).exec();
   }
+
+  /** One conditional update: the stock check and the decrement cannot be separated by another request. */
+  async reserveStock(productId: string, quantity: number): Promise<boolean> {
+    if (!isValidObjectId(productId)) return false;
+    const result = await this.model
+      .updateOne({ _id: productId, stock: { $gte: quantity } }, { $inc: { stock: -quantity } })
+      .exec();
+    return result.modifiedCount === 1;
+  }
+
+  async restoreStock(productId: string, quantity: number): Promise<void> {
+    if (!isValidObjectId(productId)) return;
+    await this.model.updateOne({ _id: productId }, { $inc: { stock: quantity } }).exec();
+  }
 }

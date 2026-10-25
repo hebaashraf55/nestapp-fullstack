@@ -91,4 +91,8 @@ export abstract class ProductsRepository {
   abstract delete(id: string): Promise<boolean>;
   abstract countByCategory(categoryId: string): Promise<number>;
   abstract countByBrand(brandId: string): Promise<number>;
+  /** Atomically takes `quantity` from stock only if enough remains. Returns false (and changes nothing) otherwise. */
+  abstract reserveStock(productId: string, quantity: number): Promise<boolean>;
+  /** Gives stock back. A product that no longer exists is ignored. */
+  abstract restoreStock(productId: string, quantity: number): Promise<void>;
 }

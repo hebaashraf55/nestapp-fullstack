@@ -1,4 +1,4 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Global, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Env } from '../config/env';
 import { Cart, CartSchema } from './cart.schema';
@@ -8,6 +8,8 @@ import { CartService, CouponAttemptLimiter } from './cart.service';
 import { MongoCartsRepository } from './mongo-cart.repository';
 import { UnavailableCartsRepository } from './unavailable-cart.repository';
 
+/** Global so orders can price and clear the cart through CartService. */
+@Global()
 @Module({})
 export class CartModule {
   static register(env: Env): DynamicModule {
@@ -26,6 +28,7 @@ export class CartModule {
         CouponAttemptLimiter,
         CartService,
       ],
+      exports: [CartService],
     };
   }
 }

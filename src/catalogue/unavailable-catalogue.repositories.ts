@@ -36,6 +36,8 @@ export class UnavailableCategoriesRepository extends CategoriesRepository {
 export class UnavailableProductsRepository extends ProductsRepository {
   findById = fail;
   findByIds = fail;
+  reserveStock = fail;
+  restoreStock = fail;
   findBySlug = fail;
   findPage = fail;
   create = fail;

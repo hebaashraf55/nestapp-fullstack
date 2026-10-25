@@ -61,6 +61,11 @@ export class CartService {
     return this.render(await this.carts.findByUser(userId));
   }
 
+  /** Empties the cart (and drops its coupon). Used after an order has been placed. */
+  async clear(userId: string): Promise<void> {
+    await this.mutate(userId, () => ({ items: [], couponId: null }));
+  }
+
   async add(userId: string, productId: string, quantity: number): Promise<CartView> {
     const id = productId.toLowerCase();
     const product = await this.products.findById(id);

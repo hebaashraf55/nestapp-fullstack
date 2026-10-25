@@ -16,6 +16,9 @@ import { CartsRepository } from '../../src/cart/cart.repository';
 import { CouponAttemptLimiter } from '../../src/cart/cart.service';
 import { CouponsModule } from '../../src/coupons/coupons.module';
 import { CouponsRepository } from '../../src/coupons/coupons.repository';
+import { OrdersModule } from '../../src/orders/orders.module';
+import { OrdersRepository } from '../../src/orders/orders.repository';
+import { OrdersService } from '../../src/orders/orders.service';
 import { configureApp } from '../../src/app.setup';
 import { ENV, loadEnv } from '../../src/config/env';
 import { HealthController } from '../../src/health/health.controller';
@@ -35,6 +38,7 @@ import {
   InMemoryProductsRepository,
 } from './in-memory-catalogue.repositories';
 import { InMemoryCartsRepository, InMemoryCouponsRepository } from './in-memory-cart.repositories';
+import { InMemoryOrdersRepository } from './in-memory-orders.repository';
 import { InMemoryUsersRepository } from './in-memory-users.repository';
 
 export const TEST_SECRET = 't'.repeat(48);
@@ -65,6 +69,8 @@ export interface AuthTestApp {
   products: InMemoryProductsRepository;
   coupons: InMemoryCouponsRepository;
   carts: InMemoryCartsRepository;
+  orders: InMemoryOrdersRepository;
+  ordersService: OrdersService;
   couponLimiter: CouponAttemptLimiter;
   mail: CapturingMailSender;
   limiter: RateLimiter;
@@ -88,6 +94,7 @@ export async function createAuthApp(
   const products = new InMemoryProductsRepository();
   const coupons = new InMemoryCouponsRepository();
   const carts = new InMemoryCartsRepository();
+  const orders = new InMemoryOrdersRepository();
   const mail = new CapturingMailSender();
   const moduleRef = await Test.createTestingModule({
     imports: [
@@ -97,6 +104,7 @@ export async function createAuthApp(
       CatalogueModule.register(env),
       CouponsModule.register(env),
       CartModule.register(env),
+      OrdersModule.register(env),
     ],
     controllers: [HealthController, ...controllers],
     providers: [{ provide: ENV, useValue: env }],
@@ -117,6 +125,8 @@ export async function createAuthApp(
     .useValue(coupons)
     .overrideProvider(CartsRepository)
     .useValue(carts)
+    .overrideProvider(OrdersRepository)
+    .useValue(orders)
     .overrideProvider(MailSender)
     .useValue(mail)
     .compile();
@@ -138,6 +148,8 @@ export async function createAuthApp(
     products,
     coupons,
     carts,
+    orders,
+    ordersService: moduleRef.get(OrdersService),
     couponLimiter: moduleRef.get(CouponAttemptLimiter),
     mail,
     limiter,
