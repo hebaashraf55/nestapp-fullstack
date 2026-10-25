@@ -52,4 +52,16 @@ export class UsersService {
     assertRoleInvariants(role, isDemo);
     await this.users.updateRoleAndDemo(id, role, isDemo);
   }
+
+  markEmailVerified(id: string): Promise<void> {
+    return this.users.markEmailVerified(id);
+  }
+
+  resetPassword(id: string, passwordHash: string): Promise<void> {
+    return this.users.resetPassword(id, passwordHash);
+  }
+
+  bumpTokenVersion(id: string): Promise<void> {
+    return this.users.bumpTokenVersion(id);
+  }
 }

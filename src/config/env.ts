@@ -50,6 +50,12 @@ const envObject = z.object({
   ),
   JWT_SECRET: optionalString(z.string().min(32, { error: 'must be at least 32 characters' })),
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(60).max(86_400).default(900),
+  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(7),
+  MAIL_TRANSPORT: z.enum(['console', 'smtp']).default('console'),
+  SMTP_URL: optionalString(
+    z.string().regex(/^smtps?:\/\/\S+$/, { error: 'must be an smtp:// or smtps:// URL' }),
+  ),
+  MAIL_FROM: optionalString(z.string().min(3).max(200)),
 });
 
 const envSchema = envObject.superRefine((env, ctx) => {
@@ -58,6 +64,25 @@ const envSchema = envObject.superRefine((env, ctx) => {
       code: 'custom',
       path: ['JWT_SECRET'],
       message: 'is required when MONGODB_URI is set',
+    });
+  }
+  if (env.MAIL_TRANSPORT === 'smtp') {
+    for (const key of ['SMTP_URL', 'MAIL_FROM'] as const) {
+      if (env[key] === undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: 'is required when MAIL_TRANSPORT=smtp',
+        });
+      }
+    }
+  }
+  if (env.NODE_ENV === 'production' && env.MAIL_TRANSPORT === 'console') {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['MAIL_TRANSPORT'],
+      message:
+        'the console transport prints one-time codes to the log and is not allowed in production',
     });
   }
   if (

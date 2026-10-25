@@ -19,6 +19,12 @@ export class User {
 
   @Prop({ required: true, default: false, index: true })
   isDemo!: boolean;
+
+  @Prop({ required: true, default: false })
+  emailVerified!: boolean;
+
+  @Prop({ required: true, default: 0 })
+  tokenVersion!: number;
 }
 
 export type UserDocument = HydratedDocument<User>;

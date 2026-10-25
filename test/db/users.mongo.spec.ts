@@ -47,7 +47,7 @@ suite('MongoUsersRepository (real MongoDB)', () => {
     await moduleRef?.close();
   });
 
-  const base = { name: 'N', passwordHash: 'scrypt$x', isDemo: false };
+  const base = { name: 'N', passwordHash: 'scrypt$x', isDemo: false, emailVerified: false };
 
   it('creates and finds a user by id and by (normalized) email', async () => {
     const created = await service.create({

@@ -8,6 +8,8 @@ describe('loadEnv', () => {
       CORS_ORIGINS: [],
       PAYMENTS_MODE: 'simulated',
       ACCESS_TOKEN_TTL_SECONDS: 900,
+      REFRESH_TOKEN_TTL_DAYS: 7,
+      MAIL_TRANSPORT: 'console',
     });
   });
 
@@ -120,5 +122,45 @@ describe('loadEnv: database and auth settings', () => {
     expect(loadEnv({ ACCESS_TOKEN_TTL_SECONDS: '600' }).ACCESS_TOKEN_TTL_SECONDS).toBe(600);
     expect(() => loadEnv({ ACCESS_TOKEN_TTL_SECONDS: '5' })).toThrow(EnvValidationError);
     expect(() => loadEnv({ ACCESS_TOKEN_TTL_SECONDS: '999999' })).toThrow(EnvValidationError);
+  });
+});
+
+describe('loadEnv: mail and refresh settings', () => {
+  const smtp = {
+    MAIL_TRANSPORT: 'smtp',
+    SMTP_URL: 'smtps://user:pw@smtp.example.com:465',
+    MAIL_FROM: 'Atelier <no-reply@example.com>',
+  };
+
+  it('accepts a complete SMTP configuration', () => {
+    expect(loadEnv(smtp).MAIL_TRANSPORT).toBe('smtp');
+  });
+
+  it('requires SMTP_URL and MAIL_FROM for the smtp transport', () => {
+    expect(() => loadEnv({ MAIL_TRANSPORT: 'smtp' })).toThrow(/SMTP_URL: is required/);
+    expect(() => loadEnv({ MAIL_TRANSPORT: 'smtp', SMTP_URL: smtp.SMTP_URL })).toThrow(
+      /MAIL_FROM: is required/,
+    );
+  });
+
+  it('rejects a non-smtp URL without echoing it', () => {
+    try {
+      loadEnv({ ...smtp, SMTP_URL: 'http://leak.example/pw123' });
+      throw new Error('should have thrown');
+    } catch (error) {
+      expect((error as Error).message).toMatch(/SMTP_URL/);
+      expect((error as Error).message).not.toContain('pw123');
+    }
+  });
+
+  it('forbids the console mail transport in production (it logs one-time codes)', () => {
+    expect(() => loadEnv({ NODE_ENV: 'production' })).toThrow(/console transport/);
+    expect(() => loadEnv({ NODE_ENV: 'production', ...smtp })).not.toThrow();
+  });
+
+  it('bounds the refresh token lifetime', () => {
+    expect(loadEnv({ REFRESH_TOKEN_TTL_DAYS: '30' }).REFRESH_TOKEN_TTL_DAYS).toBe(30);
+    expect(() => loadEnv({ REFRESH_TOKEN_TTL_DAYS: '0' })).toThrow(EnvValidationError);
+    expect(() => loadEnv({ REFRESH_TOKEN_TTL_DAYS: '365' })).toThrow(EnvValidationError);
   });
 });

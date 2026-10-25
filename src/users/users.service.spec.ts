@@ -3,7 +3,7 @@ import { Role } from './role';
 import { assertRoleInvariants, toPublicUser, UsersService } from './users.service';
 import { DuplicateEmailError } from './users.repository';
 
-const base = { name: 'N', passwordHash: 'scrypt$hash' };
+const base = { name: 'N', passwordHash: 'scrypt$hash', emailVerified: false };
 
 describe('UsersService', () => {
   let repo: InMemoryUsersRepository;

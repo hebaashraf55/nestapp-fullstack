@@ -44,16 +44,17 @@ export class AuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<Request>();
     const token = bearerToken(request);
-    const userId = token === null ? null : this.tokens.verify(token);
-    if (userId === null) throw new UnauthorizedException();
+    const claims = token === null ? null : this.tokens.verify(token);
+    if (claims === null) throw new UnauthorizedException();
 
     let user;
     try {
-      user = await this.users.findById(userId);
+      user = await this.users.findById(claims.userId);
     } catch {
       throw new ServiceUnavailableException();
     }
-    if (!user) throw new UnauthorizedException();
+    // A bumped tokenVersion (password reset, logout-all) revokes every access token issued before it.
+    if (!user || user.tokenVersion !== claims.tokenVersion) throw new UnauthorizedException();
 
     const authenticated: AuthenticatedUser = {
       id: user.id,

@@ -8,12 +8,12 @@ const make = (env: NodeJS.ProcessEnv = { JWT_SECRET: secret }) => new TokenServi
 describe('TokenService', () => {
   it('round-trips a user id', () => {
     const tokens = make();
-    expect(tokens.verify(tokens.sign('user-1'))).toBe('user-1');
+    expect(tokens.verify(tokens.sign('user-1', 3))).toEqual({ userId: 'user-1', tokenVersion: 3 });
   });
 
   it('carries no role or personal data, only the subject', () => {
     const payload = jwt.decode(make().sign('user-1')) as Record<string, unknown>;
-    expect(Object.keys(payload).sort()).toEqual(['exp', 'iat', 'iss', 'sub']);
+    expect(Object.keys(payload).sort()).toEqual(['exp', 'iat', 'iss', 'sub', 'ver']);
   });
 
   it('rejects a token signed with another secret', () => {
@@ -53,6 +53,14 @@ describe('TokenService', () => {
     const foreign = jwt.sign({}, secret, { subject: 'u', issuer: 'someone-else' });
     const noSub = jwt.sign({}, secret, { issuer: 'nestapp-fullstack' });
     for (const t of [expired, foreign, noSub]) expect(make().verify(t)).toBeNull();
+  });
+
+  it('rejects a validly signed token that has no usable version claim', () => {
+    const sign = (claims: object) =>
+      jwt.sign(claims, secret, { subject: 'u', issuer: 'nestapp-fullstack' });
+    for (const claims of [{}, { ver: -1 }, { ver: 1.5 }, { ver: '1' }]) {
+      expect(make().verify(sign(claims))).toBeNull();
+    }
   });
 
   it('rejects garbage', () => {

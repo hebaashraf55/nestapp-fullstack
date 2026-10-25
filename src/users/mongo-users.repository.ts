@@ -15,6 +15,8 @@ function toRecord(doc: UserDocument): UserRecord {
     passwordHash: doc.passwordHash,
     role: doc.role,
     isDemo: doc.isDemo,
+    emailVerified: doc.emailVerified,
+    tokenVersion: doc.tokenVersion,
     createdAt: (doc as unknown as { createdAt: Date }).createdAt,
   };
 }
@@ -54,5 +56,25 @@ export class MongoUsersRepository extends UsersRepository {
   async updateRoleAndDemo(id: string, role: Role, isDemo: boolean): Promise<void> {
     if (!isValidObjectId(id)) return;
     await this.model.updateOne({ _id: id }, { $set: { role, isDemo } }).exec();
+  }
+
+  async markEmailVerified(id: string): Promise<void> {
+    if (!isValidObjectId(id)) return;
+    await this.model.updateOne({ _id: id }, { $set: { emailVerified: true } }).exec();
+  }
+
+  async resetPassword(id: string, passwordHash: string): Promise<void> {
+    if (!isValidObjectId(id)) return;
+    await this.model
+      .updateOne(
+        { _id: id },
+        { $set: { passwordHash, emailVerified: true }, $inc: { tokenVersion: 1 } },
+      )
+      .exec();
+  }
+
+  async bumpTokenVersion(id: string): Promise<void> {
+    if (!isValidObjectId(id)) return;
+    await this.model.updateOne({ _id: id }, { $inc: { tokenVersion: 1 } }).exec();
   }
 }

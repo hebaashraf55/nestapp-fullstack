@@ -20,9 +20,10 @@ export class TokenService {
     this.ttlSeconds = env.ACCESS_TOKEN_TTL_SECONDS;
   }
 
-  sign(userId: string): string {
+  /** `tokenVersion` is the user's current version; bumping it later invalidates this token. */
+  sign(userId: string, tokenVersion = 0): string {
     if (!this.secret) throw new Error('JWT_SECRET is not configured');
-    return jwt.sign({}, this.secret, {
+    return jwt.sign({ ver: tokenVersion }, this.secret, {
       algorithm: ALGORITHM,
       subject: userId,
       issuer: ISSUER,
@@ -30,14 +31,17 @@ export class TokenService {
     });
   }
 
-  /** Returns the user id, or null for any invalid, expired, tampered or foreign token. */
-  verify(token: string): string | null {
+  /** Returns the user id and token version, or null for any invalid, expired, tampered or foreign token. */
+  verify(token: string): { userId: string; tokenVersion: number } | null {
     if (!this.secret) return null;
     try {
       // Pinning the algorithm list blocks the "alg: none" and algorithm-confusion attacks.
       const payload = jwt.verify(token, this.secret, { algorithms: [ALGORITHM], issuer: ISSUER });
       if (typeof payload === 'string') return null;
-      return typeof payload.sub === 'string' && payload.sub.length > 0 ? payload.sub : null;
+      const version: unknown = payload.ver;
+      if (typeof payload.sub !== 'string' || payload.sub.length === 0) return null;
+      if (typeof version !== 'number' || !Number.isInteger(version) || version < 0) return null;
+      return { userId: payload.sub, tokenVersion: version };
     } catch {
       return null;
     }

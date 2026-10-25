@@ -34,6 +34,7 @@ export class InMemoryUsersRepository extends UsersRepository {
     const record: UserRecord = {
       ...user,
       id: randomBytes(12).toString('hex'),
+      tokenVersion: 0,
       createdAt: new Date(),
     };
     this.records.set(record.id, record);
@@ -44,5 +45,30 @@ export class InMemoryUsersRepository extends UsersRepository {
     this.check();
     const record = this.records.get(id);
     if (record) this.records.set(id, { ...record, role, isDemo });
+  }
+
+  async markEmailVerified(id: string): Promise<void> {
+    this.check();
+    const record = this.records.get(id);
+    if (record) this.records.set(id, { ...record, emailVerified: true });
+  }
+
+  async resetPassword(id: string, passwordHash: string): Promise<void> {
+    this.check();
+    const record = this.records.get(id);
+    if (record) {
+      this.records.set(id, {
+        ...record,
+        passwordHash,
+        emailVerified: true,
+        tokenVersion: record.tokenVersion + 1,
+      });
+    }
+  }
+
+  async bumpTokenVersion(id: string): Promise<void> {
+    this.check();
+    const record = this.records.get(id);
+    if (record) this.records.set(id, { ...record, tokenVersion: record.tokenVersion + 1 });
   }
 }

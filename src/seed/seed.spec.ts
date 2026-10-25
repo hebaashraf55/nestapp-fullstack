@@ -86,9 +86,9 @@ describe('seedUsers', () => {
     const admin = await users.findByEmail('owner@example.com');
     const customer = await users.findByEmail(DEMO_CUSTOMER_EMAIL);
     const viewer = await users.findByEmail(DEMO_VIEWER_EMAIL);
-    expect(admin).toMatchObject({ role: Role.ADMIN, isDemo: false });
+    expect(admin).toMatchObject({ role: Role.ADMIN, isDemo: false, emailVerified: true });
     expect(customer).toMatchObject({ role: Role.CUSTOMER, isDemo: true });
-    expect(viewer).toMatchObject({ role: Role.DEMO_VIEWER, isDemo: true });
+    expect(viewer).toMatchObject({ role: Role.DEMO_VIEWER, isDemo: true, emailVerified: true });
   });
 
   it('stores only salted hashes, and each account gets its own password', async () => {
@@ -123,6 +123,7 @@ describe('seedUsers', () => {
       passwordHash: 'x',
       role: Role.CUSTOMER,
       isDemo: false,
+      emailVerified: false,
     });
     await expect(seedUsers(users, config)).rejects.toBeInstanceOf(SeedConflictError);
     expect((await users.findByEmail('owner@example.com'))!.role).toBe(Role.CUSTOMER);

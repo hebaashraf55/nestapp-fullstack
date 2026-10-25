@@ -66,6 +66,8 @@ export async function seedUsers(users: UsersService, config: SeedConfig): Promis
       passwordHash: await hashPassword(account.password),
       role: account.role,
       isDemo: account.isDemo,
+      // Seeded accounts are created by the owner, so there is no mailbox to confirm.
+      emailVerified: true,
     });
     results.push({ email: account.email, role: account.role, outcome: 'created' });
   }

@@ -19,4 +19,13 @@ export class UnavailableUsersRepository extends UsersRepository {
   updateRoleAndDemo(): never {
     return this.fail();
   }
+  markEmailVerified(): never {
+    return this.fail();
+  }
+  resetPassword(): never {
+    return this.fail();
+  }
+  bumpTokenVersion(): never {
+    return this.fail();
+  }
 }
