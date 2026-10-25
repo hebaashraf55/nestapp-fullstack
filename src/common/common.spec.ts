@@ -49,16 +49,25 @@ describe('HttpErrorFilter', () => {
   });
 
   it.each([
-    ['plain string', new HttpException('secret db host', 500)],
-    ['object with details', new HttpException({ message: 'secret', details: { a: 1 } }, 503)],
-    ['array message', new HttpException({ message: ['secret'] }, 502)],
-  ])('hides message and details of a developer-thrown 5xx (%s)', (_l, error) => {
-    const { status, body } = run(error);
-    expect(status).toBeGreaterThanOrEqual(500);
-    expect(body.error.details).toBeUndefined();
-    expect(JSON.stringify(body)).not.toContain('secret');
-    expect(body.error.message).toBe(status === 500 ? 'Internal server error' : body.error.message);
-  });
+    ['plain string', new HttpException('secret db host', 500), 500, 'Internal server error'],
+    [
+      'object with details',
+      new HttpException({ message: 'secret', details: { a: 1 } }, 503),
+      503,
+      'Service Unavailable',
+    ],
+    ['array message', new HttpException({ message: ['secret'] }, 502), 502, 'Bad Gateway'],
+  ])(
+    'hides message and details of a developer-thrown 5xx (%s)',
+    (_label, error, expectedStatus, expectedMessage) => {
+      const { status, body } = run(error);
+      expect(status).toBe(expectedStatus);
+      expect(body.error.statusCode).toBe(expectedStatus);
+      expect(body.error.message).toBe(expectedMessage);
+      expect(body.error.details).toBeUndefined();
+      expect(JSON.stringify(body)).not.toContain('secret');
+    },
+  );
 
   it.each([
     ['5xx from middleware', { status: 502, expose: true }],
