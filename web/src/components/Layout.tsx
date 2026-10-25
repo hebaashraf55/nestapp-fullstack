@@ -1,7 +1,11 @@
 import { MotionConfig } from 'framer-motion';
 import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
+import { useCart } from '../cart/CartContext';
 
 export function Layout() {
+  const { user, signOut } = useAuth();
+  const { itemCount } = useCart();
   return (
     <MotionConfig reducedMotion="user">
       <a className="skip" href="#main">
@@ -20,6 +24,16 @@ export function Layout() {
           </NavLink>
           <NavLink to="/shop">Shop</NavLink>
           <NavLink to="/about">About this build</NavLink>
+          <NavLink to="/cart">
+            Cart{itemCount > 0 && <span className="badge" aria-label={`${itemCount} items`}>{itemCount}</span>}
+          </NavLink>
+          {user ? (
+            <button type="button" className="link link--nav" onClick={() => void signOut()}>
+              Sign out ({user.name})
+            </button>
+          ) : (
+            <NavLink to="/login">Sign in</NavLink>
+          )}
         </nav>
       </header>
       <main id="main">

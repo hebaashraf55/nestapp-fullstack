@@ -26,7 +26,9 @@ The domain model and business flows are adapted from my earlier course project [
 | Seed script (owner admin from env vars, synthetic demo accounts), `docker-compose.yml` | Implemented; seed logic tested in memory, real-database run pending on your machine |
 | Authentication: signup, email code verification, login, rotating refresh tokens, logout, logout-all, forgot/reset password, profile | Implemented and tested over HTTP with in-memory stores. Mongoose-backed repositories are written but **their tests have not been run** |
 | Catalogue: brands, categories, products with admin-only CRUD, public search / filter / sort / pagination, demo viewer limited to synthetic records | Implemented and tested over HTTP with in-memory stores. Mongoose repositories and the `seed:catalogue` script are written but **have not been run against a real MongoDB** |
-| Cart, coupons, orders, admin dashboards | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
+| Coupons (admin CRUD) and the cart: add / view / change quantity / remove / apply coupon, server-side pricing, stock checks, live recalculation | Implemented and tested over HTTP with in-memory stores. Mongoose repositories are written but **have not been run against a real MongoDB** |
+| Storefront sign-in, cart page and add-to-cart | Implemented and tested against mocked API responses; exercised in a real browser against an in-memory API |
+| Orders, simulated payments, admin dashboards | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
 
 ## Quick start
 
@@ -90,6 +92,24 @@ Each resource has the same shape. Paths keep the original API's `create` convent
 `GET /api/product` accepts `q` (name search, literal text, max 80), `categoryId`, `brandId`, `minPrice` / `maxPrice` (cents, applied to the sale price), `inStock=true|false`, `sort=newest|price-asc|price-desc|name`, `page`, `limit` (1–50). Unknown query parameters are rejected with 400. The response is `{ items, page, limit, total, totalPages }`. Money is always integer cents in `USD`; `salePriceCents` is computed on the server and cannot be sent by a client. Images must be `https://` URLs or `/catalogue/<name>.svg|png|jpg|webp|avif` paths.
 
 **Known limits:** name search is an escaped, case-insensitive pattern match with no text index, so it scans the collection (fine for a demo catalogue, not for very large ones). The filter logic exists twice (MongoDB and the in-memory test double); only the skipped real-database tests would catch drift between them. There is no stock reservation yet: stock is shown, not decremented (checkout is a later step).
+
+## Coupons and cart (`/api/coupon`, `/api/cart`)
+
+**Coupons** (`/api/coupon`, admin only, reads included): `POST /`, `GET /`, `GET /:id`, `PATCH /:id` (discount percent or expiry; the code is immutable), `DELETE /:id`. Codes are normalised to upper case (3–32 letters, digits, `-`, `_`); `discountPercent` is 1–90; `expiresAt` is an ISO date-time in the future (at most five years out).
+
+**Cart** (signed-in users; the owner always comes from the token, never from a path or body):
+
+| Route | Notes |
+|---|---|
+| `GET /api/cart` | Always answers with a cart (empty if none). Demo viewers may read |
+| `POST /api/cart` | `{ productId, quantity }` (1–99). Adds to an existing line. 404 unknown product, 409 sold out or beyond stock |
+| `PATCH /api/cart/:productId` | `{ quantity }` (0–99); 0 removes the line. 409 beyond stock |
+| `DELETE /api/cart/:productId` | removes a line; 404 if it is not in the cart |
+| `POST /api/cart/apply-coupon` | `{ code }`. One generic 400 for unknown or expired codes; 10 wrong guesses per user per 15 minutes, then 429 |
+
+Only a product id and a quantity are stored. Unit prices, line totals, stock status, the coupon discount and the total are recomputed from the live catalogue and coupon on every read, so an admin price change or an expired coupon is reflected immediately. A line whose product was deleted appears as `unavailable` and is excluded from totals. Money is integer cents, the discount is rounded to whole cents, and unknown fields (a price, a total, a user id) are rejected with 400. Writes use optimistic concurrency (retry up to three times, then 409). Demo viewers get 403 on every cart write.
+
+**Known limits:** stock is checked but not reserved or decremented (that is Step 6, orders); the coupon-guess throttle is per-process memory like the login throttle (hardening is Step 8); the browser keeps the session in `sessionStorage`, readable by any script on the page (an httpOnly refresh cookie would need a backend change). There is no account-creation screen yet: sign in with a seeded account.
 
 ## Scripts
 

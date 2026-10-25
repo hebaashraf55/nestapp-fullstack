@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ApiError, getProduct } from '../api/client';
+import { AddToCart } from '../components/AddToCart';
 import { useRemote } from '../hooks/useRemote';
 import { formatMoney } from '../lib/money';
 
@@ -80,9 +81,9 @@ export function ProductDetail() {
           {!p.inStock ? 'Sold out' : p.stock <= 5 ? `Only ${p.stock} left` : 'In stock'}
         </p>
         {p.description && <p className="lede lede--small">{p.description}</p>}
+        <AddToCart product={p} />
         <p className="notice">
-          The cart and simulated checkout arrive in the next milestone. Nothing can be purchased yet, and no payment
-          is ever taken.
+          Checkout is simulated and arrives in a later step. No payment is ever taken.
         </p>
       </div>
     </div>

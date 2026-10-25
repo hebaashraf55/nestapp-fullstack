@@ -12,6 +12,8 @@ Ground rules (all phases)
 
 > **Update (Step 4):** the catalogue (brands, categories, products, public reads with demo-viewer scoping, admin-only writes, `seed:catalogue`) and its storefront pages are implemented on branch `phase-1/step-4-catalogue`. Cart, coupons and checkout remain Step 5 onward.
 
+> **Update (Step 5):** admin coupons and the server-priced cart are implemented on branch `phase-1/step-5-cart`, with a minimal sign-in page, an add-to-cart control and a cart page in the storefront. Orders and simulated payment remain Step 6.
+
 ## 1. Delivery steps (each is a separate, reviewable patch series)
 
 | Step | Contents | Needs a database to verify? |

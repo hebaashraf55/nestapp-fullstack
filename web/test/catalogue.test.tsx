@@ -186,8 +186,10 @@ describe('Product detail', () => {
     expect(screen.getByText('$75.00')).toBeInTheDocument();
     expect(screen.getByText('Only 3 left')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ceramics' })).toHaveAttribute('href', `/shop?category=${'c'.repeat(24)}`);
-    expect(screen.getByText(/cart and simulated checkout arrive in the next milestone/i)).toBeInTheDocument();
+    expect(screen.getByText(/checkout is simulated and arrives in a later step/i)).toBeInTheDocument();
+    // signed out: no purchase button, a sign-in prompt instead
     expect(screen.queryByRole('button', { name: /add to cart/i })).not.toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Sign in' })).toBeInTheDocument();
   });
 
   it('switches gallery images', async () => {
