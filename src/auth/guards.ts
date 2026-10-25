@@ -11,7 +11,7 @@ import type { Request } from 'express';
 import { Role } from '../users/role';
 import { UsersService } from '../users/users.service';
 import { AuthenticatedUser } from './auth.types';
-import { IS_PUBLIC, ROLES_KEY } from './decorators';
+import { IS_PUBLIC, OPTIONAL_AUTH, ROLES_KEY } from './decorators';
 import { TokenService } from './token.service';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -40,13 +40,40 @@ export class AuthGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isPublic === true) return true;
-
     const request = context.switchToHttp().getRequest<Request>();
+    if (isPublic === true) {
+      const optional = this.reflector.getAllAndOverride<boolean | undefined>(OPTIONAL_AUTH, [
+        context.getHandler(),
+        context.getClass(),
+      ]);
+      if (optional === true) await this.identifyIfPossible(request);
+      return true;
+    }
     const token = bearerToken(request);
     const claims = token === null ? null : this.tokens.verify(token);
     if (claims === null) throw new UnauthorizedException();
 
+    return this.authenticate(request, claims);
+  }
+
+  /** An invalid or revoked token leaves the request anonymous; storage failures still fail the request. */
+  private async identifyIfPossible(request: Request): Promise<void> {
+    const token = bearerToken(request);
+    const claims = token === null ? null : this.tokens.verify(token);
+    if (claims === null) return;
+    try {
+      await this.authenticate(request, claims);
+    } catch (error) {
+      // A stale or revoked token means "anonymous". A storage outage is NOT swallowed: failing open
+      // there could show a demo viewer data it should not see.
+      if (!(error instanceof UnauthorizedException)) throw error;
+    }
+  }
+
+  private async authenticate(
+    request: Request,
+    claims: { userId: string; tokenVersion: number },
+  ): Promise<true> {
     let user;
     try {
       user = await this.users.findById(claims.userId);
