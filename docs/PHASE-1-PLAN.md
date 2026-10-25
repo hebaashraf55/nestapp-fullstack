@@ -8,6 +8,8 @@ Ground rules (all phases)
 - Every push is a separate approval: target repository, branch and exact changes are shown first.
 - Evidence labels: **EXECUTED** (run and observed), **WRITTEN, NOT EXECUTED** (code exists, could not run in that environment), **PLANNED**, **BLOCKED**, **UNVERIFIED**.
 
+> **Update (2026-10-25):** Step 1 was approved at commit `fc69e05`. Frontend work (Phase 2) was then authorised to start on branch `phase-2/frontend-foundation` before backend Steps 2–8 exist. The frontend only calls endpoints that are implemented; catalogue, auth, cart and orders pages wait for their backend steps.
+
 ## 1. Delivery steps (each is a separate, reviewable patch series)
 
 | Step | Contents | Needs a database to verify? |

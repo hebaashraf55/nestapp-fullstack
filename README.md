@@ -2,7 +2,7 @@
 
 A full-stack e-commerce portfolio project: a **NestJS + MongoDB API** (Phase 1) and a **React storefront** (Phase 2).
 
-> **Status: Phase 1 in progress.** Only the API foundation exists so far (configuration, security headers, CORS allow-list, response envelope, error handling, health check). Nothing is deployed. There is no live demo yet.
+> **Status: Phase 1 in progress; Phase 2 frontend foundation started.** The API has only its foundation (configuration, security headers, CORS allow-list, response envelope, error handling, health check). The React app in `web/` is a shell that calls the one endpoint that exists. Nothing is deployed. There is no live demo yet.
 
 ## Important: checkout is simulated
 
@@ -20,6 +20,7 @@ The domain model and business flows are adapted from my earlier course project [
 | Validated configuration (`PORT`, `CORS_ORIGINS`, `PAYMENTS_MODE`, `NODE_ENV`) | Implemented and tested |
 | Helmet security headers, exact-match CORS allow-list | Implemented and tested |
 | `{ success, data, timestamp }` response envelope and safe error envelope | Implemented and tested |
+| React + TypeScript + Vite shell in `web/` (animated landing, live API status, reduced-motion support) | Implemented and tested; **no catalogue or checkout yet** — those need backend endpoints that do not exist |
 | Database, authentication, catalog, cart, orders, admin | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
 
 ## Quick start
@@ -32,6 +33,13 @@ cp .env.example .env     # edit if needed; never commit .env
 npm run start:dev        # http://localhost:5000/api/health
 ```
 
+### Run the web app locally
+
+```bash
+npm run build && node dist/main.js     # API on http://localhost:5000
+cd web && npm ci && npm run dev        # http://localhost:5173 (proxies /api to :5000)
+```
+
 ## Scripts
 
 | Command | What it does |
@@ -42,6 +50,8 @@ npm run start:dev        # http://localhost:5000/api/health
 | `npm run build` | Compile to `dist/` |
 | `npm test` | Unit and HTTP tests (no database needed at this stage) |
 | `npm run test:cov` | Tests with a measured coverage report in `coverage/` |
+
+The frontend has its own scripts in `web/` (`lint`, `typecheck`, `build`, `test`, `test:cov`).
 
 ## Documentation
 
