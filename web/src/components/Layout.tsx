@@ -27,7 +27,8 @@ export function Layout() {
           <NavLink to="/cart">
             Cart{itemCount > 0 && <span className="badge" aria-label={`${itemCount} items`}>{itemCount}</span>}
           </NavLink>
-          {user && <NavLink to="/orders">Orders</NavLink>}
+          {user && user.role !== 'DEMO_VIEWER' && user.role !== 'ADMIN' && <NavLink to="/orders">Orders</NavLink>}
+          {user && (user.role === 'ADMIN' || user.role === 'DEMO_VIEWER') && <NavLink to="/admin">Admin</NavLink>}
           {user ? (
             <button type="button" className="link link--nav" onClick={() => void signOut()}>
               Sign out ({user.name})

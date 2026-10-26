@@ -29,6 +29,7 @@ The domain model and business flows are adapted from my earlier course project [
 | Coupons (admin CRUD) and the cart: add / view / change quantity / remove / apply coupon, server-side pricing, stock checks, live recalculation | Implemented and tested over HTTP with in-memory stores. Mongoose repositories are written but **have not been run against a real MongoDB** |
 | Storefront sign-in, cart page and add-to-cart | Implemented and tested against mocked API responses; exercised in a real browser against an in-memory API |
 | Orders and simulated payments: place order from cart, 30-minute stock hold, one-click `simulate-payment`, expiry, owner history, admin status changes and simulated refunds. Storefront `/checkout`, `/orders`, `/orders/:id` | Implemented and tested over HTTP with in-memory stores and against mocked API responses; exercised in a real browser against an in-memory API. Mongoose order and stock code **has not been run against a real MongoDB** (6 new skipped DB tests) |
+| Admin and demo viewer: masked customer list, dashboard stats, admin order list with status and simulated-refund actions, append-only audit log, demo viewer limited to synthetic read-only data. Storefront `/admin`, `/admin/orders`, `/admin/customers`, `/admin/audit` | Implemented and tested over HTTP with in-memory stores and against mocked API responses; exercised in a real browser against an in-memory API. New MongoDB queries **have not been run against a real MongoDB** (6 more skipped DB tests, 42 in total) |
 | Orders, simulated payments, admin dashboards | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
 
 ## Quick start
@@ -128,6 +129,23 @@ Only a product id and a quantity are stored. Unit prices, line totals, stock sta
 Every transition is a compare-and-set, so concurrent requests have exactly one winner and stock is restored once. Orders expire after 30 minutes (checked on read and payment, and by a 60-second sweeper when MongoDB is configured). Demo viewers get 403 on every order write, and their orders are only `isDemo` data.
 
 **Known limits:** stock is reserved with one conditional update per product and compensated on failure, not with a multi-document transaction (a standalone MongoDB cannot do one); a process crash between a status change and its stock restore could leak stock and there is no reconciliation job; the double-submit guard is per process; there is no admin order list yet (Step 7); the sweeper and Mongoose repositories are covered only by the skipped real-database tests.
+
+## Admin and demo viewer (`/api/admin`)
+
+All routes are `GET`, enforced on the server by the global guards (a hidden button is never the protection). Anonymous callers get 401 and customers get 403.
+
+| Route | Who | Behaviour |
+|---|---|---|
+| `GET /api/admin/stats` | admin, demo viewer | Customer, product and order counts, low-stock (≤ 5) and sold-out products, simulated paid and refunded totals. Demo viewer: synthetic records only |
+| `GET /api/admin/customers` | admin, demo viewer | Customers only (no admins), newest first, `page`/`limit`. Name and email are masked on the server (`Heba A.`, `h***@e***.com`); no hash, role or token data. Demo viewer: synthetic customers only |
+| `GET /api/admin/orders` | admin, demo viewer | All orders with a masked customer, optional `status` filter. Demo viewer: synthetic orders only, so real customers' addresses are never returned to it |
+| `GET /api/admin/audit` | **admin only** | Newest first. Who (id, role), what (`order.status`, `product.delete`, …), which record, and a short detail such as the requested status |
+
+Changing an order uses the existing admin-only `PATCH /api/order/:id/status` and `POST /api/order/:id/refund`. Every successful admin write (brand, category, product, coupon, order status, refund) is audited; request bodies are never stored. Unknown query parameters are rejected with 400.
+
+**Demo viewer:** a global guard answers 403 to any non-GET request carrying a demo-viewer token. `test/demo-readonly.spec.ts` reads every registered route from Express, requires each write route to be classified (public with a stated reason, or forbidden for the viewer) and sends the viewer's token to each forbidden one, so a new write route that is not classified fails the suite.
+
+**Known limits:** the audit entry is written after the action succeeds, so if the audit store fails the action stays done and the failure is only logged; failed and forbidden attempts are not recorded; there is no audit retention or export; the audit log is not tamper-evident beyond having no update or delete route; customer and order lists are paginated but not searchable; there is no product or coupon management screen yet (those admin APIs exist); the new reporting queries are covered only by skipped real-database tests.
 
 ## Scripts
 

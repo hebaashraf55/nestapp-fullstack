@@ -348,3 +348,110 @@ export const getOrder = async (id: string, signal?: AbortSignal) =>
 /** POST /api/order/:id/simulate-payment. No body: nothing about a card is ever sent. */
 export const simulatePayment = (id: string) =>
   orderCall(apiSend('POST', `/api/order/${encodeURIComponent(id)}/simulate-payment`, {}));
+
+/* ---------- Admin (GET /api/admin/*, PATCH /api/order/:id/status, POST /api/order/:id/refund) ---------- */
+/* The server enforces every permission; these calls simply fail with 401/403 for anyone who may not use them. */
+
+export interface AdminStats {
+  scope: 'all' | 'demo';
+  currency: string;
+  customers: number;
+  products: { total: number; outOfStock: number; lowStock: number; lowStockThreshold: number };
+  orders: { total: number; byStatus: Record<OrderStatus, number> };
+  simulatedPaidCents: number;
+  simulatedRefundedCents: number;
+  notice: string;
+}
+
+export interface AdminCustomer {
+  id: string;
+  displayName: string;
+  maskedEmail: string;
+  emailVerified: boolean;
+  isDemo: boolean;
+  createdAt: string;
+}
+
+export interface AdminOrder extends Order {
+  customer: { id: string; displayName: string; maskedEmail: string };
+}
+
+export interface AuditEntry {
+  id: string;
+  actorId: string;
+  actorRole: string;
+  action: string;
+  targetId: string | null;
+  detail: string | null;
+  createdAt: string;
+}
+
+export interface AdminPage<T> {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+function adminPage<T>(data: unknown, isItem: (v: unknown) => v is T): AdminPage<T> {
+  if (
+    !isRecord(data) ||
+    !Array.isArray(data.items) ||
+    !data.items.every(isItem) ||
+    typeof data.page !== 'number' ||
+    typeof data.total !== 'number' ||
+    typeof data.totalPages !== 'number' ||
+    typeof data.limit !== 'number'
+  ) {
+    throw new ApiError(200, 'Unexpected response from the server');
+  }
+  return data as unknown as AdminPage<T>;
+}
+
+const hasString = (v: unknown, key: string): v is Record<string, unknown> =>
+  isRecord(v) && typeof v[key] === 'string';
+const isCustomer = (v: unknown): v is AdminCustomer => hasString(v, 'maskedEmail');
+const isAdminOrder = (v: unknown): v is AdminOrder => isOrder(v) && isRecord((v as unknown as Record<string, unknown>).customer);
+const isAuditEntry = (v: unknown): v is AuditEntry => hasString(v, 'action') && hasString(v, 'actorId');
+
+/** GET /api/admin/stats */
+export async function getAdminStats(signal?: AbortSignal): Promise<AdminStats> {
+  const data = await apiGet<unknown>('/api/admin/stats', signal);
+  if (!isRecord(data) || !isRecord(data.orders) || !isRecord(data.products) || typeof data.customers !== 'number') {
+    throw new ApiError(200, 'Unexpected response from the server');
+  }
+  return data as unknown as AdminStats;
+}
+
+const pageQuery = (page: number, extra: Record<string, string | undefined> = {}) => {
+  const params = new URLSearchParams({ page: String(page), limit: '10' });
+  for (const [k, v] of Object.entries(extra)) if (v) params.set(k, v);
+  return params.toString();
+};
+
+/** GET /api/admin/customers (names and emails arrive already masked) */
+export async function getAdminCustomers(page: number, signal?: AbortSignal) {
+  return adminPage(await apiGet<unknown>(`/api/admin/customers?${pageQuery(page)}`, signal), isCustomer);
+}
+
+/** GET /api/admin/orders */
+export async function getAdminOrders(page: number, status: OrderStatus | '', signal?: AbortSignal) {
+  return adminPage(
+    await apiGet<unknown>(`/api/admin/orders?${pageQuery(page, { status: status || undefined })}`, signal),
+    isAdminOrder,
+  );
+}
+
+/** GET /api/admin/audit (administrators only) */
+export async function getAuditLog(page: number, signal?: AbortSignal) {
+  return adminPage(await apiGet<unknown>(`/api/admin/audit?${pageQuery(page)}`, signal), isAuditEntry);
+}
+
+/** PATCH /api/order/:id/status */
+export const setOrderStatus = (id: string, status: 'SHIPPED' | 'DELIVERED' | 'CANCELLED') =>
+  orderCall(apiSend('PATCH', `/api/order/${encodeURIComponent(id)}/status`, { status }));
+
+/** POST /api/order/:id/refund. Simulated: no money moves. */
+export const refundOrder = (id: string) =>
+  orderCall(apiSend('POST', `/api/order/${encodeURIComponent(id)}/refund`, {}));
