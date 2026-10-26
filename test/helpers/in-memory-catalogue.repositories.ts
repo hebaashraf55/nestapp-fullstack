@@ -9,6 +9,7 @@ import {
   ProductPatch,
   ProductRecord,
   ProductsRepository,
+  StockSummary,
   TaxonomyPatch,
   TaxonomyRecord,
   TaxonomyRepository,
@@ -84,6 +85,15 @@ export class InMemoryProductsRepository extends ProductsRepository {
     if (this.failWith) throw this.failWith;
   }
 
+  async summarizeStock(demoOnly: boolean, lowStockAt: number): Promise<StockSummary> {
+    this.check();
+    const all = [...this.records.values()].filter((p) => !demoOnly || p.isDemo);
+    return {
+      total: all.length,
+      outOfStock: all.filter((p) => p.stock === 0).length,
+      lowStock: all.filter((p) => p.stock > 0 && p.stock <= lowStockAt).length,
+    };
+  }
   async findById(id: string) {
     this.check();
     return this.records.get(id) ?? null;

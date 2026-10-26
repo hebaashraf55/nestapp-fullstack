@@ -16,6 +16,12 @@ export class UnavailableUsersRepository extends UsersRepository {
   create(): never {
     return this.fail();
   }
+  findPage(): never {
+    return this.fail();
+  }
+  findByIds(): never {
+    return this.fail();
+  }
   updateRoleAndDemo(): never {
     return this.fail();
   }

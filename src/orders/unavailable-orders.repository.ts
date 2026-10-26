@@ -9,6 +9,8 @@ const fail = (): never => {
 @Injectable()
 export class UnavailableOrdersRepository extends OrdersRepository {
   create = fail;
+  findPage = fail;
+  summarize = fail;
   findById = fail;
   findByUser = fail;
   countPending = fail;

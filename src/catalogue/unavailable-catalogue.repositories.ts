@@ -34,6 +34,7 @@ export class UnavailableCategoriesRepository extends CategoriesRepository {
 
 @Injectable()
 export class UnavailableProductsRepository extends ProductsRepository {
+  summarizeStock = fail;
   findById = fail;
   findByIds = fail;
   reserveStock = fail;

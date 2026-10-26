@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { AuthenticatedUser } from '../auth/auth.types';
+import { Audited } from '../audit/audited';
 import { CurrentUser, OptionalAuth, Public, Roles } from '../auth/decorators';
 import { Role } from '../users/role';
 import { BrandsService, CategoriesService, ProductsService } from './catalogue.services';
@@ -29,6 +30,7 @@ export class BrandController {
   constructor(private readonly brands: BrandsService) {}
 
   @Roles(Role.ADMIN)
+  @Audited('brand.create')
   @Post('create')
   create(
     @Body(new ZodPipe(taxonomyCreateSchema)) dto: TaxonomyCreateDto,
@@ -52,6 +54,7 @@ export class BrandController {
   }
 
   @Roles(Role.ADMIN)
+  @Audited('brand.update')
   @Patch(':id')
   update(
     @Param('id', new ParseObjectIdPipe()) id: string,
@@ -61,6 +64,7 @@ export class BrandController {
   }
 
   @Roles(Role.ADMIN)
+  @Audited('brand.delete')
   @Delete(':id')
   @HttpCode(200)
   remove(@Param('id', new ParseObjectIdPipe()) id: string) {
@@ -73,6 +77,7 @@ export class CategoryController {
   constructor(private readonly categories: CategoriesService) {}
 
   @Roles(Role.ADMIN)
+  @Audited('category.create')
   @Post('create')
   create(
     @Body(new ZodPipe(taxonomyCreateSchema)) dto: TaxonomyCreateDto,
@@ -96,6 +101,7 @@ export class CategoryController {
   }
 
   @Roles(Role.ADMIN)
+  @Audited('category.update')
   @Patch(':id')
   update(
     @Param('id', new ParseObjectIdPipe()) id: string,
@@ -105,6 +111,7 @@ export class CategoryController {
   }
 
   @Roles(Role.ADMIN)
+  @Audited('category.delete')
   @Delete(':id')
   @HttpCode(200)
   remove(@Param('id', new ParseObjectIdPipe()) id: string) {
@@ -117,6 +124,7 @@ export class ProductController {
   constructor(private readonly products: ProductsService) {}
 
   @Roles(Role.ADMIN)
+  @Audited('product.create')
   @Post('create')
   create(
     @Body(new ZodPipe(productCreateSchema)) dto: ProductCreateDto,
@@ -143,6 +151,7 @@ export class ProductController {
   }
 
   @Roles(Role.ADMIN)
+  @Audited('product.update')
   @Patch(':id')
   update(
     @Param('id', new ParseObjectIdPipe()) id: string,
@@ -152,6 +161,7 @@ export class ProductController {
   }
 
   @Roles(Role.ADMIN)
+  @Audited('product.delete')
   @Delete(':id')
   @HttpCode(200)
   remove(@Param('id', new ParseObjectIdPipe()) id: string) {

@@ -3,6 +3,7 @@ import { Role } from '../../src/users/role';
 import {
   DuplicateEmailError,
   NewUser,
+  UserPageFilter,
   UserRecord,
   UsersRepository,
 } from '../../src/users/users.repository';
@@ -39,6 +40,20 @@ export class InMemoryUsersRepository extends UsersRepository {
     };
     this.records.set(record.id, record);
     return record;
+  }
+
+  async findPage(filter: UserPageFilter): Promise<{ items: UserRecord[]; total: number }> {
+    this.check();
+    const all = [...this.records.values()]
+      .filter((u) => filter.roles.includes(u.role) && (!filter.demoOnly || u.isDemo))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const start = (filter.page - 1) * filter.limit;
+    return { items: all.slice(start, start + filter.limit), total: all.length };
+  }
+
+  async findByIds(ids: string[]): Promise<UserRecord[]> {
+    this.check();
+    return ids.map((id) => this.records.get(id)).filter((u): u is UserRecord => !!u);
   }
 
   async updateRoleAndDemo(id: string, role: Role, isDemo: boolean): Promise<void> {

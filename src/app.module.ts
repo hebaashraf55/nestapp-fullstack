@@ -1,4 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
+import { AdminModule } from './admin/admin.module';
+import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { ENV, Env } from './config/env';
 import { CartModule } from './cart/cart.module';
@@ -23,6 +25,8 @@ export class AppModule {
         CouponsModule.register(env),
         CartModule.register(env),
         OrdersModule.register(env),
+        AuditModule.register(env),
+        AdminModule.register(),
       ],
       controllers: [HealthController],
       providers: [{ provide: ENV, useValue: env }],

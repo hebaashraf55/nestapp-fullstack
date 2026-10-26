@@ -63,6 +63,8 @@ const view = (o: OrderRecord): OrderView => ({
   payment: { mode: 'SIMULATED', notice: SIMULATION_NOTICE },
 });
 
+export const toOrderView = view;
+
 const HISTORY_LIMIT = 50;
 const SWEEP_BATCH = 100;
 

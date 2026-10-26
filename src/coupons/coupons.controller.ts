@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import { Audited } from '../audit/audited';
 import { AuthenticatedUser } from '../auth/auth.types';
 import { CurrentUser, Roles } from '../auth/decorators';
 import { ParseObjectIdPipe } from '../catalogue/object-id.pipe';
@@ -13,6 +14,7 @@ import { CouponsService } from './coupons.service';
 export class CouponsController {
   constructor(private readonly coupons: CouponsService) {}
 
+  @Audited('coupon.create')
   @Post()
   create(
     @Body(new ZodPipe(couponCreateSchema)) dto: CouponCreateDto,
@@ -31,6 +33,7 @@ export class CouponsController {
     return this.coupons.get(id);
   }
 
+  @Audited('coupon.update')
   @Patch(':id')
   update(
     @Param('id', new ParseObjectIdPipe()) id: string,
@@ -39,6 +42,7 @@ export class CouponsController {
     return this.coupons.update(id, dto);
   }
 
+  @Audited('coupon.delete')
   @Delete(':id')
   @HttpCode(200)
   remove(@Param('id', new ParseObjectIdPipe()) id: string) {

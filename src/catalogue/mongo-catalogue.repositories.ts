@@ -15,6 +15,7 @@ import {
   TaxonomyPatch,
   TaxonomyRecord,
   TaxonomyRepository,
+  StockSummary,
 } from './catalogue.repositories';
 
 const MONGO_DUPLICATE_KEY = 11000;
@@ -171,6 +172,16 @@ const SORTS = {
 export class MongoProductsRepository extends ProductsRepository {
   constructor(@InjectModel(Product.name) private readonly model: Model<Product>) {
     super();
+  }
+
+  async summarizeStock(demoOnly: boolean, lowStockAt: number): Promise<StockSummary> {
+    const scope = demoOnly ? { isDemo: true } : {};
+    const [total, outOfStock, lowStock] = await Promise.all([
+      this.model.countDocuments(scope).exec(),
+      this.model.countDocuments({ ...scope, stock: 0 }).exec(),
+      this.model.countDocuments({ ...scope, stock: { $gt: 0, $lte: lowStockAt } }).exec(),
+    ]);
+    return { total, outOfStock, lowStock };
   }
 
   async findByIds(ids: string[]): Promise<ProductRecord[]> {

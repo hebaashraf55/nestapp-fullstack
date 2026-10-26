@@ -2,9 +2,11 @@ import { randomBytes } from 'node:crypto';
 import type { OrderStatus } from '../../src/orders/order-status';
 import {
   NewOrder,
+  OrderPageFilter,
   OrderPatch,
   OrderRecord,
   OrdersRepository,
+  OrderSummary,
 } from '../../src/orders/orders.repository';
 
 /** Test-only fake of the persistence port. Never wired into the real application. */
@@ -29,6 +31,30 @@ export class InMemoryOrdersRepository extends OrdersRepository {
     this.check();
     const found = this.records.get(id);
     return found ? { ...found } : null;
+  }
+  async findPage(filter: OrderPageFilter) {
+    this.check();
+    const all = [...this.records.values()]
+      .filter(
+        (o) => (!filter.demoOnly || o.isDemo) && (!filter.status || o.status === filter.status),
+      )
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const start = (filter.page - 1) * filter.limit;
+    return {
+      items: all.slice(start, start + filter.limit).map((o) => ({ ...o })),
+      total: all.length,
+    };
+  }
+  async summarize(demoOnly: boolean): Promise<OrderSummary> {
+    this.check();
+    const summary: OrderSummary = { countsByStatus: {}, paidCents: 0, refundedCents: 0 };
+    for (const o of this.records.values()) {
+      if (demoOnly && !o.isDemo) continue;
+      summary.countsByStatus[o.status] = (summary.countsByStatus[o.status] ?? 0) + 1;
+      if (o.paymentStatus === 'SIMULATED_PAID') summary.paidCents += o.totalCents;
+      if (o.paymentStatus === 'SIMULATED_REFUNDED') summary.refundedCents += o.totalCents;
+    }
+    return summary;
   }
   async findByUser(userId: string, limit: number) {
     this.check();

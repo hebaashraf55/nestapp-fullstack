@@ -1,3 +1,7 @@
+import { AdminModule } from '../../src/admin/admin.module';
+import { AuditModule } from '../../src/audit/audit.module';
+import { AuditRepository } from '../../src/audit/audit.repository';
+import { InMemoryAuditRepository } from './in-memory-audit.repository';
 import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AuthModule } from '../../src/auth/auth.module';
@@ -70,6 +74,7 @@ export interface AuthTestApp {
   coupons: InMemoryCouponsRepository;
   carts: InMemoryCartsRepository;
   orders: InMemoryOrdersRepository;
+  audit: InMemoryAuditRepository;
   ordersService: OrdersService;
   couponLimiter: CouponAttemptLimiter;
   mail: CapturingMailSender;
@@ -95,6 +100,7 @@ export async function createAuthApp(
   const coupons = new InMemoryCouponsRepository();
   const carts = new InMemoryCartsRepository();
   const orders = new InMemoryOrdersRepository();
+  const audit = new InMemoryAuditRepository();
   const mail = new CapturingMailSender();
   const moduleRef = await Test.createTestingModule({
     imports: [
@@ -105,6 +111,8 @@ export async function createAuthApp(
       CouponsModule.register(env),
       CartModule.register(env),
       OrdersModule.register(env),
+      AuditModule.register(env),
+      AdminModule.register(),
     ],
     controllers: [HealthController, ...controllers],
     providers: [{ provide: ENV, useValue: env }],
@@ -127,6 +135,8 @@ export async function createAuthApp(
     .useValue(carts)
     .overrideProvider(OrdersRepository)
     .useValue(orders)
+    .overrideProvider(AuditRepository)
+    .useValue(audit)
     .overrideProvider(MailSender)
     .useValue(mail)
     .compile();
@@ -149,6 +159,7 @@ export async function createAuthApp(
     coupons,
     carts,
     orders,
+    audit,
     ordersService: moduleRef.get(OrdersService),
     couponLimiter: moduleRef.get(CouponAttemptLimiter),
     mail,

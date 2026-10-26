@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import { Audited } from '../audit/audited';
 import { AuthenticatedUser } from '../auth/auth.types';
 import { CurrentUser, Roles } from '../auth/decorators';
 import { ZodPipe } from '../catalogue/dto';
@@ -54,6 +55,7 @@ export class OrdersController {
   }
 
   @Roles(Role.ADMIN)
+  @Audited('order.status', 'status')
   @Patch(':orderId/status')
   setStatus(
     @Param('orderId', new ParseObjectIdPipe()) id: string,
@@ -63,6 +65,7 @@ export class OrdersController {
   }
 
   @Roles(Role.ADMIN)
+  @Audited('order.refund')
   @Post(':orderId/refund')
   @HttpCode(200)
   refund(

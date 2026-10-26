@@ -1,4 +1,4 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Global, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ENV, Env } from '../config/env';
 import { MongoOrdersRepository } from './mongo-orders.repository';
@@ -9,6 +9,8 @@ import { OrdersRepository } from './orders.repository';
 import { OrdersService } from './orders.service';
 import { UnavailableOrdersRepository } from './unavailable-orders.repository';
 
+/** Global so the admin reporting module can read orders without re-importing the module. */
+@Global()
 @Module({})
 export class OrdersModule {
   static register(env: Env): DynamicModule {
@@ -28,6 +30,7 @@ export class OrdersModule {
         OrdersService,
         OrderExpirySweeper,
       ],
+      exports: [OrdersRepository],
     };
   }
 }

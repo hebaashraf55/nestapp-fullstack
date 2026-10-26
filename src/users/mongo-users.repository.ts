@@ -3,7 +3,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
 import { Role } from './role';
 import { User, UserDocument } from './user.schema';
-import { DuplicateEmailError, NewUser, UserRecord, UsersRepository } from './users.repository';
+import {
+  DuplicateEmailError,
+  NewUser,
+  UserPageFilter,
+  UserRecord,
+  UsersRepository,
+} from './users.repository';
 
 const MONGO_DUPLICATE_KEY = 11000;
 
@@ -51,6 +57,28 @@ export class MongoUsersRepository extends UsersRepository {
         throw new DuplicateEmailError();
       throw error;
     }
+  }
+
+  async findPage(filter: UserPageFilter): Promise<{ items: UserRecord[]; total: number }> {
+    const query: Record<string, unknown> = { role: { $in: filter.roles } };
+    if (filter.demoOnly) query.isDemo = true;
+    const [docs, total] = await Promise.all([
+      this.model
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip((filter.page - 1) * filter.limit)
+        .limit(filter.limit)
+        .exec(),
+      this.model.countDocuments(query).exec(),
+    ]);
+    return { items: docs.map(toRecord), total };
+  }
+
+  async findByIds(ids: string[]): Promise<UserRecord[]> {
+    const valid = ids.filter((id) => isValidObjectId(id));
+    if (valid.length === 0) return [];
+    const docs = await this.model.find({ _id: { $in: valid } }).exec();
+    return docs.map(toRecord);
   }
 
   async updateRoleAndDemo(id: string, role: Role, isDemo: boolean): Promise<void> {

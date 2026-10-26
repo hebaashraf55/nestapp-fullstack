@@ -17,6 +17,14 @@ export interface UserRecord {
 
 export type NewUser = Omit<UserRecord, 'id' | 'createdAt' | 'tokenVersion'>;
 
+export interface UserPageFilter {
+  roles: Role[];
+  /** True for the demo viewer: only synthetic accounts. */
+  demoOnly: boolean;
+  page: number;
+  limit: number;
+}
+
 /** Thrown when an email is already registered. */
 export class DuplicateEmailError extends Error {
   constructor() {
@@ -30,6 +38,9 @@ export abstract class UsersRepository {
   abstract findById(id: string): Promise<UserRecord | null>;
   abstract findByEmail(email: string): Promise<UserRecord | null>;
   abstract create(user: NewUser): Promise<UserRecord>;
+  /** Newest first. Used by the admin customer list; callers must never expose `passwordHash`. */
+  abstract findPage(filter: UserPageFilter): Promise<{ items: UserRecord[]; total: number }>;
+  abstract findByIds(ids: string[]): Promise<UserRecord[]>;
   abstract updateRoleAndDemo(id: string, role: Role, isDemo: boolean): Promise<void>;
   abstract markEmailVerified(id: string): Promise<void>;
   /** Sets a new password hash, marks the email verified, and bumps tokenVersion (one atomic update). */

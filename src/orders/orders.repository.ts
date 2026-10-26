@@ -36,7 +36,26 @@ export type OrderPatch = Partial<
   Pick<OrderRecord, 'status' | 'paymentStatus' | 'paidAt' | 'refundedAt' | 'cancelledAt'>
 >;
 
+export interface OrderPageFilter {
+  status?: OrderStatus;
+  /** True for the demo viewer: only synthetic orders. */
+  demoOnly: boolean;
+  page: number;
+  limit: number;
+}
+
+export interface OrderSummary {
+  countsByStatus: Partial<Record<OrderStatus, number>>;
+  /** Sum of totals whose payment is SIMULATED_PAID. No money was ever taken. */
+  paidCents: number;
+  /** Sum of totals whose payment is SIMULATED_REFUNDED. */
+  refundedCents: number;
+}
+
 export abstract class OrdersRepository {
+  /** Newest first, for the admin order list. */
+  abstract findPage(filter: OrderPageFilter): Promise<{ items: OrderRecord[]; total: number }>;
+  abstract summarize(demoOnly: boolean): Promise<OrderSummary>;
   abstract create(order: NewOrder): Promise<OrderRecord>;
   abstract findById(id: string): Promise<OrderRecord | null>;
   /** Newest first. */

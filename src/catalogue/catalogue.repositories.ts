@@ -81,7 +81,15 @@ export interface ProductFilter {
   limit: number;
 }
 
+export interface StockSummary {
+  total: number;
+  outOfStock: number;
+  /** In stock, but at or below the low-stock threshold. */
+  lowStock: number;
+}
+
 export abstract class ProductsRepository {
+  abstract summarizeStock(demoOnly: boolean, lowStockAt: number): Promise<StockSummary>;
   abstract findById(id: string): Promise<ProductRecord | null>;
   abstract findByIds(ids: string[]): Promise<ProductRecord[]>;
   abstract findBySlug(slug: string): Promise<ProductRecord | null>;
