@@ -23,6 +23,7 @@
     "test:cov": "jest --coverage",
     "seed": "npm run build && node --env-file-if-exists=.env dist/seed/seed.js",
     "seed:catalogue": "npm run build && node --env-file-if-exists=.env dist/seed/seed-catalogue-main.js",
+    "docs:openapi": "npm run build && node dist/openapi/generate.js",
     "db:up": "docker compose up -d --wait mongo",
     "db:down": "docker compose down",
     "test:db": "node --env-file-if-exists=.env node_modules/jest/bin/jest.js test/db"
@@ -81,9 +82,15 @@
     },
     "collectCoverageFrom": [
       "src/**/*.ts",
-      "!src/main.ts"
+      "!src/main.ts",
+      "!src/openapi/generate.ts"
     ],
     "coverageDirectory": "coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "coverageReporters": [
+      "text-summary",
+      "json-summary",
+      "lcov"
+    ]
   }
 }

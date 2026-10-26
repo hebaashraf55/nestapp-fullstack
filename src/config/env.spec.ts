@@ -9,6 +9,9 @@ describe('loadEnv', () => {
       PAYMENTS_MODE: 'simulated',
       ACCESS_TOKEN_TTL_SECONDS: 900,
       REFRESH_TOKEN_TTL_DAYS: 7,
+      TRUST_PROXY: 0,
+      THROTTLE_LIMIT: 300,
+      THROTTLE_WINDOW_SECONDS: 60,
       MAIL_TRANSPORT: 'console',
     });
   });

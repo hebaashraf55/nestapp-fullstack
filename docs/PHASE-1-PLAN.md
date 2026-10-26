@@ -17,6 +17,8 @@ Ground rules (all phases)
 > **Update (Step 6):** orders, the state machine, stock reservation/restore, expiry, `simulate-payment`, owner history, admin status changes and simulated refunds are implemented on branch `phase-1/step-6-orders`, with `/checkout`, `/orders` and `/orders/:id` in the storefront. The 36 real-MongoDB tests (30 before this step, 6 new) are still skipped and unverified. Admin and demo-viewer reporting was Step 7.
 
 > **Update (Step 7):** masked customer list, dashboard stats, admin order list, audit log and the table-driven demo-viewer write-route test are implemented on branch `phase-1/step-7-admin`, with `/admin` pages in the storefront. The 42 real-MongoDB tests (36 before this step, 6 new) are still skipped and unverified. Hardening and reporting remain Step 8.
+>
+> **Update (Step 8):** throttling, `trust proxy`, OpenAPI, the generated test matrix, the coverage report and the API change log are implemented on branch `phase-1/step-8-hardening`. The CI workflow is only a draft held outside the repository for your review. Acceptance criterion 7 (STATIC audit findings) cannot be checked because the audit document is not in the repository. The 42 real-MongoDB tests are still unverified unless the delivery report says they were run.
 
 ## 1. Delivery steps (each is a separate, reviewable patch series)
 

@@ -1,3 +1,4 @@
+import { OpenApiModule } from '../../src/openapi/openapi.module';
 import { AdminModule } from '../../src/admin/admin.module';
 import { AuditModule } from '../../src/audit/audit.module';
 import { AuditRepository } from '../../src/audit/audit.repository';
@@ -75,6 +76,8 @@ export interface AuthTestApp {
   carts: InMemoryCartsRepository;
   orders: InMemoryOrdersRepository;
   audit: InMemoryAuditRepository;
+  /** The request throttle's counters, so tests can inspect or move its clock. */
+  throttler: RateLimiter;
   ordersService: OrdersService;
   couponLimiter: CouponAttemptLimiter;
   mail: CapturingMailSender;
@@ -101,6 +104,7 @@ export async function createAuthApp(
   const carts = new InMemoryCartsRepository();
   const orders = new InMemoryOrdersRepository();
   const audit = new InMemoryAuditRepository();
+  const throttler = new RateLimiter();
   const mail = new CapturingMailSender();
   const moduleRef = await Test.createTestingModule({
     imports: [
@@ -113,6 +117,7 @@ export async function createAuthApp(
       OrdersModule.register(env),
       AuditModule.register(env),
       AdminModule.register(),
+      OpenApiModule.register(env),
     ],
     controllers: [HealthController, ...controllers],
     providers: [{ provide: ENV, useValue: env }],
@@ -141,7 +146,7 @@ export async function createAuthApp(
     .useValue(mail)
     .compile();
   const app = moduleRef.createNestApplication();
-  configureApp(app, env);
+  configureApp(app, env, throttler);
   await app.init();
 
   const tokens = moduleRef.get(TokenService);
@@ -160,6 +165,7 @@ export async function createAuthApp(
     carts,
     orders,
     audit,
+    throttler,
     ordersService: moduleRef.get(OrdersService),
     couponLimiter: moduleRef.get(CouponAttemptLimiter),
     mail,

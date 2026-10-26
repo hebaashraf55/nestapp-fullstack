@@ -51,6 +51,20 @@ const envObject = z.object({
   JWT_SECRET: optionalString(z.string().min(32, { error: 'must be at least 32 characters' })),
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(60).max(86_400).default(900),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(7),
+  /**
+   * How many reverse proxies sit in front of the API. 0 (the default) trusts no forwarding header, so a
+   * client cannot choose its own address by sending X-Forwarded-For. Set it to the real hop count (for
+   * example 1 behind a single load balancer); `true` or a blanket "trust everyone" is deliberately not allowed.
+   */
+  TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
+  /** Requests allowed per client address per window, across the whole API (`/api/health` excluded). */
+  THROTTLE_LIMIT: z.coerce.number().int().min(1).max(100_000).default(300),
+  THROTTLE_WINDOW_SECONDS: z.coerce.number().int().min(1).max(3600).default(60),
+  /**
+   * Serves the machine-readable API description at GET /api/openapi.json. On by default for local work and
+   * off by default in production (set it to "true" there only if you want the contract public).
+   */
+  OPENAPI_ENABLED: z.enum(['true', 'false']).optional(),
   MAIL_TRANSPORT: z.enum(['console', 'smtp']).default('console'),
   SMTP_URL: optionalString(
     z.string().regex(/^smtps?:\/\/\S+$/, { error: 'must be an smtp:// or smtps:// URL' }),
@@ -99,6 +113,12 @@ const envSchema = envObject.superRefine((env, ctx) => {
 });
 
 export type Env = z.infer<typeof envSchema>;
+
+/** The documentation endpoint is on unless production, where it must be switched on explicitly. */
+export const openApiEnabled = (env: Pick<Env, 'NODE_ENV' | 'OPENAPI_ENABLED'>): boolean =>
+  env.OPENAPI_ENABLED === undefined
+    ? env.NODE_ENV !== 'production'
+    : env.OPENAPI_ENABLED === 'true';
 
 export class EnvValidationError extends Error {
   constructor(public readonly issues: ReadonlyArray<{ variable: string; message: string }>) {

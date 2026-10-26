@@ -1,0 +1,222 @@
+[
+  {
+    "n": 1,
+    "original": "POST /api/auth/signup",
+    "fate": "ported",
+    "now": "POST /api/auth/signup"
+  },
+  {
+    "n": 2,
+    "original": "POST /api/auth/resend-otp",
+    "fate": "ported",
+    "now": "POST /api/auth/resend-otp"
+  },
+  {
+    "n": 3,
+    "original": "PATCH /api/auth/confirm-email",
+    "fate": "renamed",
+    "now": "POST /api/auth/verify-email"
+  },
+  {
+    "n": 4,
+    "original": "POST /api/auth/login",
+    "fate": "ported",
+    "now": "POST /api/auth/login"
+  },
+  {
+    "n": 5,
+    "original": "GET /api/auth/profile",
+    "fate": "ported",
+    "now": "GET /api/auth/profile"
+  },
+  {
+    "n": 6,
+    "original": "POST /api/auth/upload-file",
+    "fate": "dropped",
+    "now": null,
+    "probe": "POST /api/auth/upload-file"
+  },
+  {
+    "n": 7,
+    "original": "POST /api/auth/upload-files",
+    "fate": "dropped",
+    "now": null,
+    "probe": "POST /api/auth/upload-files"
+  },
+  {
+    "n": 8,
+    "original": "POST /api/brand/create",
+    "fate": "ported",
+    "now": "POST /api/brand/create"
+  },
+  {
+    "n": 9,
+    "original": "GET /api/brand",
+    "fate": "ported",
+    "now": "GET /api/brand"
+  },
+  {
+    "n": 10,
+    "original": "GET /api/brand/:id",
+    "fate": "ported",
+    "now": "GET /api/brand/{id}"
+  },
+  {
+    "n": 11,
+    "original": "PATCH /api/brand/:id",
+    "fate": "ported",
+    "now": "PATCH /api/brand/{id}"
+  },
+  {
+    "n": 12,
+    "original": "DELETE /api/brand/:id",
+    "fate": "ported",
+    "now": "DELETE /api/brand/{id}"
+  },
+  {
+    "n": 13,
+    "original": "POST /api/category/create",
+    "fate": "ported",
+    "now": "POST /api/category/create"
+  },
+  {
+    "n": 14,
+    "original": "GET /api/category",
+    "fate": "ported",
+    "now": "GET /api/category"
+  },
+  {
+    "n": 15,
+    "original": "GET /api/category/:id",
+    "fate": "ported",
+    "now": "GET /api/category/{id}"
+  },
+  {
+    "n": 16,
+    "original": "PATCH /api/category/:id",
+    "fate": "ported",
+    "now": "PATCH /api/category/{id}"
+  },
+  {
+    "n": 17,
+    "original": "DELETE /api/category/:id",
+    "fate": "ported",
+    "now": "DELETE /api/category/{id}"
+  },
+  {
+    "n": 18,
+    "original": "POST /api/product/create",
+    "fate": "ported",
+    "now": "POST /api/product/create"
+  },
+  {
+    "n": 19,
+    "original": "GET /api/product/test",
+    "fate": "dropped",
+    "now": null,
+    "probe": "GET /api/product/test",
+    "expectStatus": 400,
+    "note": "now captured by GET /api/product/{id}; \"test\" is not a valid id, so it is rejected with 400"
+  },
+  {
+    "n": 20,
+    "original": "POST /api/coupon",
+    "fate": "ported",
+    "now": "POST /api/coupon"
+  },
+  {
+    "n": 21,
+    "original": "GET /api/coupon",
+    "fate": "ported",
+    "now": "GET /api/coupon"
+  },
+  {
+    "n": 22,
+    "original": "GET /api/coupon/:id",
+    "fate": "ported",
+    "now": "GET /api/coupon/{id}"
+  },
+  {
+    "n": 23,
+    "original": "PATCH /api/coupon/:id",
+    "fate": "ported",
+    "now": "PATCH /api/coupon/{id}"
+  },
+  {
+    "n": 24,
+    "original": "DELETE /api/coupon/:id",
+    "fate": "ported",
+    "now": "DELETE /api/coupon/{id}"
+  },
+  {
+    "n": 25,
+    "original": "POST /api/cart",
+    "fate": "ported",
+    "now": "POST /api/cart"
+  },
+  {
+    "n": 26,
+    "original": "GET /api/cart",
+    "fate": "ported",
+    "now": "GET /api/cart"
+  },
+  {
+    "n": 27,
+    "original": "PATCH /api/cart/:productId",
+    "fate": "ported",
+    "now": "PATCH /api/cart/{productId}"
+  },
+  {
+    "n": 28,
+    "original": "DELETE /api/cart/:productId",
+    "fate": "ported",
+    "now": "DELETE /api/cart/{productId}"
+  },
+  {
+    "n": 29,
+    "original": "POST /api/cart/apply-coupon",
+    "fate": "ported",
+    "now": "POST /api/cart/apply-coupon"
+  },
+  {
+    "n": 30,
+    "original": "POST /api/order",
+    "fate": "ported",
+    "now": "POST /api/order"
+  },
+  {
+    "n": 31,
+    "original": "POST /api/order/checkout/:orderId",
+    "fate": "replaced (Stripe removed)",
+    "now": "POST /api/order/{orderId}/simulate-payment",
+    "probe": "POST /api/order/checkout/aaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+    "n": 32,
+    "original": "POST /api/order/refund/:orderId",
+    "fate": "replaced (Stripe removed)",
+    "now": "POST /api/order/{orderId}/refund",
+    "probe": "POST /api/order/refund/aaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+    "n": 33,
+    "original": "GET /cats",
+    "fate": "dropped",
+    "now": null,
+    "probe": "GET /cats"
+  },
+  {
+    "n": 34,
+    "original": "GET /uploads/* (static files)",
+    "fate": "dropped",
+    "now": null,
+    "probe": "GET /uploads/photo.png"
+  },
+  {
+    "n": 35,
+    "original": "WebSocket gateway (public / sayHi)",
+    "fate": "dropped",
+    "now": null,
+    "probe": null
+  }
+]

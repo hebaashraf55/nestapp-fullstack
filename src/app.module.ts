@@ -4,6 +4,7 @@ import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { ENV, Env } from './config/env';
 import { CartModule } from './cart/cart.module';
+import { OpenApiModule } from './openapi/openapi.module';
 import { OrdersModule } from './orders/orders.module';
 import { CouponsModule } from './coupons/coupons.module';
 import { CatalogueModule } from './catalogue/catalogue.module';
@@ -27,6 +28,7 @@ export class AppModule {
         OrdersModule.register(env),
         AuditModule.register(env),
         AdminModule.register(),
+        OpenApiModule.register(env),
       ],
       controllers: [HealthController],
       providers: [{ provide: ENV, useValue: env }],

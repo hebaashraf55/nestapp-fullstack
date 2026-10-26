@@ -30,7 +30,7 @@ The domain model and business flows are adapted from my earlier course project [
 | Storefront sign-in, cart page and add-to-cart | Implemented and tested against mocked API responses; exercised in a real browser against an in-memory API |
 | Orders and simulated payments: place order from cart, 30-minute stock hold, one-click `simulate-payment`, expiry, owner history, admin status changes and simulated refunds. Storefront `/checkout`, `/orders`, `/orders/:id` | Implemented and tested over HTTP with in-memory stores and against mocked API responses; exercised in a real browser against an in-memory API. Mongoose order and stock code **has not been run against a real MongoDB** (6 new skipped DB tests) |
 | Admin and demo viewer: masked customer list, dashboard stats, admin order list with status and simulated-refund actions, append-only audit log, demo viewer limited to synthetic read-only data. Storefront `/admin`, `/admin/orders`, `/admin/customers`, `/admin/audit` | Implemented and tested over HTTP with in-memory stores and against mocked API responses; exercised in a real browser against an in-memory API. New MongoDB queries **have not been run against a real MongoDB** (6 more skipped DB tests, 42 in total) |
-| Hardening, throttling, OpenAPI, CI draft | **Not started** (Step 8) — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
+| Hardening and reporting: global request throttle, `trust proxy` setting, generated OpenAPI description, generated test matrix, coverage report, API change log | Implemented and tested with in-memory stores. The throttle is per process memory. The CI workflow is a **draft held outside the repository** awaiting your review. See "Hardening" below |
 
 ## Quick start
 
@@ -78,7 +78,7 @@ Credentials come only from `.env` (git-ignored). `SEED_ADMIN_*` is your private 
 
 Errors use the standard envelope. Login failures are always `401 Invalid email or password`. Too many attempts return `429` with `Retry-After`.
 
-**Brute-force protection today:** 5 failed logins per account and 30 per IP address per 15 minutes; 10 email-sending requests per IP per hour; 20 failed code checks per IP per 15 minutes; codes lock after 5 wrong attempts. **Deferred to Step 8:** these counters live in the server's memory (reset on restart, not shared between instances), `trust proxy` is not configured (behind a proxy every visitor shares one address), and a determined attacker can temporarily lock a known account by failing logins against it.
+**Brute-force protection today:** 5 failed logins per account and 30 per IP address per 15 minutes; 10 email-sending requests per IP per hour; 20 failed code checks per IP per 15 minutes; codes lock after 5 wrong attempts. **Known limits:** these counters live in the server's memory (reset on restart, not shared between instances), and a determined attacker can temporarily lock a known account by failing logins against it. Behind a reverse proxy, set `TRUST_PROXY` (see "Hardening") or every visitor shares one address.
 
 ## Catalogue API (`/api/brand`, `/api/category`, `/api/product`)
 
@@ -147,6 +147,24 @@ Changing an order uses the existing admin-only `PATCH /api/order/:id/status` and
 
 **Known limits:** the audit entry is written after the action succeeds, so if the audit store fails the action stays done and the failure is only logged; failed and forbidden attempts are not recorded; there is no audit retention or export; the audit log is not tamper-evident beyond having no update or delete route; customer and order lists are paginated but not searchable; there is no product or coupon management screen yet (those admin APIs exist); the new reporting queries are covered only by skipped real-database tests.
 
+## Hardening (Step 8)
+
+**Request throttle.** A global in-process limiter runs before body parsing and authentication, so floods of anonymous, malformed or 404 requests are counted too. Default 300 requests per 60 seconds per client address; excess requests get `429` with `Retry-After` in the standard error envelope. `GET /api/health` is exempt so monitors keep working. Settings: `THROTTLE_LIMIT`, `THROTTLE_WINDOW_SECONDS`. Limits: counters are per process (reset on restart, not shared across instances); behind a CDN or shared NAT many users can share one address.
+
+**Reverse proxies.** `TRUST_PROXY` is the number of proxy hops you control in front of the app (default `0`: `X-Forwarded-For` is ignored, so a client cannot choose its own address). Set it to `1` behind one proxy. A wrong value either lets clients spoof their address (too high) or makes everyone look like the proxy (too low).
+
+**OpenAPI.** `npm run docs:openapi` regenerates [`docs/openapi.json`](docs/openapi.json) from the running application's routes and validation schemas; a test fails if the file is stale or a route is undocumented. `GET /api/openapi.json` serves it when `NODE_ENV` is not `production` (override with `OPENAPI_ENABLED=true|false`). There is no Swagger UI; response bodies are described in words, not schemas.
+
+**Generated reports.** [`docs/test-matrix.md`](docs/test-matrix.md) (every original and current endpoint, with EXECUTED / NOT EXECUTED labels taken from real Jest output) and [`docs/coverage-report.md`](docs/coverage-report.md). Regenerate with:
+
+```bash
+npx jest --coverage --json --outputFile=/tmp/jest-results.json
+node tools/generate-test-matrix.mjs /tmp/jest-results.json
+node tools/generate-coverage-report.mjs
+```
+
+[`docs/API-CHANGELOG.md`](docs/API-CHANGELOG.md) lists what changed against the original contract and why.
+
 ## Scripts
 
 | Command | What it does |
@@ -157,12 +175,15 @@ Changing an order uses the existing admin-only `PATCH /api/order/:id/status` and
 | `npm run build` | Compile to `dist/` |
 | `npm test` | Unit and HTTP tests (no database needed at this stage; the real-MongoDB specs are skipped unless `MONGODB_TEST_URI` is set) |
 | `npm run test:cov` | Tests with a measured coverage report in `coverage/` |
+| `npm run docs:openapi` | Rebuild and rewrite `docs/openapi.json` |
+| `npm run test:db` | The real-MongoDB specs in `test/db` (needs `MONGODB_TEST_URI`) |
 
 The frontend has its own scripts in `web/` (`lint`, `typecheck`, `build`, `test`, `test:cov`).
 
 ## Documentation
 
 - [`docs/LOCAL-DEMO.md`](docs/LOCAL-DEMO.md) — run the demo on a Mac with Docker (MongoDB path not yet verified).
+- [`docs/API-CHANGELOG.md`](docs/API-CHANGELOG.md), [`docs/openapi.json`](docs/openapi.json), [`docs/test-matrix.md`](docs/test-matrix.md), [`docs/coverage-report.md`](docs/coverage-report.md) — Step 8 reference material.
 - [`docs/PHASE-1-PLAN.md`](docs/PHASE-1-PLAN.md) — Phase 1 execution plan, endpoint disposition, acceptance criteria, and what can and cannot be verified in each environment.
 
 ## License
