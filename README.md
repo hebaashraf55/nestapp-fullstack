@@ -30,7 +30,7 @@ The domain model and business flows are adapted from my earlier course project [
 | Storefront sign-in, cart page and add-to-cart | Implemented and tested against mocked API responses; exercised in a real browser against an in-memory API |
 | Orders and simulated payments: place order from cart, 30-minute stock hold, one-click `simulate-payment`, expiry, owner history, admin status changes and simulated refunds. Storefront `/checkout`, `/orders`, `/orders/:id` | Implemented and tested over HTTP with in-memory stores and against mocked API responses; exercised in a real browser against an in-memory API. Mongoose order and stock code **has not been run against a real MongoDB** (6 new skipped DB tests) |
 | Admin and demo viewer: masked customer list, dashboard stats, admin order list with status and simulated-refund actions, append-only audit log, demo viewer limited to synthetic read-only data. Storefront `/admin`, `/admin/orders`, `/admin/customers`, `/admin/audit` | Implemented and tested over HTTP with in-memory stores and against mocked API responses; exercised in a real browser against an in-memory API. New MongoDB queries **have not been run against a real MongoDB** (6 more skipped DB tests, 42 in total) |
-| Orders, simulated payments, admin dashboards | **Not started** — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
+| Hardening, throttling, OpenAPI, CI draft | **Not started** (Step 8) — see [the Phase 1 plan](docs/PHASE-1-PLAN.md) |
 
 ## Quick start
 
@@ -162,6 +162,7 @@ The frontend has its own scripts in `web/` (`lint`, `typecheck`, `build`, `test`
 
 ## Documentation
 
+- [`docs/LOCAL-DEMO.md`](docs/LOCAL-DEMO.md) — run the demo on a Mac with Docker (MongoDB path not yet verified).
 - [`docs/PHASE-1-PLAN.md`](docs/PHASE-1-PLAN.md) — Phase 1 execution plan, endpoint disposition, acceptance criteria, and what can and cannot be verified in each environment.
 
 ## License
