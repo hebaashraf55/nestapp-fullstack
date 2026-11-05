@@ -102,12 +102,13 @@ Free Render web services sleep after 15 minutes without traffic, so the first re
 |---|---|
 | `npm run lint` / `typecheck` / `format:check` / `build` | API quality gates |
 | `npm test` | API unit and HTTP tests (in-memory stores) |
-| `npm run test:db` | Real-MongoDB integration tests (needs `MONGODB_TEST_URI`) |
+| `npm run test:db` | Real-MongoDB repository tests and the end-to-end API suite (needs `MONGODB_TEST_URI`) |
 | `npm run docs:openapi` | Regenerate [`docs/openapi.json`](docs/openapi.json) |
 | `cd web && npm run lint && npm run typecheck && npm run build && npm test` | Storefront gates |
 
 ## Documentation
 
+- [`docs/BACKEND-VERIFICATION.md`](docs/BACKEND-VERIFICATION.md) — how every backend feature is proven (HTTP tests, real-MongoDB tests, end to end with a restart)
 - [`docs/API-CHANGELOG.md`](docs/API-CHANGELOG.md) — how the API differs from the original course project
 - [`docs/openapi.json`](docs/openapi.json) — machine-readable API description
 - [`docs/test-matrix.md`](docs/test-matrix.md) — per-endpoint test evidence generated from real test runs
