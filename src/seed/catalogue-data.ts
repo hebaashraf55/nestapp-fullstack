@@ -86,7 +86,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Saffron Linen Throw',
-    description: 'A stonewashed linen throw in muted saffron.',
+    description: 'A chunky knitted throw in muted saffron.',
     priceCents: 8900,
     discountPercent: 20,
     stock: 7,
@@ -95,7 +95,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Nile Cotton Cushion',
-    description: 'A woven cotton cushion cover in mustard and sand.',
+    description: 'A woven cotton cushion cover in sand and sage.',
     priceCents: 2800,
     discountPercent: 0,
     stock: 40,
