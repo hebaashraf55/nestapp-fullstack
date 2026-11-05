@@ -32,4 +32,4 @@ How each backend feature is proven. Three kinds of automated evidence exist:
 | Rate limiting | Yes | In-memory counters | — | throttle, auth | Real, per process (not shared across instances) |
 | OpenAPI accuracy | Generated from the running app; a test fails if a route lacks a summary or the file drifts | — | — | openapi | Real |
 
-**Demo data:** the seeds create the admin, two demo accounts and 12 synthetic products (flagged `isDemo`). **Simulated:** payments and refunds only.
+**Demo data:** the seeds create the admin, two demo accounts and 24 synthetic products (flagged `isDemo`). **Simulated:** payments and refunds only.

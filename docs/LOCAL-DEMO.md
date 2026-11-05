@@ -63,7 +63,7 @@ Leave `MAIL_TRANSPORT=console`, `PAYMENTS_MODE=simulated` and `CORS_ORIGINS=http
 npm ci
 npm run db:up            # starts MongoDB in Docker (127.0.0.1:27017 only); waits until healthy
 npm run seed             # creates your admin + demo-customer + demo-viewer accounts
-npm run seed:catalogue   # 12 synthetic products; safe to re-run
+npm run seed:catalogue   # 24 synthetic products in 7 categories; safe to re-run
 npm run build
 npm run start:prod       # API on http://localhost:5000  (keep this window open)
 ```

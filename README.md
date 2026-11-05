@@ -62,7 +62,7 @@ npm ci && (cd web && npm ci)
 cp .env.example .env      # then set your own passwords and a JWT secret: openssl rand -base64 48
 npm run db:up             # MongoDB on 127.0.0.1 only
 npm run seed              # admin + demo accounts
-npm run seed:catalogue    # 3 brands, 4 categories, 12 synthetic products (safe to re-run)
+npm run seed:catalogue    # 3 brands, 7 categories, 24 synthetic products (safe to re-run)
 npm run start:dev         # API on http://localhost:5000 (PORT in .env)
 cd web && npm run dev     # storefront on http://localhost:5173, proxies /api to the API
 ```
