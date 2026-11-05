@@ -19,9 +19,12 @@ import type {
   ProductCreateDto,
   ProductQueryDto,
   ProductUpdateDto,
+  StockAdjustDto,
   TaxonomyCreateDto,
   TaxonomyUpdateDto,
 } from './dto';
+import { MAX_STOCK } from './dto';
+import { OrdersRepository } from '../orders/orders.repository';
 import { uniqueSlug } from './slug';
 
 export const CURRENCY = 'USD';
@@ -190,6 +193,7 @@ export class ProductsService {
     private readonly products: ProductsRepository,
     private readonly brands: BrandsRepository,
     private readonly categories: CategoriesRepository,
+    private readonly orders: OrdersRepository,
   ) {}
 
   async list(query: ProductQueryDto, user?: AuthenticatedUser): Promise<ProductPage> {
@@ -292,7 +296,41 @@ export class ProductsService {
     }
   }
 
+  /**
+   * Receive or write off stock without overwriting it: uses the same atomic operations as order
+   * reservations, so a concurrent order can never be lost and stock can never go below zero.
+   */
+  async adjustStock(id: string, dto: StockAdjustDto): Promise<ProductView> {
+    const current = await this.products.findById(id);
+    if (!current) throw new NotFoundException('Product not found');
+    if (dto.change < 0) {
+      if (!(await this.products.reserveStock(id, -dto.change))) {
+        throw new ConflictException(`Only ${current.stock} in stock; stock cannot go below zero`);
+      }
+    } else {
+      if (current.stock + dto.change > MAX_STOCK) {
+        throw new BadRequestException(`Stock cannot exceed ${MAX_STOCK}`);
+      }
+      await this.products.restoreStock(id, dto.change);
+    }
+    const updated = await this.products.findById(id);
+    if (!updated) throw new NotFoundException('Product not found');
+    return (await this.toViews([updated]))[0] as ProductView;
+  }
+
+  /**
+   * Placed orders keep their own copy of each line (name, price), so history survives a deletion.
+   * A product still held by an unpaid or paid order is refused: a later cancel, expiry or refund
+   * would have no product to return the stock to.
+   */
   async remove(id: string): Promise<{ deleted: true }> {
+    if (!(await this.products.findById(id))) throw new NotFoundException('Product not found');
+    const holding = await this.orders.countStockHoldingWithProduct(id);
+    if (holding > 0) {
+      throw new ConflictException(
+        `This product is in ${holding} open order${holding === 1 ? '' : 's'}. Set its stock to 0 to stop sales, and delete it once those orders are settled.`,
+      );
+    }
     if (!(await this.products.delete(id))) throw new NotFoundException('Product not found');
     return { deleted: true };
   }

@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { loadEnv } from '../config/env';
 import { ConsoleMailSender } from './console-mail-sender';
+import { DisabledMailSender } from './disabled-mail-sender';
 import { MailModule } from './mail.module';
 import { SmtpMailSender } from './smtp-mail-sender';
 
@@ -55,5 +56,29 @@ describe('mail senders', () => {
       (m.providers?.[0] as { useFactory: () => unknown }).useFactory();
     expect(factory(smtp)).toBeInstanceOf(SmtpMailSender);
     expect(factory(dev)).toBeInstanceOf(ConsoleMailSender);
+    const off = MailModule.register(loadEnv({ MAIL_TRANSPORT: 'disabled' }));
+    expect(factory(off)).toBeInstanceOf(DisabledMailSender);
+  });
+
+  it('the disabled sender sends nothing and never logs the recipient or the code', async () => {
+    const stdout = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await expect(
+      new DisabledMailSender().send({ to: 'a@example.com', subject: 's', text: 'code 654321' }),
+    ).resolves.toBeUndefined();
+    const logged = stdout.mock.calls.map((c) => String(c[0])).join('');
+    expect(logged).not.toContain('654321');
+    expect(logged).not.toContain('a@example.com');
+    stdout.mockRestore();
+  });
+
+  it('production accepts the disabled transport but still refuses the console one', () => {
+    const prod = {
+      NODE_ENV: 'production',
+      MONGODB_URI: 'mongodb+srv://u:p@cluster.example.net/noma',
+      JWT_SECRET: 'x'.repeat(48),
+      CORS_ORIGINS: 'https://noma.example.com',
+    };
+    expect(loadEnv({ ...prod, MAIL_TRANSPORT: 'disabled' }).MAIL_TRANSPORT).toBe('disabled');
+    expect(() => loadEnv({ ...prod, MAIL_TRANSPORT: 'console' })).toThrow(/MAIL_TRANSPORT/);
   });
 });

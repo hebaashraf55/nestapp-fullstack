@@ -42,6 +42,7 @@ const FORBIDDEN_FOR_VIEWER: Record<string, object> = {
     brandId: ID,
   },
   'PATCH /api/product/:id': { stock: 5 },
+  'PATCH /api/product/:id/stock': { change: 1 },
   'DELETE /api/product/:id': {},
   'POST /api/coupon': { code: 'NOPE10', discountPercent: 10, expiresAt: '2999-01-01T00:00:00Z' },
   'PATCH /api/coupon/:id': { discountPercent: 20 },

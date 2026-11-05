@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Atelier Noor API",
+    "title": "NOMA API",
     "version": "1.0.0-phase1",
     "description": "Portfolio e-commerce API. **Payments are simulated: no payment gateway exists and no card data is ever accepted.** Every response is wrapped as `{ success, data, timestamp }` (errors: `{ success: false, error, timestamp }`). Requests are rate limited per client address (429 + Retry-After). Generated from the running application."
   },
@@ -2439,7 +2439,7 @@
     "/api/coupon": {
       "get": {
         "operationId": "getApiCoupon",
-        "summary": "List coupons",
+        "summary": "List coupons with status and the number of orders placed with each",
         "tags": [
           "coupon"
         ],
@@ -2499,7 +2499,7 @@
       },
       "post": {
         "operationId": "postApiCoupon",
-        "summary": "Create a coupon (code is immutable, 1–90 % off, must expire in the future)",
+        "summary": "Create a coupon (code is immutable, 1–90 % off, must expire in the future, active by default)",
         "tags": [
           "coupon"
         ],
@@ -2524,6 +2524,10 @@
                     "type": "string",
                     "format": "date-time",
                     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "active": {
+                    "default": true,
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -2603,7 +2607,7 @@
     "/api/coupon/{id}": {
       "delete": {
         "operationId": "deleteApiCouponId",
-        "summary": "Delete a coupon",
+        "summary": "Delete a coupon (placed orders keep their own copy of the code)",
         "tags": [
           "coupon"
         ],
@@ -2785,7 +2789,7 @@
       },
       "patch": {
         "operationId": "patchApiCouponId",
-        "summary": "Change a coupon’s discount or expiry",
+        "summary": "Change a coupon’s discount or expiry, or pause / resume it (active)",
         "tags": [
           "coupon"
         ],
@@ -2817,6 +2821,9 @@
                     "type": "string",
                     "format": "date-time",
                     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "active": {
+                    "type": "boolean"
                   }
                 },
                 "additionalProperties": false
@@ -3838,7 +3845,7 @@
     "/api/product/{id}": {
       "delete": {
         "operationId": "deleteApiProductId",
-        "summary": "Delete a product",
+        "summary": "Delete a product; refused (409) while an unpaid or paid order still holds its stock",
         "tags": [
           "product"
         ],
@@ -4071,6 +4078,120 @@
                     "pattern": "^[0-9a-fA-F]{24}$"
                   }
                 },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success. `data`: the product",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (unknown fields are rejected)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role (needs ADMIN); demo viewers can never write",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such record (or not yours)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit reached; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable (generic body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/product/{id}/stock": {
+      "patch": {
+        "operationId": "patchApiProductIdStock",
+        "summary": "Add or remove stock atomically ({ change: ±n }); stock never goes below zero (409)",
+        "tags": [
+          "product"
+        ],
+        "x-access": "ADMIN",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "change": {
+                    "type": "integer",
+                    "minimum": -1000000,
+                    "maximum": 1000000
+                  }
+                },
+                "required": [
+                  "change"
+                ],
                 "additionalProperties": false
               }
             }

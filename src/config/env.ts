@@ -65,7 +65,8 @@ const envObject = z.object({
    * off by default in production (set it to "true" there only if you want the contract public).
    */
   OPENAPI_ENABLED: z.enum(['true', 'false']).optional(),
-  MAIL_TRANSPORT: z.enum(['console', 'smtp']).default('console'),
+  /** console: dev only (prints codes); smtp: real email; disabled: public demo without email. */
+  MAIL_TRANSPORT: z.enum(['console', 'smtp', 'disabled']).default('console'),
   SMTP_URL: optionalString(
     z.string().regex(/^smtps?:\/\/\S+$/, { error: 'must be an smtp:// or smtps:// URL' }),
   ),

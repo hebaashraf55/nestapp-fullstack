@@ -8,7 +8,7 @@ import { ProductRecord, ProductsRepository } from '../catalogue/catalogue.reposi
 import { CURRENCY } from '../catalogue/catalogue.services';
 import { RateLimiter } from '../auth/rate-limiter';
 import { TooManyAttemptsException } from '../auth/too-many-attempts.exception';
-import { CouponsRepository } from '../coupons/coupons.repository';
+import { CouponsRepository, isCouponUsable } from '../coupons/coupons.repository';
 import { CartData, CartRecord, CartsRepository, VersionConflictError } from './cart.repository';
 import { MAX_LINES, MAX_QUANTITY } from './dto';
 
@@ -118,8 +118,8 @@ export class CartService {
     if (status.blocked) throw new TooManyAttemptsException(status.retryAfterSeconds);
 
     const coupon = await this.coupons.findByCode(code);
-    if (!coupon || coupon.expiresAt.getTime() <= Date.now()) {
-      // One generic answer for unknown and expired codes, and failures are counted per user.
+    if (!coupon || !isCouponUsable(coupon)) {
+      // One generic answer for unknown, paused and expired codes; failures are counted per user.
       this.limiter.record(key, COUPON_WINDOW_MS);
       throw new BadRequestException('Invalid or expired coupon');
     }
@@ -201,7 +201,7 @@ export class CartService {
     let discountCents = 0;
     if (cart?.couponId) {
       const record = await this.coupons.findById(cart.couponId);
-      if (record && record.expiresAt.getTime() > Date.now()) {
+      if (record && isCouponUsable(record)) {
         coupon = { code: record.code, discountPercent: record.discountPercent };
         discountCents = Math.round((subtotalCents * record.discountPercent) / 100);
       } else {

@@ -10,6 +10,7 @@ interface CouponDoc {
   code: string;
   discountPercent: number;
   expiresAt: Date;
+  active?: boolean;
   isDemo: boolean;
   createdBy: string;
   createdAt: Date;
@@ -19,6 +20,7 @@ const toRecord = (d: CouponDoc): CouponRecord => ({
   code: d.code,
   discountPercent: d.discountPercent,
   expiresAt: d.expiresAt,
+  active: d.active !== false, // created before the flag existed: active
   isDemo: d.isDemo,
   createdBy: d.createdBy,
   createdAt: d.createdAt,

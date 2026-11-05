@@ -10,6 +10,9 @@ import {
 } from './seed-config';
 import { SeedConflictError, seedUsers } from './seed-users';
 
+// scrypt hashing is deliberately slow; under a parallel full run it can exceed Jest's 5 s default.
+jest.setTimeout(30_000);
+
 const good = {
   SEED_ADMIN_EMAIL: 'Owner@Example.com',
   SEED_ADMIN_PASSWORD: 'admin-pass-long-1',

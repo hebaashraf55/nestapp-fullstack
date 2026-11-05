@@ -226,7 +226,7 @@ export function buildOpenApi(container: ModulesContainer): OpenApiDocument {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'Atelier Noor API',
+      title: 'NOMA API',
       version: '1.0.0-phase1',
       description:
         'Portfolio e-commerce API. **Payments are simulated: no payment gateway exists and no card data is ever accepted.** ' +

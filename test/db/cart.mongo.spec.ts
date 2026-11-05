@@ -54,6 +54,7 @@ suite('coupon and cart storage (real MongoDB)', () => {
     code,
     discountPercent: 10,
     expiresAt: new Date(Date.now() + 86_400_000),
+    active: true,
     isDemo: false,
     createdBy: 'tester',
   });
@@ -63,6 +64,21 @@ suite('coupon and cart storage (real MongoDB)', () => {
     await coupons.create(coupon('save10'));
     expect((await coupons.findByCode('SAVE10'))?.code).toBe('SAVE10');
     await expect(coupons.create(coupon('SAVE10'))).rejects.toBeInstanceOf(DuplicateKeyError);
+  });
+
+  it('reads a coupon stored before the active flag existed as active, and can pause it', async () => {
+    const legacy = await models[0]!.collection.insertOne({
+      code: 'LEGACY5',
+      discountPercent: 5,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      isDemo: false,
+      createdBy: 'tester',
+      createdAt: new Date(),
+    });
+    const id = legacy.insertedId.toString();
+    expect((await coupons.findById(id))?.active).toBe(true);
+    expect((await coupons.update(id, { active: false }))?.active).toBe(false);
+    expect((await coupons.findByCode('LEGACY5'))?.active).toBe(false);
   });
 
   it('handles malformed coupon ids without throwing', async () => {

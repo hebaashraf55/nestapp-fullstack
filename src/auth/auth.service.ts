@@ -248,9 +248,7 @@ export class AuthService {
       sentAt: new Date(now),
     });
     const subject =
-      purpose === 'verify-email'
-        ? 'Your Atelier Noor verification code'
-        : 'Your Atelier Noor password reset code';
+      purpose === 'verify-email' ? 'Your NOMA verification code' : 'Your NOMA password reset code';
     try {
       await this.mail.send({
         to: user.email,

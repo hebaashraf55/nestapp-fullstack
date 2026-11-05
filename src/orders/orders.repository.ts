@@ -61,6 +61,10 @@ export abstract class OrdersRepository {
   /** Newest first. */
   abstract findByUser(userId: string, limit: number): Promise<OrderRecord[]>;
   abstract countPending(userId: string): Promise<number>;
+  /** How many orders that still hold reserved stock (see STOCK_HOLDING_STATUSES) contain this product. */
+  abstract countStockHoldingWithProduct(productId: string): Promise<number>;
+  /** Number of placed orders per coupon code (upper-case), for the admin coupon list. */
+  abstract countByCouponCode(): Promise<Record<string, number>>;
   /** Unpaid orders whose hold has run out. */
   abstract findOverdue(now: Date, limit: number): Promise<OrderRecord[]>;
   /**

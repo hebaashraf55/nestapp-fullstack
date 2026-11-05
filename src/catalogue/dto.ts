@@ -42,7 +42,8 @@ export const taxonomyUpdateSchema = z
 
 const money = z.number().int().min(1).max(100_000_00);
 const discount = z.number().int().min(0).max(90);
-const stock = z.number().int().min(0).max(1_000_000);
+export const MAX_STOCK = 1_000_000;
+const stock = z.number().int().min(0).max(MAX_STOCK);
 
 export const productCreateSchema = z.strictObject({
   name: name(3, 100),
@@ -54,6 +55,17 @@ export const productCreateSchema = z.strictObject({
   categoryId: objectId,
   brandId: objectId,
 });
+
+/** A relative stock change (receive goods: positive; write off: negative). Applied atomically. */
+export const stockAdjustSchema = z.strictObject({
+  change: z
+    .number()
+    .int()
+    .min(-MAX_STOCK)
+    .max(MAX_STOCK)
+    .refine((v) => v !== 0, { error: 'must not be zero' }),
+});
+export type StockAdjustDto = z.infer<typeof stockAdjustSchema>;
 
 export const productUpdateSchema = z
   .strictObject({

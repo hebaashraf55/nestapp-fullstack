@@ -26,6 +26,15 @@ export const PAYMENT_STATUSES = [
 ] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
+/**
+ * Orders whose reserved stock may still be handed back (cancel, expiry or refund before shipment).
+ * A product in one of these orders must not be deleted, or that stock could never be restored.
+ */
+export const STOCK_HOLDING_STATUSES = [
+  'PENDING_PAYMENT',
+  'PAID',
+] as const satisfies readonly OrderStatus[];
+
 /** What an admin may set directly. Payment and refund have their own routes. */
 export const ADMIN_STATUS_TARGETS = ['SHIPPED', 'DELIVERED', 'CANCELLED'] as const;
 

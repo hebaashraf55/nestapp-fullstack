@@ -11,6 +11,8 @@ import {
   productQuerySchema,
   ProductUpdateDto,
   productUpdateSchema,
+  StockAdjustDto,
+  stockAdjustSchema,
   TaxonomyCreateDto,
   taxonomyCreateSchema,
   TaxonomyUpdateDto,
@@ -158,6 +160,16 @@ export class ProductController {
     @Body(new ZodPipe(productUpdateSchema)) dto: ProductUpdateDto,
   ) {
     return this.products.update(id, dto);
+  }
+
+  @Roles(Role.ADMIN)
+  @Audited('product.stock')
+  @Patch(':id/stock')
+  adjustStock(
+    @Param('id', new ParseObjectIdPipe()) id: string,
+    @Body(new ZodPipe(stockAdjustSchema)) dto: StockAdjustDto,
+  ) {
+    return this.products.adjustStock(id, dto);
   }
 
   @Roles(Role.ADMIN)

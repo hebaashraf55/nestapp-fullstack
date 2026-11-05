@@ -59,19 +59,31 @@ export const ROUTE_DOCS: Record<string, RouteDoc> = {
   },
   'GET /api/product/{id}': { summary: 'Get a product', returns: 'the product' },
   'PATCH /api/product/{id}': { summary: 'Update a product', returns: 'the product' },
-  'DELETE /api/product/{id}': { summary: 'Delete a product' },
+  'PATCH /api/product/{id}/stock': {
+    summary: 'Add or remove stock atomically ({ change: ±n }); stock never goes below zero (409)',
+    returns: 'the product',
+  },
+  'DELETE /api/product/{id}': {
+    summary: 'Delete a product; refused (409) while an unpaid or paid order still holds its stock',
+  },
 
   'POST /api/coupon': {
-    summary: 'Create a coupon (code is immutable, 1–90 % off, must expire in the future)',
+    summary:
+      'Create a coupon (code is immutable, 1–90 % off, must expire in the future, active by default)',
     returns: 'the coupon',
   },
-  'GET /api/coupon': { summary: 'List coupons', returns: 'coupon[]' },
+  'GET /api/coupon': {
+    summary: 'List coupons with status and the number of orders placed with each',
+    returns: 'coupon[]',
+  },
   'GET /api/coupon/{id}': { summary: 'Get a coupon', returns: 'the coupon' },
   'PATCH /api/coupon/{id}': {
-    summary: 'Change a coupon’s discount or expiry',
+    summary: 'Change a coupon’s discount or expiry, or pause / resume it (active)',
     returns: 'the coupon',
   },
-  'DELETE /api/coupon/{id}': { summary: 'Delete a coupon' },
+  'DELETE /api/coupon/{id}': {
+    summary: 'Delete a coupon (placed orders keep their own copy of the code)',
+  },
 
   'GET /api/cart': {
     summary: 'The caller’s cart, priced by the server on every read',

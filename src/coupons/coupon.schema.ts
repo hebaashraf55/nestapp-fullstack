@@ -11,6 +11,10 @@ export class Coupon {
   @Prop({ required: true, type: Date, index: true })
   expiresAt!: Date;
 
+  /** An admin can pause a coupon without deleting it. Older documents without the field count as active. */
+  @Prop({ required: true, default: true })
+  active!: boolean;
+
   @Prop({ required: true, default: false })
   isDemo!: boolean;
 

@@ -14,6 +14,8 @@ export class UnavailableOrdersRepository extends OrdersRepository {
   findById = fail;
   findByUser = fail;
   countPending = fail;
+  countStockHoldingWithProduct = fail;
+  countByCouponCode = fail;
   findOverdue = fail;
   transition = fail;
 }

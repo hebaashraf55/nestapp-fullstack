@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import type { OrderStatus } from '../../src/orders/order-status';
+import { STOCK_HOLDING_STATUSES, type OrderStatus } from '../../src/orders/order-status';
 import {
   NewOrder,
   OrderPageFilter,
@@ -69,6 +69,21 @@ export class InMemoryOrdersRepository extends OrdersRepository {
     return [...this.records.values()].filter(
       (o) => o.userId === userId && o.status === 'PENDING_PAYMENT',
     ).length;
+  }
+  async countStockHoldingWithProduct(productId: string) {
+    this.check();
+    const holding: readonly OrderStatus[] = STOCK_HOLDING_STATUSES;
+    return [...this.records.values()].filter(
+      (o) => holding.includes(o.status) && o.items.some((i) => i.productId === productId),
+    ).length;
+  }
+  async countByCouponCode() {
+    this.check();
+    const counts: Record<string, number> = {};
+    for (const o of this.records.values()) {
+      if (o.couponCode) counts[o.couponCode] = (counts[o.couponCode] ?? 0) + 1;
+    }
+    return counts;
   }
   async findOverdue(now: Date, limit: number) {
     this.check();

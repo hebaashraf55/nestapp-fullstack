@@ -83,6 +83,26 @@ suite('order storage and stock reservation (real MongoDB)', () => {
       createdBy: 'tester',
     });
 
+  it('counts only unpaid and paid orders as holding a product, and ignores operator objects', async () => {
+    await orders.create(newOrder()); // PENDING_PAYMENT, product 1
+    await orders.create(newOrder({ status: 'PAID', paymentStatus: 'SIMULATED_PAID' }));
+    await orders.create(newOrder({ status: 'SHIPPED' }));
+    await orders.create(newOrder({ status: 'DELIVERED' }));
+    await orders.create(newOrder({ status: 'CANCELLED' }));
+    await orders.create(newOrder({ status: 'EXPIRED' }));
+    expect(await orders.countStockHoldingWithProduct(oid(1))).toBe(2);
+    expect(await orders.countStockHoldingWithProduct(oid(9))).toBe(0);
+    expect(await orders.countStockHoldingWithProduct({ $ne: '' } as unknown as string)).toBe(0);
+  });
+
+  it('counts placed orders per coupon code', async () => {
+    await orders.create(newOrder({ couponCode: 'SAVE10', couponPercent: 10 }));
+    await orders.create(newOrder({ couponCode: 'SAVE10', couponPercent: 10, status: 'CANCELLED' }));
+    await orders.create(newOrder({ couponCode: 'SPRING', couponPercent: 5 }));
+    await orders.create(newOrder());
+    expect(await orders.countByCouponCode()).toEqual({ SAVE10: 2, SPRING: 1 });
+  });
+
   it('round-trips an order', async () => {
     const created = await orders.create(newOrder());
     expect(await orders.findById(created.id)).toMatchObject({

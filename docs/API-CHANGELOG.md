@@ -35,7 +35,7 @@ Original 35 = 26 + 1 + 2 + 6. Current API = 26 + 1 + 2 + 18 = 47 operations.
 
 ## New endpoints
 
-`GET /api/health`, `GET /api/openapi.json` (disabled in production unless `OPENAPI_ENABLED=true`), `POST /api/auth/refresh`, `logout`, `logout-all`, `forgot-password`, `reset-password`, `GET /api/product`, `GET|PATCH|DELETE /api/product/{id}`, `GET /api/order`, `GET /api/order/{orderId}`, `PATCH /api/order/{orderId}/status`, `GET /api/admin/stats|customers|orders|audit`.
+`GET /api/health`, `GET /api/openapi.json` (disabled in production unless `OPENAPI_ENABLED=true`), `POST /api/auth/refresh`, `logout`, `logout-all`, `forgot-password`, `reset-password`, `GET /api/product`, `GET|PATCH|DELETE /api/product/{id}`, `GET /api/order`, `GET /api/order/{orderId}`, `PATCH /api/order/{orderId}/status`, `GET /api/admin/stats|customers|orders|audit`, `PATCH /api/product/{id}/stock` (Phase 1 finalisation).
 
 ## Behaviour changes that affect clients
 
@@ -45,6 +45,12 @@ Original 35 = 26 + 1 + 2 + 6. Current API = 26 + 1 + 2 + 18 = 47 operations.
 - **Authentication is deny-by-default.** Routes are protected unless explicitly public; roles are enforced on the server (`CUSTOMER`, `ADMIN`, read-only `DEMO_VIEWER`).
 - **Ids** in paths must be valid ObjectIds (400 otherwise); list endpoints are paginated with bounded `limit`.
 - **Orders** follow a state machine with atomic stock reservation, 30-minute expiry of unpaid orders and at most 3 pending orders per customer.
+- **Phase 1 finalisation (admin management):**
+  - `PATCH /api/product/{id}/stock` takes `{ change: ±n }` (non-zero integer) and applies it atomically with the same operations as order reservations; stock can never go below zero (`409`).
+  - `DELETE /api/product/{id}` is refused (`409`) while an unpaid or paid order still holds the product's stock; placed orders keep their own copy of each line, so deleting a product later never changes history.
+  - Coupons gain an `active` flag (default `true`; documents created earlier read as active). `PATCH /api/coupon/{id}` accepts `active`. A paused or expired coupon is refused by `apply-coupon` with the same generic `Invalid or expired coupon`, and a cart holding it stops being discounted on its next read.
+  - Coupon responses add `discountType` (always `PERCENT`; no other type exists), `active`, `status` (`ACTIVE` / `INACTIVE` / `EXPIRED`) and `ordersPlaced` (orders placed with the code). There is no usage limit.
+  - The OpenAPI title is now `NOMA API`. All of these routes stay ADMIN-only; customers and the demo viewer get `403`, and every successful change is audited (`product.stock` is new).
 - **New in Step 8:** a global request throttle (default 300 requests per 60 s per client address, `429` with `Retry-After`; `/api/health` exempt) and an explicit `trust proxy` hop count. Both are configured by environment variables (`THROTTLE_LIMIT`, `THROTTLE_WINDOW_SECONDS`, `TRUST_PROXY`).
 
 ## Not yet verified

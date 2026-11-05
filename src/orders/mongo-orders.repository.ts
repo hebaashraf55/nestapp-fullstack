@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
 import { Order } from './order.schema';
-import type { OrderStatus, PaymentStatus } from './order-status';
+import { STOCK_HOLDING_STATUSES, type OrderStatus, type PaymentStatus } from './order-status';
 import {
   NewOrder,
   OrderPageFilter,
@@ -140,6 +140,25 @@ export class MongoOrdersRepository extends OrdersRepository {
 
   countPending(userId: string) {
     return this.model.countDocuments({ userId: { $eq: userId }, status: 'PENDING_PAYMENT' }).exec();
+  }
+
+  countStockHoldingWithProduct(productId: string) {
+    return this.model
+      .countDocuments({
+        status: { $in: [...STOCK_HOLDING_STATUSES] },
+        'items.productId': { $eq: productId },
+      })
+      .exec();
+  }
+
+  async countByCouponCode() {
+    const rows = await this.model
+      .aggregate<{ _id: string; count: number }>([
+        { $match: { couponCode: { $type: 'string' } } },
+        { $group: { _id: '$couponCode', count: { $sum: 1 } } },
+      ])
+      .exec();
+    return Object.fromEntries(rows.map((r) => [r._id, r.count]));
   }
 
   async findOverdue(now: Date, limit: number) {

@@ -1,5 +1,8 @@
 import { hashPassword, verifyPassword } from './password';
 
+// scrypt hashing is deliberately slow; under a parallel full run it can exceed Jest's 5 s default.
+jest.setTimeout(30_000);
+
 describe('password hashing (scrypt)', () => {
   it('verifies the right password and rejects a wrong one', async () => {
     const hash = await hashPassword('correct horse battery staple');

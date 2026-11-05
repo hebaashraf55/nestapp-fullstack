@@ -18,6 +18,7 @@ export const couponCreateSchema = z.strictObject({
   code: couponCode,
   discountPercent: z.number().int().min(1).max(MAX_DISCOUNT),
   expiresAt: expiry.refine((d) => d.getTime() > Date.now(), { error: 'must be in the future' }),
+  active: z.boolean().default(true),
 });
 
 /** The code is immutable: carts and customers may already hold it. */
@@ -25,6 +26,7 @@ export const couponUpdateSchema = z
   .strictObject({
     discountPercent: z.number().int().min(1).max(MAX_DISCOUNT).optional(),
     expiresAt: expiry.optional(),
+    active: z.boolean().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { error: 'provide at least one field to change' });
 
