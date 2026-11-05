@@ -41,6 +41,8 @@ export class MongoUsersRepository extends UsersRepository {
   }
 
   async findByEmail(email: string): Promise<UserRecord | null> {
+    // A non-string (e.g. a JSON object) can never match a stored email; answer "not found" instead of a CastError.
+    if (typeof email !== 'string') return null;
     // `$eq` stops an object such as {"$ne": ""} from being interpreted as a query operator.
     const doc = await this.model
       .findOne({ email: { $eq: email } })

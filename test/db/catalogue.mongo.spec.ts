@@ -64,8 +64,8 @@ suite('catalogue storage (real MongoDB)', () => {
     createdBy: 'tester',
   });
   const product = (over: Record<string, unknown>) => ({
-    name: 'P',
-    slug: 'p',
+    name: 'Sample product',
+    slug: 'sample-product',
     description: '',
     images: ['/catalogue/p.svg'],
     priceCents: 1000,

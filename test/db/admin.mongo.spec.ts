@@ -102,7 +102,7 @@ suite('admin reporting queries and audit log (real MongoDB)', () => {
     });
   const product = (stock: number, isDemo: boolean) =>
     products.create({
-      name: 'P',
+      name: 'Product',
       slug: `p-${Math.random().toString(16).slice(2)}`,
       description: '',
       images: ['/catalogue/p.svg'],

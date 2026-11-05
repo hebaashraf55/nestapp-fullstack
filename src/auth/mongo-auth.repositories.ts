@@ -39,6 +39,8 @@ export class MongoOtpRepository extends OtpRepository {
   }
 
   async find(userId: string, purpose: OtpPurpose): Promise<OtpRecord | null> {
+    // Malformed input can never match a stored code; answer "not found" instead of a CastError.
+    if (typeof userId !== 'string' || typeof purpose !== 'string') return null;
     const doc = await this.model
       .findOne({ userId: { $eq: userId }, purpose: { $eq: purpose } })
       .exec();
@@ -90,6 +92,7 @@ export class MongoRefreshTokenRepository extends RefreshTokenRepository {
   }
 
   async findByHash(tokenHash: string): Promise<RefreshTokenRecord | null> {
+    if (typeof tokenHash !== 'string') return null;
     const doc = await this.model.findOne({ tokenHash: { $eq: tokenHash } }).exec();
     return doc
       ? MongoRefreshTokenRepository.toRecord(
