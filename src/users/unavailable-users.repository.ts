@@ -25,6 +25,12 @@ export class UnavailableUsersRepository extends UsersRepository {
   updateRoleAndDemo(): never {
     return this.fail();
   }
+  findByGoogleSub(): never {
+    return this.fail();
+  }
+  linkGoogle(): never {
+    return this.fail();
+  }
   markEmailVerified(): never {
     return this.fail();
   }

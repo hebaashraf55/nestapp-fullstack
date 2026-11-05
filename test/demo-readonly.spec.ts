@@ -22,6 +22,8 @@ const PUBLIC_WRITES: Record<string, string> = {
   'POST /api/auth/logout': 'public: ends the viewer’s own session',
   'POST /api/auth/forgot-password': 'public, rate limited, answers identically for unknown emails',
   'POST /api/auth/reset-password': 'public: needs a mailed code',
+  'POST /api/auth/google':
+    'public: needs a Google-signed ID token; only ever reaches CUSTOMER accounts',
 };
 
 /** Authenticated write routes → a body that would otherwise be valid, so only the guard can say 403. */

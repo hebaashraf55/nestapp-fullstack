@@ -454,6 +454,129 @@
         }
       }
     },
+    "/api/auth/google": {
+      "post": {
+        "operationId": "postApiAuthGoogle",
+        "summary": "Sign in or up with a Google ID token ({ credential, nonceToken }); customers only, verified email required",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "public",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "credential": {
+                    "type": "string",
+                    "minLength": 100,
+                    "maxLength": 4096
+                  },
+                  "nonceToken": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "credential",
+                  "nonceToken"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success. `data`: { Credentials: { accessToken, refreshToken }, user }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (unknown fields are rejected)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit reached; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable (generic body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/google/nonce": {
+      "get": {
+        "operationId": "getApiAuthGoogleNonce",
+        "summary": "A one-time nonce for Google sign-in, and its signed ticket (503 if Google is not configured)",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "public",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success. `data`: { nonce, nonceToken }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit reached; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable (generic body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "operationId": "postApiAuthLogin",

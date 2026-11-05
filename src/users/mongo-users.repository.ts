@@ -5,6 +5,7 @@ import { Role } from './role';
 import { User, UserDocument } from './user.schema';
 import {
   DuplicateEmailError,
+  DuplicateGoogleAccountError,
   NewUser,
   UserPageFilter,
   UserRecord,
@@ -23,6 +24,7 @@ function toRecord(doc: UserDocument): UserRecord {
     isDemo: doc.isDemo,
     emailVerified: doc.emailVerified,
     tokenVersion: doc.tokenVersion,
+    ...(doc.googleSub ? { googleSub: doc.googleSub } : {}),
     createdAt: (doc as unknown as { createdAt: Date }).createdAt,
   };
 }
@@ -55,8 +57,11 @@ export class MongoUsersRepository extends UsersRepository {
     try {
       return toRecord(await this.model.create(user));
     } catch (error) {
-      if ((error as { code?: number }).code === MONGO_DUPLICATE_KEY)
+      if ((error as { code?: number; keyPattern?: object }).code === MONGO_DUPLICATE_KEY) {
+        if ('googleSub' in ((error as { keyPattern?: object }).keyPattern ?? {}))
+          throw new DuplicateGoogleAccountError();
         throw new DuplicateEmailError();
+      }
       throw error;
     }
   }
@@ -101,6 +106,37 @@ export class MongoUsersRepository extends UsersRepository {
         { $set: { passwordHash, emailVerified: true }, $inc: { tokenVersion: 1 } },
       )
       .exec();
+  }
+
+  async findByGoogleSub(sub: string): Promise<UserRecord | null> {
+    if (typeof sub !== 'string' || sub === '') return null;
+    const doc = await this.model
+      .findOne({ googleSub: { $eq: sub } })
+      .select('+passwordHash')
+      .exec();
+    return doc ? toRecord(doc) : null;
+  }
+
+  async linkGoogle(id: string, sub: string, replacePasswordHash?: string): Promise<boolean> {
+    if (!isValidObjectId(id) || typeof sub !== 'string' || sub === '') return false;
+    try {
+      const result = await this.model
+        .updateOne(
+          { _id: id, googleSub: { $exists: false } },
+          replacePasswordHash
+            ? {
+                $set: { googleSub: sub, emailVerified: true, passwordHash: replacePasswordHash },
+                $inc: { tokenVersion: 1 },
+              }
+            : { $set: { googleSub: sub, emailVerified: true } },
+        )
+        .exec();
+      return result.modifiedCount === 1;
+    } catch (error) {
+      if ((error as { code?: number }).code === MONGO_DUPLICATE_KEY)
+        throw new DuplicateGoogleAccountError();
+      throw error;
+    }
   }
 
   async bumpTokenVersion(id: string): Promise<void> {

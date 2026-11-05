@@ -339,6 +339,26 @@ select:disabled { cursor: not-allowed; opacity: .6; }
 .admin-order__actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
 .confirm { display: inline-flex; flex-wrap: wrap; gap: .5rem; }
 
+/* Authentication screens */
+.auth .form { margin-top: 1.5rem; }
+.auth__divider { display: flex; align-items: center; gap: 1rem; margin: 1.75rem 0 .25rem; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; }
+.auth__divider::before, .auth__divider::after { content: ''; flex: 1; border-top: 1px solid var(--line-strong); }
+.auth__row { display: flex; justify-content: flex-end; margin: -.5rem 0 0; font-size: .85rem; }
+.auth__row a, .auth__footer a { color: var(--link); text-decoration-color: var(--sand); }
+.auth__footer { margin: 1.75rem 0 1rem; color: var(--muted); }
+.google-signin { display: grid; gap: .5rem; margin-top: 1.75rem; min-height: 2.75rem; }
+.google-signin__slot { display: flex; justify-content: center; min-height: 2.75rem; }
+.google-signin[data-disabled] { opacity: .6; pointer-events: none; }
+.password-field { position: relative; display: flex; }
+.password-field input { width: 100%; min-width: 0; font: 400 .95rem var(--sans); color: var(--ink); background-color: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: .6rem 4.5rem .6rem .75rem; min-height: 2.75rem; transition: border-color .2s; }
+.password-field input:hover { border-color: var(--muted); }
+.password-field input:focus-visible { outline: none; border-color: var(--heading); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sand) 60%, transparent); }
+.password-field input[aria-invalid='true'] { border-color: var(--bad); }
+.password-field__toggle { position: absolute; inset-block: .3rem; inset-inline-end: .3rem; padding: 0 .75rem; border: 0; border-radius: var(--radius); background: transparent; color: var(--muted); font: 500 .7rem var(--sans); text-transform: uppercase; letter-spacing: .12em; cursor: pointer; }
+.password-field__toggle:hover { color: var(--heading); background: var(--surface-soft); }
+.password-field__toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.link:disabled { color: var(--muted); text-decoration: none; cursor: not-allowed; }
+
 /* Admin management (products, coupons): same tokens as the rest of the admin area */
 .admin-toolbar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; justify-content: space-between; padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--line); }
 .admin-filters { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: flex-end; flex: 1 1 32rem; }

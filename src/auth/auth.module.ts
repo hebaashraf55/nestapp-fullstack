@@ -4,6 +4,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ENV, Env } from '../config/env';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { GoogleIdTokenVerifier, OfficialGoogleIdTokenVerifier } from './google-id-token.verifier';
+import { GoogleNonceService } from './google-nonce.service';
 import { Otp, OtpSchema, RefreshToken, RefreshTokenSchema } from './auth-storage.schemas';
 import { AuthGuard, DemoReadOnlyGuard, RolesGuard } from './guards';
 import { MongoOtpRepository, MongoRefreshTokenRepository } from './mongo-auth.repositories';
@@ -37,6 +39,11 @@ export class AuthModule {
         TokenService,
         AuthService,
         RateLimiter,
+        GoogleNonceService,
+        {
+          provide: GoogleIdTokenVerifier,
+          useFactory: () => new OfficialGoogleIdTokenVerifier(env.GOOGLE_CLIENT_ID),
+        },
         {
           provide: OtpRepository,
           useClass: connected ? MongoOtpRepository : UnavailableOtpRepository,

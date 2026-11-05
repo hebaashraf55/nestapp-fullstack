@@ -26,6 +26,7 @@ NOMA is a portfolio e-commerce project: a **NestJS + MongoDB API** and a **React
 - Customers with masked names and emails, and an append-only audit log of every admin change
 
 **Roles and security**
+- Email + password accounts with emailed verification codes, forgot/reset password, and **Continue with Google** (ID token verified on the server, nonce-protected, customers only)
 - Deny-by-default authentication with short-lived access tokens and rotating refresh tokens
 - `ADMIN`, `CUSTOMER` and a read-only `DEMO_VIEWER` that sees only synthetic records; all enforced on the server (403), not just hidden in the UI
 - Helmet headers, exact-match CORS allow-list, request throttling, login and coupon-guess limits, validated input everywhere (Zod), NoSQL-operator injection guarded in repositories
@@ -50,7 +51,7 @@ The seed creates three accounts:
 | `demo-viewer@example.com` | Demo viewer | Browse the admin area read-only (synthetic records only, every write is 403) |
 | `SEED_ADMIN_EMAIL` | Admin | Everything; the owner's private account |
 
-Both demo accounts share `SEED_DEMO_PASSWORD`, which the person running the app chooses. Creating new accounts by email is disabled on the public demo (no email provider is configured), so use the demo accounts.
+Both demo accounts share `SEED_DEMO_PASSWORD`, which the person running the app chooses. Visitors can also create their own customer account with Google, or by email once an email provider is configured. Google and email sign-up only ever create customer accounts. Setup: [`docs/AUTHENTICATION.md`](docs/AUTHENTICATION.md).
 
 ## Run locally
 
@@ -83,8 +84,11 @@ All configuration is validated at startup; the API refuses to start with a bad o
 | `TRUST_PROXY` | Number of proxy hops in front of the API (1 on Render) |
 | `THROTTLE_LIMIT`, `THROTTLE_WINDOW_SECONDS` | Request throttle per client address |
 | `OPENAPI_ENABLED` | Serve `/api/openapi.json` in production when `true` |
+| `GOOGLE_CLIENT_ID` | Google OAuth Web client id; unset switches Google sign-in off |
+| `SMTP_URL`, `MAIL_FROM` | Email provider when `MAIL_TRANSPORT=smtp` |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_DEMO_PASSWORD` | Accounts created by the seed (placeholders refused in production) |
 | `VITE_API_BASE_URL` (web) | Absolute API URL when the storefront and API are on different hosts |
+| `VITE_GOOGLE_CLIENT_ID` (web) | Same Google client id; unset hides the Google button |
 
 ## Deploy
 

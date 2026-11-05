@@ -10,6 +10,7 @@ How each backend feature is proven. Three kinds of automated evidence exist:
 |---|---|---|---|---|---|
 | Registration (signup, emailed code, verify) | Yes | Yes (e2e) | Role cannot be chosen by the client (400) | auth-flows, e2e | Real |
 | Login, logout, logout-all, refresh rotation, reset | Yes | Yes (repo + e2e, refresh survives restart) | Wrong password 401, unverified 403 | auth, auth-flows, auth.mongo, e2e | Real |
+| Google sign-in (ID token, nonce, linking, customers only) | Yes | Yes (users repo + e2e) | Staff/demo emails 403, foreign link 409, strict body | google-id-token.verifier (Google's real library, local keys), auth-google, users.mongo, e2e | Real (needs `GOOGLE_CLIENT_ID`) |
 | Password hashing | Yes | Yes (stored as `scrypt$…`, never plain) | — | password, e2e | Real |
 | JWT validation and expiry | Yes | Yes (e2e) | Missing, forged, expired, `alg:none` → 401 | auth, e2e | Real |
 | Roles (ADMIN, CUSTOMER, DEMO_VIEWER) | Yes | Yes (e2e) | Every write route classified; viewer 403 on all | guards, demo-readonly, matrix, e2e | Real |

@@ -53,6 +53,14 @@ export class UsersService {
     await this.users.updateRoleAndDemo(id, role, isDemo);
   }
 
+  findByGoogleSub(sub: string): Promise<UserRecord | null> {
+    return this.users.findByGoogleSub(sub);
+  }
+
+  linkGoogle(id: string, sub: string, replacePasswordHash?: string): Promise<boolean> {
+    return this.users.linkGoogle(id, sub, replacePasswordHash);
+  }
+
   markEmailVerified(id: string): Promise<void> {
     return this.users.markEmailVerified(id);
   }

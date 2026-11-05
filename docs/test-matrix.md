@@ -7,18 +7,19 @@
 
 | Result | Count |
 |---|---|
-| Passed (EXECUTED) | 913 |
+| Passed (EXECUTED) | 944 |
 | Failed | 0 |
 | Skipped (NOT EXECUTED) | 0 |
-| Total | 913 |
+| Total | 944 |
 
-**MongoDB integration:** 53 of 53 tests in `test/db` ran against a real MongoDB (passed: 53, failed: 0).
+**MongoDB integration:** 55 of 55 tests in `test/db` ran against a real MongoDB (passed: 55, failed: 0).
 
 ## Per-suite results
 
 | Suite | Passed | Failed | Skipped |
 |---|---|---|---|
 | `src/auth/demo-scope.spec.ts` | 2 | 0 | 0 |
+| `src/auth/google-id-token.verifier.spec.ts` | 11 | 0 | 0 |
 | `src/auth/password.spec.ts` | 8 | 0 | 0 |
 | `src/auth/rate-limiter.spec.ts` | 5 | 0 | 0 |
 | `src/auth/token.service.spec.ts` | 10 | 0 | 0 |
@@ -32,6 +33,7 @@
 | `test/admin.spec.ts` | 59 | 0 | 0 |
 | `test/app.spec.ts` | 21 | 0 | 0 |
 | `test/auth-flows.spec.ts` | 56 | 0 | 0 |
+| `test/auth-google.spec.ts` | 16 | 0 | 0 |
 | `test/auth.spec.ts` | 24 | 0 | 0 |
 | `test/cart.spec.ts` | 75 | 0 | 0 |
 | `test/catalogue-units.spec.ts` | 49 | 0 | 0 |
@@ -40,12 +42,12 @@
 | `test/db/auth.mongo.spec.ts` | 12 | 0 | 0 |
 | `test/db/cart.mongo.spec.ts` | 6 | 0 | 0 |
 | `test/db/catalogue.mongo.spec.ts` | 4 | 0 | 0 |
-| `test/db/e2e-api.mongo.spec.ts` | 8 | 0 | 0 |
+| `test/db/e2e-api.mongo.spec.ts` | 9 | 0 | 0 |
 | `test/db/orders.mongo.spec.ts` | 8 | 0 | 0 |
-| `test/db/users.mongo.spec.ts` | 9 | 0 | 0 |
+| `test/db/users.mongo.spec.ts` | 10 | 0 | 0 |
 | `test/demo-readonly.spec.ts` | 27 | 0 | 0 |
 | `test/guards.spec.ts` | 4 | 0 | 0 |
-| `test/matrix.spec.ts` | 201 | 0 | 0 |
+| `test/matrix.spec.ts` | 203 | 0 | 0 |
 | `test/mongo-malformed-input.spec.ts` | 21 | 0 | 0 |
 | `test/openapi.spec.ts` | 14 | 0 | 0 |
 | `test/orders.spec.ts` | 87 | 0 | 0 |
@@ -55,11 +57,11 @@
 
 | # | Original endpoint | What happened | Now served by | Evidence |
 |---|---|---|---|---|
-| 1 | `POST /api/auth/signup` | ported | `POST /api/auth/signup` | matrix row below (2 feature suite(s)) |
+| 1 | `POST /api/auth/signup` | ported | `POST /api/auth/signup` | matrix row below (3 feature suite(s)) |
 | 2 | `POST /api/auth/resend-otp` | ported | `POST /api/auth/resend-otp` | matrix row below (1 feature suite(s)) |
-| 3 | `PATCH /api/auth/confirm-email` | renamed | `POST /api/auth/verify-email` | matrix row below (2 feature suite(s)) |
-| 4 | `POST /api/auth/login` | ported | `POST /api/auth/login` | matrix row below (3 feature suite(s)) |
-| 5 | `GET /api/auth/profile` | ported | `GET /api/auth/profile` | matrix row below (2 feature suite(s)) |
+| 3 | `PATCH /api/auth/confirm-email` | renamed | `POST /api/auth/verify-email` | matrix row below (3 feature suite(s)) |
+| 4 | `POST /api/auth/login` | ported | `POST /api/auth/login` | matrix row below (4 feature suite(s)) |
+| 5 | `GET /api/auth/profile` | ported | `GET /api/auth/profile` | matrix row below (3 feature suite(s)) |
 | 6 | `POST /api/auth/upload-file` | dropped | — | removed-route probe: EXECUTED |
 | 7 | `POST /api/auth/upload-files` | dropped | — | removed-route probe: EXECUTED |
 | 8 | `POST /api/brand/create` | ported | `POST /api/brand/create` | matrix row below (6 feature suite(s)) |
@@ -74,15 +76,15 @@
 | 17 | `DELETE /api/category/:id` | ported | `DELETE /api/category/{id}` | matrix row below (7 feature suite(s)) |
 | 18 | `POST /api/product/create` | ported | `POST /api/product/create` | matrix row below (6 feature suite(s)) |
 | 19 | `GET /api/product/test` | dropped (now captured by GET /api/product/{id}; "test" is not a valid id, so it is rejected with 400) | — | removed-route probe: EXECUTED |
-| 20 | `POST /api/coupon` | ported | `POST /api/coupon` | matrix row below (6 feature suite(s)) |
-| 21 | `GET /api/coupon` | ported | `GET /api/coupon` | matrix row below (6 feature suite(s)) |
-| 22 | `GET /api/coupon/:id` | ported | `GET /api/coupon/{id}` | matrix row below (6 feature suite(s)) |
-| 23 | `PATCH /api/coupon/:id` | ported | `PATCH /api/coupon/{id}` | matrix row below (6 feature suite(s)) |
-| 24 | `DELETE /api/coupon/:id` | ported | `DELETE /api/coupon/{id}` | matrix row below (6 feature suite(s)) |
-| 25 | `POST /api/cart` | ported | `POST /api/cart` | matrix row below (6 feature suite(s)) |
-| 26 | `GET /api/cart` | ported | `GET /api/cart` | matrix row below (6 feature suite(s)) |
-| 27 | `PATCH /api/cart/:productId` | ported | `PATCH /api/cart/{productId}` | matrix row below (6 feature suite(s)) |
-| 28 | `DELETE /api/cart/:productId` | ported | `DELETE /api/cart/{productId}` | matrix row below (6 feature suite(s)) |
+| 20 | `POST /api/coupon` | ported | `POST /api/coupon` | matrix row below (7 feature suite(s)) |
+| 21 | `GET /api/coupon` | ported | `GET /api/coupon` | matrix row below (7 feature suite(s)) |
+| 22 | `GET /api/coupon/:id` | ported | `GET /api/coupon/{id}` | matrix row below (7 feature suite(s)) |
+| 23 | `PATCH /api/coupon/:id` | ported | `PATCH /api/coupon/{id}` | matrix row below (7 feature suite(s)) |
+| 24 | `DELETE /api/coupon/:id` | ported | `DELETE /api/coupon/{id}` | matrix row below (7 feature suite(s)) |
+| 25 | `POST /api/cart` | ported | `POST /api/cart` | matrix row below (7 feature suite(s)) |
+| 26 | `GET /api/cart` | ported | `GET /api/cart` | matrix row below (7 feature suite(s)) |
+| 27 | `PATCH /api/cart/:productId` | ported | `PATCH /api/cart/{productId}` | matrix row below (7 feature suite(s)) |
+| 28 | `DELETE /api/cart/:productId` | ported | `DELETE /api/cart/{productId}` | matrix row below (7 feature suite(s)) |
 | 29 | `POST /api/cart/apply-coupon` | ported | `POST /api/cart/apply-coupon` | matrix row below (5 feature suite(s)) |
 | 30 | `POST /api/order` | ported | `POST /api/order` | matrix row below (5 feature suite(s)) |
 | 31 | `POST /api/order/checkout/:orderId` | replaced (Stripe removed) | `POST /api/order/{orderId}/simulate-payment` | matrix row below (5 feature suite(s)) |
@@ -91,7 +93,7 @@
 | 34 | `GET /uploads/* (static files)` | dropped | — | removed-route probe: EXECUTED |
 | 35 | `WebSocket gateway (public / sayHi)` | dropped | — | dependency-absence check: EXECUTED |
 
-## B. Every endpoint of this API (48) × cross-cutting checks
+## B. Every endpoint of this API (50) × cross-cutting checks
 
 Cells come from `test/matrix.spec.ts`, which builds its cases from the generated OpenAPI file. `n/a` = the check does not apply to that route.
 
@@ -100,37 +102,39 @@ Cells come from `test/matrix.spec.ts`, which builds its cases from the generated
 | `GET /api/admin/audit` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | EXECUTED | admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED) |
 | `GET /api/admin/customers` | ADMIN or DEMO_VIEWER | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | admin.spec.ts (EXECUTED) |
 | `GET /api/admin/orders` | ADMIN or DEMO_VIEWER | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | admin.spec.ts (EXECUTED) |
-| `GET /api/admin/stats` | ADMIN or DEMO_VIEWER | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
-| `POST /api/auth/forgot-password` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | demo-readonly.spec.ts (EXECUTED) |
-| `POST /api/auth/login` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `GET /api/admin/stats` | ADMIN or DEMO_VIEWER | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `POST /api/auth/forgot-password` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | auth-google.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
+| `POST /api/auth/google` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | auth-google.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
+| `GET /api/auth/google/nonce` | public | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | auth-google.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED) |
+| `POST /api/auth/login` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | auth-google.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
 | `POST /api/auth/logout` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | auth-flows.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
 | `POST /api/auth/logout-all` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | n/a | n/a | n/a | n/a | auth-flows.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
-| `GET /api/auth/profile` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | auth-flows.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED) |
-| `POST /api/auth/refresh` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
+| `GET /api/auth/profile` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | auth-flows.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED) |
+| `POST /api/auth/refresh` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | auth-google.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
 | `POST /api/auth/resend-otp` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | demo-readonly.spec.ts (EXECUTED) |
-| `POST /api/auth/reset-password` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | demo-readonly.spec.ts (EXECUTED) |
-| `POST /api/auth/signup` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
-| `POST /api/auth/verify-email` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
+| `POST /api/auth/reset-password` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | auth-google.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
+| `POST /api/auth/signup` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | auth-google.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
+| `POST /api/auth/verify-email` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | auth-google.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
 | `GET /api/brand` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `POST /api/brand/create` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `DELETE /api/brand/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `GET /api/brand/{id}` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `PATCH /api/brand/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
-| `GET /api/cart` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
-| `POST /api/cart` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `GET /api/cart` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `POST /api/cart` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
 | `POST /api/cart/apply-coupon` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
-| `DELETE /api/cart/{productId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
-| `PATCH /api/cart/{productId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `DELETE /api/cart/{productId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `PATCH /api/cart/{productId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
 | `GET /api/category` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `POST /api/category/create` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `DELETE /api/category/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `GET /api/category/{id}` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `PATCH /api/category/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
-| `GET /api/coupon` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
-| `POST /api/coupon` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
-| `DELETE /api/coupon/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
-| `GET /api/coupon/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
-| `PATCH /api/coupon/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
+| `GET /api/coupon` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
+| `POST /api/coupon` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
+| `DELETE /api/coupon/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
+| `GET /api/coupon/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
+| `PATCH /api/coupon/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `GET /api/health` | public | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | app.spec.ts (EXECUTED)<br>auth.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
 | `GET /api/openapi.json` | public | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | none (matrix only) |
 | `GET /api/order` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |

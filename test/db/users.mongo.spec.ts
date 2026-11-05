@@ -10,7 +10,7 @@ import { hashPassword, verifyPassword } from '../../src/auth/password';
 import { MongoUsersRepository } from '../../src/users/mongo-users.repository';
 import { Role } from '../../src/users/role';
 import { User, UserSchema } from '../../src/users/user.schema';
-import { DuplicateEmailError } from '../../src/users/users.repository';
+import { DuplicateEmailError, DuplicateGoogleAccountError } from '../../src/users/users.repository';
 import { UsersService } from '../../src/users/users.service';
 import { loadSeedConfig } from '../../src/seed/seed-config';
 import { seedUsers } from '../../src/seed/seed-users';
@@ -48,6 +48,34 @@ suite('MongoUsersRepository (real MongoDB)', () => {
   });
 
   const base = { name: 'N', passwordHash: 'scrypt$x', isDemo: false, emailVerified: false };
+
+  it('links a Google account atomically, once, and keeps Google ids unique', async () => {
+    const a = await service.create({ ...base, email: 'a@example.com', role: Role.CUSTOMER });
+    const b = await service.create({ ...base, email: 'b@example.com', role: Role.CUSTOMER });
+    // Many accounts without a Google id coexist (sparse unique index).
+    await service.create({ ...base, email: 'c@example.com', role: Role.CUSTOMER });
+    expect(await repo.linkGoogle(a.id, 'g-1')).toBe(true);
+    expect(await repo.findByGoogleSub('g-1')).toMatchObject({
+      id: a.id,
+      emailVerified: true,
+      tokenVersion: 0,
+    });
+    expect(await repo.linkGoogle(a.id, 'g-2')).toBe(false); // already linked: never overwritten
+    await expect(repo.linkGoogle(b.id, 'g-1')).rejects.toBeInstanceOf(DuplicateGoogleAccountError);
+    // Linking with a replacement password also bumps tokenVersion in the same update.
+    expect(await repo.linkGoogle(b.id, 'g-3', 'scrypt$new')).toBe(true);
+    expect(await repo.findById(b.id)).toMatchObject({
+      googleSub: 'g-3',
+      passwordHash: 'scrypt$new',
+      tokenVersion: 1,
+    });
+    // Operator objects and empty values never match.
+    expect(await repo.findByGoogleSub({ $ne: '' } as unknown as string)).toBeNull();
+    expect(await repo.findByGoogleSub('')).toBeNull();
+    expect(
+      (await repo.findById((await repo.findByEmail('c@example.com'))!.id))?.googleSub,
+    ).toBeUndefined();
+  });
 
   it('creates and finds a user by id and by (normalized) email', async () => {
     const created = await service.create({

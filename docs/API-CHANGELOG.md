@@ -35,7 +35,7 @@ Original 35 = 26 + 1 + 2 + 6. Current API = 26 + 1 + 2 + 18 = 47 operations.
 
 ## New endpoints
 
-`GET /api/health`, `GET /api/openapi.json` (disabled in production unless `OPENAPI_ENABLED=true`), `POST /api/auth/refresh`, `logout`, `logout-all`, `forgot-password`, `reset-password`, `GET /api/product`, `GET|PATCH|DELETE /api/product/{id}`, `GET /api/order`, `GET /api/order/{orderId}`, `PATCH /api/order/{orderId}/status`, `GET /api/admin/stats|customers|orders|audit`, `PATCH /api/product/{id}/stock` (Phase 1 finalisation).
+`GET /api/health`, `GET /api/openapi.json` (disabled in production unless `OPENAPI_ENABLED=true`), `POST /api/auth/refresh`, `logout`, `logout-all`, `forgot-password`, `reset-password`, `GET /api/product`, `GET|PATCH|DELETE /api/product/{id}`, `GET /api/order`, `GET /api/order/{orderId}`, `PATCH /api/order/{orderId}/status`, `GET /api/admin/stats|customers|orders|audit`, `PATCH /api/product/{id}/stock` (Phase 1 finalisation), `GET /api/auth/google/nonce`, `POST /api/auth/google` (Google sign-in).
 
 ## Behaviour changes that affect clients
 
@@ -45,6 +45,7 @@ Original 35 = 26 + 1 + 2 + 6. Current API = 26 + 1 + 2 + 18 = 47 operations.
 - **Authentication is deny-by-default.** Routes are protected unless explicitly public; roles are enforced on the server (`CUSTOMER`, `ADMIN`, read-only `DEMO_VIEWER`).
 - **Ids** in paths must be valid ObjectIds (400 otherwise); list endpoints are paginated with bounded `limit`.
 - **Orders** follow a state machine with atomic stock reservation, 30-minute expiry of unpaid orders and at most 3 pending orders per customer.
+- **Google sign-in:** `GET /api/auth/google/nonce` returns `{ nonce, nonceToken }`; `POST /api/auth/google` takes `{ credential, nonceToken }` and answers like `login`. The ID token is verified on the server (signature, issuer, audience, expiry, verified email, single-use nonce). It only ever creates or signs in `CUSTOMER` accounts; staff and demo emails get `403`, an email linked to another Google account `409`, and with `GOOGLE_CLIENT_ID` unset both routes answer `503`. Details: [`AUTHENTICATION.md`](AUTHENTICATION.md).
 - **Phase 1 finalisation (admin management):**
   - `PATCH /api/product/{id}/stock` takes `{ change: ±n }` (non-zero integer) and applies it atomically with the same operations as order reservations; stock can never go below zero (`409`).
   - `DELETE /api/product/{id}` is refused (`409`) while an unpaid or paid order still holds the product's stock; placed orders keep their own copy of each line, so deleting a product later never changes history.

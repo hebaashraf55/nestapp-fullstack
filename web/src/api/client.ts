@@ -246,6 +246,33 @@ export interface LoginResult {
 export const login = (email: string, password: string) =>
   apiSend<LoginResult>('POST', '/api/auth/login', { email, password });
 
+/** POST /api/auth/signup. Always the same generic answer, whether or not the email is registered. */
+export const signup = (name: string, email: string, password: string) =>
+  apiSend<{ message: string }>('POST', '/api/auth/signup', { name, email, password });
+
+/** POST /api/auth/verify-email with the 6-digit code from the email. */
+export const verifyEmail = (email: string, code: string) =>
+  apiSend<{ verified: true }>('POST', '/api/auth/verify-email', { email, code });
+
+/** POST /api/auth/resend-otp (cool-down and rate limits apply on the server). */
+export const resendVerification = (email: string) =>
+  apiSend<{ message: string }>('POST', '/api/auth/resend-otp', { email });
+
+/** POST /api/auth/forgot-password. Same answer for unknown emails. */
+export const forgotPassword = (email: string) =>
+  apiSend<{ message: string }>('POST', '/api/auth/forgot-password', { email });
+
+/** POST /api/auth/reset-password. Signs every existing session out on success. */
+export const resetPassword = (email: string, code: string, newPassword: string) =>
+  apiSend<{ passwordReset: true }>('POST', '/api/auth/reset-password', { email, code, newPassword });
+
+/** GET /api/auth/google/nonce: a one-time nonce for Google and the server's signed ticket for it. */
+export const getGoogleNonce = () => apiGet<{ nonce: string; nonceToken: string }>('/api/auth/google/nonce');
+
+/** POST /api/auth/google with Google's ID token. The server verifies it; the browser sends no profile data. */
+export const googleSignIn = (credential: string, nonceToken: string) =>
+  apiSend<LoginResult>('POST', '/api/auth/google', { credential, nonceToken });
+
 /** POST /api/auth/logout: ends this one session on the server. */
 export const logout = (refreshToken: string) =>
   apiSend<{ loggedOut: true }>('POST', '/api/auth/logout', { refreshToken });

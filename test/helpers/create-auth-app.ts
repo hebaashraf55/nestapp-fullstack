@@ -3,6 +3,8 @@ import { AdminModule } from '../../src/admin/admin.module';
 import { AuditModule } from '../../src/audit/audit.module';
 import { AuditRepository } from '../../src/audit/audit.repository';
 import { InMemoryAuditRepository } from './in-memory-audit.repository';
+import { GoogleIdTokenVerifier } from '../../src/auth/google-id-token.verifier';
+import { FakeGoogleVerifier } from './fake-google-verifier';
 import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AuthModule } from '../../src/auth/auth.module';
@@ -76,6 +78,8 @@ export interface AuthTestApp {
   carts: InMemoryCartsRepository;
   orders: InMemoryOrdersRepository;
   audit: InMemoryAuditRepository;
+  /** Stands in for Google's ID-token verification (see fake-google-verifier.ts). */
+  google: FakeGoogleVerifier;
   /** The request throttle's counters, so tests can inspect or move its clock. */
   throttler: RateLimiter;
   ordersService: OrdersService;
@@ -106,6 +110,7 @@ export async function createAuthApp(
   const audit = new InMemoryAuditRepository();
   const throttler = new RateLimiter();
   const mail = new CapturingMailSender();
+  const google = new FakeGoogleVerifier();
   const moduleRef = await Test.createTestingModule({
     imports: [
       UsersModule.register(env),
@@ -144,6 +149,8 @@ export async function createAuthApp(
     .useValue(audit)
     .overrideProvider(MailSender)
     .useValue(mail)
+    .overrideProvider(GoogleIdTokenVerifier)
+    .useValue(google)
     .compile();
   const app = moduleRef.createNestApplication();
   configureApp(app, env, throttler);
@@ -165,6 +172,7 @@ export async function createAuthApp(
     carts,
     orders,
     audit,
+    google,
     throttler,
     ordersService: moduleRef.get(OrdersService),
     couponLimiter: moduleRef.get(CouponAttemptLimiter),

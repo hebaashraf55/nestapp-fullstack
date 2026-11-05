@@ -12,6 +12,8 @@ import { MailMessage, MailSender } from '../../src/mail/mail-sender';
 import { seedUsers } from '../../src/seed/seed-users';
 import { Role } from '../../src/users/role';
 import { UsersService } from '../../src/users/users.service';
+import { GoogleIdTokenVerifier } from '../../src/auth/google-id-token.verifier';
+import { FakeGoogleVerifier } from '../helpers/fake-google-verifier';
 
 /*
  * End to end against a REAL MongoDB: the production AppModule (real Mongoose repositories, guards,
@@ -53,12 +55,15 @@ suite('NOMA API end to end on a real MongoDB', () => {
     THROTTLE_LIMIT: '100000',
   });
   const mail = new CapturingMail();
+  const google = new FakeGoogleVerifier();
   let app: INestApplication;
 
   const start = async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule.register(env)] })
       .overrideProvider(MailSender)
       .useValue(mail)
+      .overrideProvider(GoogleIdTokenVerifier)
+      .useValue(google)
       .compile();
     app = moduleRef.createNestApplication();
     configureApp(app, env);
@@ -133,6 +138,35 @@ suite('NOMA API end to end on a real MongoDB', () => {
     const stored = await conn.collection('users').findOne({ email });
     expect(stored?.passwordHash).toMatch(/^scrypt\$/); // hashed, never the plain password
     expect(JSON.stringify(stored)).not.toContain(password);
+  });
+
+  it('signs up with Google into MongoDB, links the existing verified customer, and refuses staff', async () => {
+    const viaGoogle = async (email: string, sub: string) => {
+      const n = (await http().get('/api/auth/google/nonce')).body.data;
+      return http()
+        .post('/api/auth/google')
+        .send({
+          credential: google.issue({ email, sub, name: 'G User' }, n.nonce),
+          nonceToken: n.nonceToken,
+        });
+    };
+    const created = await viaGoogle('e2e-google@example.com', 'g-e2e-new');
+    expect(created.status).toBe(200);
+    expect(created.body.data.user).toMatchObject({ role: 'CUSTOMER', isDemo: false });
+    // The customer registered with a password above is linked, not duplicated.
+    const linked = await viaGoogle('e2e-customer@example.com', 'g-e2e-linked');
+    expect(linked.body.data.user.email).toBe('e2e-customer@example.com');
+    expect((await viaGoogle(ADMIN.email, 'g-e2e-admin')).status).toBe(403);
+    const conn = app.get<Connection>(getConnectionToken());
+    expect(
+      await conn.collection('users').countDocuments({ email: 'e2e-customer@example.com' }),
+    ).toBe(1);
+    expect(
+      (await conn.collection('users').findOne({ email: ADMIN.email }))?.googleSub,
+    ).toBeUndefined();
+    expect(
+      (await conn.collection('users').findOne({ googleSub: 'g-e2e-new' }))?.emailVerified,
+    ).toBe(true);
   });
 
   it('rejects a wrong password, a missing, a forged and an expired token', async () => {

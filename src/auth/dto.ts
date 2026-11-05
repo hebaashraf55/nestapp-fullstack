@@ -24,6 +24,11 @@ export const emailOnlySchema = z.strictObject({ email });
 export const loginSchema = z.strictObject({ email, password: loginPassword });
 export const refreshSchema = z.strictObject({ refreshToken });
 export const resetPasswordSchema = z.strictObject({ email, code, newPassword });
+/** The Google ID token (a JWT) from Google Identity Services, plus the server-issued nonce ticket. */
+export const googleSignInSchema = z.strictObject({
+  credential: z.string().min(100).max(4096),
+  nonceToken: z.string().min(20).max(1000),
+});
 
 export type SignupDto = z.infer<typeof signupSchema>;
 export type VerifyEmailDto = z.infer<typeof verifyEmailSchema>;
@@ -31,6 +36,7 @@ export type EmailOnlyDto = z.infer<typeof emailOnlySchema>;
 export type LoginDto = z.infer<typeof loginSchema>;
 export type RefreshDto = z.infer<typeof refreshSchema>;
 export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;
+export type GoogleSignInDto = z.infer<typeof googleSignInSchema>;
 
 /** Validates and normalizes a request body. Error details name the field, never echo its value. */
 export class ZodBodyPipe<T extends z.ZodType> implements PipeTransform<unknown, z.infer<T>> {

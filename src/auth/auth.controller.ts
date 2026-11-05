@@ -6,6 +6,8 @@ import { CurrentUser, Public } from './decorators';
 import {
   EmailOnlyDto,
   emailOnlySchema,
+  GoogleSignInDto,
+  googleSignInSchema,
   LoginDto,
   loginSchema,
   RefreshDto,
@@ -51,6 +53,19 @@ export class AuthController {
   @HttpCode(200)
   login(@Body(new ZodBodyPipe(loginSchema)) dto: LoginDto, @Req() req: Request) {
     return this.auth.login(dto, ipOf(req));
+  }
+
+  @Public()
+  @Get('google/nonce')
+  googleNonce() {
+    return this.auth.googleNonce();
+  }
+
+  @Public()
+  @Post('google')
+  @HttpCode(200)
+  google(@Body(new ZodBodyPipe(googleSignInSchema)) dto: GoogleSignInDto, @Req() req: Request) {
+    return this.auth.googleSignIn(dto, ipOf(req));
   }
 
   @Public()

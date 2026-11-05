@@ -49,6 +49,12 @@ const envObject = z.object({
     }),
   ),
   JWT_SECRET: optionalString(z.string().min(32, { error: 'must be at least 32 characters' })),
+  /** OAuth 2.0 Web client id from Google Cloud. Unset: "Continue with Google" is switched off. */
+  GOOGLE_CLIENT_ID: optionalString(
+    z.string().regex(/^[\w-]+\.apps\.googleusercontent\.com$/, {
+      error: 'must be a Google OAuth client id ending in .apps.googleusercontent.com',
+    }),
+  ),
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(60).max(86_400).default(900),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   /**

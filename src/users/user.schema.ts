@@ -25,6 +25,10 @@ export class User {
 
   @Prop({ required: true, default: 0 })
   tokenVersion!: number;
+
+  /** Google "sub". Sparse: most accounts have none, and absent values never collide. */
+  @Prop({ type: String, unique: true, sparse: true })
+  googleSub?: string;
 }
 
 export type UserDocument = HydratedDocument<User>;

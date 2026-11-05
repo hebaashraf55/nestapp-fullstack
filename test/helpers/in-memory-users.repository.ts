@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { Role } from '../../src/users/role';
 import {
   DuplicateEmailError,
+  DuplicateGoogleAccountError,
   NewUser,
   UserPageFilter,
   UserRecord,
@@ -32,6 +33,9 @@ export class InMemoryUsersRepository extends UsersRepository {
     if ([...this.records.values()].some((u) => u.email === user.email)) {
       throw new DuplicateEmailError();
     }
+    if (user.googleSub && [...this.records.values()].some((u) => u.googleSub === user.googleSub)) {
+      throw new DuplicateGoogleAccountError();
+    }
     const record: UserRecord = {
       ...user,
       id: randomBytes(12).toString('hex'),
@@ -60,6 +64,29 @@ export class InMemoryUsersRepository extends UsersRepository {
     this.check();
     const record = this.records.get(id);
     if (record) this.records.set(id, { ...record, role, isDemo });
+  }
+
+  async findByGoogleSub(sub: string): Promise<UserRecord | null> {
+    this.check();
+    return [...this.records.values()].find((u) => u.googleSub === sub) ?? null;
+  }
+
+  async linkGoogle(id: string, sub: string, replacePasswordHash?: string): Promise<boolean> {
+    this.check();
+    const record = this.records.get(id);
+    if (!record || record.googleSub) return false;
+    if ([...this.records.values()].some((u) => u.googleSub === sub)) {
+      throw new DuplicateGoogleAccountError();
+    }
+    this.records.set(id, {
+      ...record,
+      googleSub: sub,
+      emailVerified: true,
+      ...(replacePasswordHash
+        ? { passwordHash: replacePasswordHash, tokenVersion: record.tokenVersion + 1 }
+        : {}),
+    });
+    return true;
   }
 
   async markEmailVerified(id: string): Promise<void> {

@@ -31,3 +31,6 @@ export function saveTheme(theme: Theme): void {
     // Not persisted; the choice still applies for this page view.
   }
 }
+
+/** The theme currently shown (what the toggle last applied). */
+export const getTheme = (): Theme => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');

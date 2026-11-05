@@ -26,8 +26,17 @@ services:
         value: "1"
       - key: OPENAPI_ENABLED
         value: "true"
+      # disabled: no email provider yet (email sign-up and password reset cannot complete).
+      # For working email set MAIL_TRANSPORT=smtp plus SMTP_URL and MAIL_FROM (see docs/AUTHENTICATION.md).
       - key: MAIL_TRANSPORT
         value: disabled
+      - key: SMTP_URL
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      # OAuth Web client id from Google Cloud; leave empty to hide "Continue with Google".
+      - key: GOOGLE_CLIENT_ID
+        sync: false
       - key: CORS_ORIGINS
         value: https://noma-hebaashraf.onrender.com
       - key: JWT_SECRET
@@ -50,6 +59,9 @@ services:
     envVars:
       - key: VITE_API_BASE_URL
         value: https://noma-hebaashraf-api.onrender.com
+      # Same Google client id as the API (public by design); empty hides the Google button.
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
     routes:
       # Client-side routing: every path serves the app shell.
       - type: rewrite

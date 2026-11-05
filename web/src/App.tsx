@@ -14,6 +14,7 @@ import { Dashboard } from './pages/admin/Dashboard';
 import { Cart } from './pages/Cart';
 import { Checkout } from './pages/Checkout';
 import { Home } from './pages/Home';
+import { ForgotPassword, Register, ResetPassword, VerifyEmail } from './pages/AuthPages';
 import { Login } from './pages/Login';
 import { NotFound } from './pages/NotFound';
 import { OrderDetail } from './pages/OrderDetail';
@@ -45,6 +46,10 @@ export function App() {
               <Route path="audit" element={<AuditLog />} />
             </Route>
             <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />
+            <Route path="verify-email" element={<VerifyEmail />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password" element={<ResetPassword />} />
             <Route path="about" element={<About />} />
             <Route path="*" element={<NotFound />} />
           </Route>

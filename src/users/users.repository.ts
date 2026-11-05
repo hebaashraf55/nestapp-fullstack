@@ -12,6 +12,8 @@ export interface UserRecord {
   emailVerified: boolean;
   /** Embedded in access tokens; incrementing it invalidates every access token already issued. */
   tokenVersion: number;
+  /** Google account id ("sub") once the user has signed in with Google; absent otherwise. */
+  googleSub?: string;
   createdAt: Date;
 }
 
@@ -33,6 +35,14 @@ export class DuplicateEmailError extends Error {
   }
 }
 
+/** Thrown when a Google account is already linked to a different user. */
+export class DuplicateGoogleAccountError extends Error {
+  constructor() {
+    super('Google account already linked');
+    this.name = 'DuplicateGoogleAccountError';
+  }
+}
+
 /** Persistence port. The Mongoose implementation is production; tests use an in-memory fake. */
 export abstract class UsersRepository {
   abstract findById(id: string): Promise<UserRecord | null>;
@@ -47,4 +57,12 @@ export abstract class UsersRepository {
   abstract resetPassword(id: string, passwordHash: string): Promise<void>;
   /** Invalidates every access token already issued to this user. */
   abstract bumpTokenVersion(id: string): Promise<void>;
+  abstract findByGoogleSub(sub: string): Promise<UserRecord | null>;
+  /**
+   * Links a Google account to a user that has none yet and marks the email verified (Google verified
+   * it). With `replacePasswordHash`, also replaces the password and bumps tokenVersion, all in one
+   * atomic update. Returns false if the user already had a Google account linked (or is gone);
+   * throws DuplicateGoogleAccountError if that Google account belongs to someone else.
+   */
+  abstract linkGoogle(id: string, sub: string, replacePasswordHash?: string): Promise<boolean>;
 }

@@ -1,5 +1,7 @@
 import {
+  ConflictException,
   ForbiddenException,
+  ServiceUnavailableException,
   Inject,
   Injectable,
   Logger,
@@ -10,9 +12,15 @@ import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 
 import { ENV, Env } from '../config/env';
 import { MailSender } from '../mail/mail-sender';
 import { Role } from '../users/role';
-import { DuplicateEmailError, UserRecord } from '../users/users.repository';
+import {
+  DuplicateEmailError,
+  DuplicateGoogleAccountError,
+  UserRecord,
+} from '../users/users.repository';
 import { PublicUser, toPublicUser, UsersService } from '../users/users.service';
-import type { LoginDto, ResetPasswordDto, SignupDto, VerifyEmailDto } from './dto';
+import type { GoogleSignInDto, LoginDto, ResetPasswordDto, SignupDto, VerifyEmailDto } from './dto';
+import { GoogleIdTokenVerifier } from './google-id-token.verifier';
+import { GoogleNonceService } from './google-nonce.service';
 import { OtpPurpose, OtpRepository } from './otp.repository';
 import { hashPassword, verifyPassword } from './password';
 import { RateLimiter } from './rate-limiter';
@@ -32,6 +40,7 @@ export const LIMITS = {
   mailRequestsPerIp: 10,
   codeAttemptsPerIp: 20,
   refreshPerIp: 60,
+  googlePerIp: 30,
 } as const;
 
 export const GENERIC_ACCEPTED = {
@@ -66,6 +75,8 @@ export class AuthService {
     private readonly tokens: TokenService,
     private readonly mail: MailSender,
     private readonly limiter: RateLimiter,
+    private readonly google: GoogleIdTokenVerifier,
+    private readonly nonces: GoogleNonceService,
   ) {
     this.secret = env.JWT_SECRET ?? '';
     this.refreshTtlMs = env.REFRESH_TOKEN_TTL_DAYS * 86_400_000;
@@ -213,6 +224,101 @@ export class AuthService {
     await this.refreshTokens.revokeAllForUser(user.id);
     await this.otps.deleteForUser(user.id);
     return { passwordReset: true };
+  }
+
+  // --------------------------------------------------------------------------- Google sign-in
+
+  /** A fresh nonce for the browser to pass to Google, and the signed ticket that proves we issued it. */
+  googleNonce(): { nonce: string; nonceToken: string } {
+    if (!this.google.configured)
+      throw new ServiceUnavailableException('Google sign-in is not configured');
+    return this.nonces.issue();
+  }
+
+  /**
+   * Signs in (or up) with a Google ID token. Only verified claims are used; nothing about the user is
+   * taken from the browser. Google can only ever reach CUSTOMER accounts: it never creates staff or
+   * demo accounts and never signs in to one. Linking rules for an existing email:
+   *  - verified customer: link (Google has proven control of the same mailbox);
+   *  - unverified customer: link AND replace the password, revoking sessions, so whoever registered
+   *    the address without proving it (a "pre-hijacking" attempt) loses access;
+   *  - already linked to a different Google account: 409, never a second account for one email.
+   */
+  async googleSignIn(dto: GoogleSignInDto, ip: string): Promise<LoginResult> {
+    this.throttle(`google:ip:${ip}`, LIMITS.googlePerIp, WINDOW_15_MIN, true);
+    if (!this.google.configured)
+      throw new ServiceUnavailableException('Google sign-in is not configured');
+    const identity = await this.google.verify(dto.credential);
+    if (!identity || !this.nonces.consume(dto.nonceToken, identity.nonce)) {
+      throw new UnauthorizedException('Google sign-in could not be verified. Please try again.');
+    }
+    if (!identity.emailVerified) {
+      throw new ForbiddenException('Your Google email address is not verified.');
+    }
+    const email = identity.email.trim().toLowerCase();
+    let user = await this.users.findByGoogleSub(identity.sub);
+    if (!user) user = await this.linkOrCreateGoogleUser(identity.sub, email, identity.name);
+    if (user.role !== Role.CUSTOMER || user.isDemo) {
+      throw new ForbiddenException('This account signs in with its email and password.');
+    }
+    return { Credentials: await this.openSession(user), user: toPublicUser(user) };
+  }
+
+  private async linkOrCreateGoogleUser(
+    sub: string,
+    email: string,
+    name: string | undefined,
+  ): Promise<UserRecord> {
+    const existing = await this.users.findByEmail(email);
+    if (existing) {
+      if (existing.role !== Role.CUSTOMER || existing.isDemo) {
+        throw new ForbiddenException('This account signs in with its email and password.');
+      }
+      if (existing.googleSub) {
+        throw new ConflictException('This email is already linked to a different Google account.');
+      }
+      const replace = existing.emailVerified
+        ? undefined
+        : await hashPassword(randomBytes(32).toString('hex'));
+      let linked: boolean;
+      try {
+        linked = await this.users.linkGoogle(existing.id, sub, replace);
+      } catch (error) {
+        if (error instanceof DuplicateGoogleAccountError) return this.userByGoogleSub(sub);
+        throw error;
+      }
+      if (!linked)
+        throw new ConflictException('This email is already linked to a different Google account.');
+      if (replace) await this.refreshTokens.revokeAllForUser(existing.id);
+      return (await this.users.findById(existing.id)) as UserRecord;
+    }
+    try {
+      return await this.users.create({
+        email,
+        name: (name?.trim() || email.split('@')[0] || 'Customer').slice(0, 100),
+        // Unusable random password: the account signs in with Google, or sets one via "Forgot password".
+        passwordHash: await hashPassword(randomBytes(32).toString('hex')),
+        role: Role.CUSTOMER,
+        isDemo: false,
+        emailVerified: true,
+        googleSub: sub,
+      });
+    } catch (error) {
+      // A concurrent first sign-in with the same Google account won the race: use that account.
+      if (error instanceof DuplicateGoogleAccountError) return this.userByGoogleSub(sub);
+      if (error instanceof DuplicateEmailError) {
+        throw new ConflictException(
+          'An account for this email was just created. Please try again.',
+        );
+      }
+      throw error;
+    }
+  }
+
+  private async userByGoogleSub(sub: string): Promise<UserRecord> {
+    const user = await this.users.findByGoogleSub(sub);
+    if (!user) throw new ConflictException('Please try again.');
+    return user;
   }
 
   // ---------------------------------------------------------------------------------- internals

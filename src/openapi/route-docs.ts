@@ -26,6 +26,16 @@ export const ROUTE_DOCS: Record<string, RouteDoc> = {
     summary: 'Sign in',
     returns: '{ Credentials: { accessToken, refreshToken }, user }',
   },
+  'GET /api/auth/google/nonce': {
+    summary:
+      'A one-time nonce for Google sign-in, and its signed ticket (503 if Google is not configured)',
+    returns: '{ nonce, nonceToken }',
+  },
+  'POST /api/auth/google': {
+    summary:
+      'Sign in or up with a Google ID token ({ credential, nonceToken }); customers only, verified email required',
+    returns: '{ Credentials: { accessToken, refreshToken }, user }',
+  },
   'POST /api/auth/refresh': {
     summary: 'Rotate the refresh token; reuse of an old one revokes the session',
     returns: '{ Credentials }',
