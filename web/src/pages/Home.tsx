@@ -17,7 +17,7 @@ export function Home() {
       <section className="hero">
         <div className="hero__glow" aria-hidden="true" />
         <motion.p className="eyebrow" variants={rise} initial="hidden" animate="show" custom={0}>
-          A storefront in progress
+          Handmade homeware
         </motion.p>
         <motion.h1 variants={rise} initial="hidden" animate="show" custom={1}>
           Objects worth <em>lingering</em> over.
@@ -29,14 +29,23 @@ export function Home() {
         <motion.div variants={rise} initial="hidden" animate="show" custom={3}>
           <ApiStatus />
         </motion.div>
+        <motion.figure
+          className="hero__media"
+          aria-hidden="true"
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <img src="/catalogue/dune-stoneware-vase.jpg" alt="" width="400" height="500" />
+        </motion.figure>
       </section>
 
       <Featured />
 
       <section className="grid" aria-label="Project status">
         {[
-          ['Live now', 'Accounts and roles, authentication, and the catalogue with search, filters and pagination.'],
-          ['Next', 'Cart and coupons, then simulated checkout and orders.'],
+          ['Shop', 'A live catalogue with search, filters and pagination, read straight from the API.'],
+          ['Checkout', 'Server-priced cart, coupons, orders and a simulated payment flow.'],
           ['Always', 'No payment gateway. No card fields. Demo data is synthetic.'],
         ].map(([title, body], i) => (
           <motion.article

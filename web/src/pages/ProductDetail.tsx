@@ -4,6 +4,7 @@ import { ApiError, getProduct } from '../api/client';
 import { AddToCart } from '../components/AddToCart';
 import { useRemote } from '../hooks/useRemote';
 import { formatMoney } from '../lib/money';
+import { creditFor } from '../lib/photoCredits';
 
 export function ProductDetail() {
   const { id = '' } = useParams();
@@ -36,10 +37,21 @@ export function ProductDetail() {
 
   const p = product.data;
   const discounted = p.discountPercent > 0;
+  const shown = p.images[selected] ?? p.images[0];
+  const credit = creditFor(shown);
   return (
     <div className="page detail">
       <div className="detail__media">
-        <img src={p.images[selected] ?? p.images[0]} alt={p.name} width="400" height="500" />
+        <img src={shown} alt={p.name} width="400" height="500" />
+        {credit && (
+          <p className="credit">
+            Photo:{' '}
+            <a href={credit.url} target="_blank" rel="noreferrer">
+              {credit.photographer}
+            </a>{' '}
+            on Unsplash
+          </p>
+        )}
         {p.images.length > 1 && (
           <ul className="thumbs" aria-label="Product images">
             {p.images.map((src, i) => (

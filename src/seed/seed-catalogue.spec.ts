@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   InMemoryBrandsRepository,
   InMemoryCategoriesRepository,
@@ -5,7 +7,14 @@ import {
 } from '../../test/helpers/in-memory-catalogue.repositories';
 import { computeSalePriceCents } from '../catalogue/catalogue.services';
 import { imageRef } from '../catalogue/dto';
-import { SEED_BRANDS, SEED_CATEGORIES, SEED_PRODUCTS } from './catalogue-data';
+import { slugify } from '../catalogue/slug';
+import {
+  imagePathFor,
+  legacyImagePathFor,
+  SEED_BRANDS,
+  SEED_CATEGORIES,
+  SEED_PRODUCTS,
+} from './catalogue-data';
 import { seedCatalogue } from './seed-catalogue';
 
 const repos = () => ({
@@ -39,9 +48,32 @@ describe('seedCatalogue', () => {
     const first = [...r.products.records.values()][0]!;
     await r.products.update(first.id, { stock: 999 });
     const again = await seedCatalogue(r.brands, r.categories, r.products);
-    expect(again.products).toEqual({ created: 0, existing: SEED_PRODUCTS.length });
+    expect(again.products).toEqual({
+      created: 0,
+      existing: SEED_PRODUCTS.length,
+      imagesUpdated: 0,
+    });
     expect(r.products.records.size).toBe(SEED_PRODUCTS.length);
     expect(r.products.records.get(first.id)!.stock).toBe(999);
+  });
+
+  it('switches a seeded product still on the old SVG to its photo, but keeps an admin-chosen image', async () => {
+    const r = repos();
+    await seedCatalogue(r.brands, r.categories, r.products);
+    const [a, b] = [...r.products.records.values()];
+    await r.products.update(a!.id, { images: [legacyImagePathFor(a!.slug)] });
+    await r.products.update(b!.id, { images: ['/catalogue/admin-choice.webp'] });
+    const again = await seedCatalogue(r.brands, r.categories, r.products);
+    expect(again.products.imagesUpdated).toBe(1);
+    expect(r.products.records.get(a!.id)!.images).toEqual([imagePathFor(a!.slug)]);
+    expect(r.products.records.get(b!.id)!.images).toEqual(['/catalogue/admin-choice.webp']);
+  });
+
+  it('has a photo file for every seeded product', () => {
+    for (const p of SEED_PRODUCTS) {
+      const slug = slugify(p.name);
+      expect(existsSync(join(__dirname, '../../web/public', imagePathFor(slug)))).toBe(true);
+    }
   });
 
   it('has unique product names and an out-of-stock example', () => {

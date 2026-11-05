@@ -9,6 +9,7 @@ import {
 import { slugify } from '../catalogue/slug';
 import {
   imagePathFor,
+  legacyImagePathFor,
   SEED_BRANDS,
   SEED_CATEGORIES,
   SEED_PRODUCTS,
@@ -18,7 +19,7 @@ import {
 export interface CatalogueSeedResult {
   brands: { created: number; existing: number };
   categories: { created: number; existing: number };
-  products: { created: number; existing: number };
+  products: { created: number; existing: number; imagesUpdated: number };
 }
 
 const SEEDER = 'seed';
@@ -49,7 +50,8 @@ async function seedTaxonomy(
 
 /**
  * Idempotent: records are matched by slug and an existing one is left untouched, so re-running never
- * duplicates data or overwrites an admin's edits. Every seeded record is flagged `isDemo` (synthetic).
+ * duplicates data or overwrites an admin's edits. The one exception: a seeded product whose images are
+ * still exactly the old default SVG is switched to its photo (an admin-chosen image is never replaced). Every seeded record is flagged `isDemo` (synthetic).
  */
 export async function seedCatalogue(
   brands: BrandsRepository,
@@ -60,10 +62,16 @@ export async function seedCatalogue(
   const c = await seedTaxonomy(categories, SEED_CATEGORIES);
   let created = 0;
   let existing = 0;
+  let imagesUpdated = 0;
   for (const p of SEED_PRODUCTS) {
     const slug = slugify(p.name);
-    if (await products.findBySlug(slug)) {
+    const found = await products.findBySlug(slug);
+    if (found) {
       existing++;
+      if (found.images.length === 1 && found.images[0] === legacyImagePathFor(slug)) {
+        await products.update(found.id, { images: [imagePathFor(slug)] });
+        imagesUpdated++;
+      }
       continue;
     }
     const category = c.byName.get(p.category);
@@ -89,6 +97,6 @@ export async function seedCatalogue(
   return {
     brands: { created: b.created, existing: b.existing },
     categories: { created: c.created, existing: c.existing },
-    products: { created, existing },
+    products: { created, existing, imagesUpdated },
   };
 }

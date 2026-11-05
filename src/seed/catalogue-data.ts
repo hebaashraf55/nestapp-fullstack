@@ -1,6 +1,7 @@
 /*
  * Synthetic demo catalogue. Every brand, category and product here is invented for the portfolio demo
- * (no real companies, trademarks or photographs). Images are original abstract SVGs in web/public/catalogue.
+ * (no real companies or trademarks). Product images are free-licence Unsplash photos stored in
+ * web/public/catalogue; the photographers are credited in web/public/catalogue/CREDITS.md and on the About page.
  */
 export interface SeedTaxonomy {
   name: string;
@@ -31,7 +32,7 @@ export const SEED_CATEGORIES: SeedTaxonomy[] = [
 export const SEED_PRODUCTS: SeedProduct[] = [
   {
     name: 'Dune Stoneware Vase',
-    description: 'A tall hand-glazed vase with a soft sand finish.',
+    description: 'A round hand-glazed vase with a soft cream finish.',
     priceCents: 7800,
     discountPercent: 0,
     stock: 14,
@@ -49,7 +50,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Mirage Espresso Set',
-    description: 'Four small cups with a speckled cream glaze and matching saucers.',
+    description: 'White porcelain cups with matching saucers, sold as a set of four.',
     priceCents: 5400,
     discountPercent: 0,
     stock: 9,
@@ -58,7 +59,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Amber Tumbler Pair',
-    description: 'Two heavy tumblers in warm amber glass.',
+    description: 'Two ribbed tumblers in smoky amber and sea-green glass.',
     priceCents: 3200,
     discountPercent: 0,
     stock: 30,
@@ -67,7 +68,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Reed Carafe',
-    description: 'A slim blown-glass carafe with a cork stopper.',
+    description: 'A slim blown-glass carafe with a glass stopper.',
     priceCents: 3900,
     discountPercent: 10,
     stock: 12,
@@ -76,7 +77,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Tide Wine Glasses',
-    description: 'A set of four stemless glasses with a gentle ripple.',
+    description: 'A set of four fine-rimmed wine glasses in clear crystal.',
     priceCents: 6200,
     discountPercent: 0,
     stock: 0,
@@ -94,7 +95,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Nile Cotton Cushion',
-    description: 'A woven cotton cushion cover with a quiet river pattern.',
+    description: 'A woven cotton cushion cover in mustard and sand.',
     priceCents: 2800,
     discountPercent: 0,
     stock: 40,
@@ -103,7 +104,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Sandstone Table Runner',
-    description: 'A long table runner in natural undyed cotton.',
+    description: 'A long hemstitched table runner in natural undyed linen.',
     priceCents: 3500,
     discountPercent: 0,
     stock: 18,
@@ -112,7 +113,7 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
   {
     name: 'Lantern Table Lamp',
-    description: 'A ceramic-based lamp with a warm linen shade.',
+    description: 'A walnut-stem lamp with a warm linen shade.',
     priceCents: 12900,
     discountPercent: 0,
     stock: 5,
@@ -139,5 +140,8 @@ export const SEED_PRODUCTS: SeedProduct[] = [
   },
 ];
 
-/** Image path for a seeded product, matching the generated SVG files. */
-export const imagePathFor = (slug: string) => `/catalogue/${slug}.svg`;
+/** Image path for a seeded product, matching the photo files in web/public/catalogue. */
+export const imagePathFor = (slug: string) => `/catalogue/${slug}.jpg`;
+
+/** The abstract SVG an earlier seed used. Still served so old order snapshots keep their image. */
+export const legacyImagePathFor = (slug: string) => `/catalogue/${slug}.svg`;
