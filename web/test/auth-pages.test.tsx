@@ -116,6 +116,21 @@ describe('Continue with Google', () => {
     expect(calls.find((c) => c.path === '/api/auth/google')!.body).toEqual({ credential: 'google.id.token', nonceToken: 'ticket-1-xxxxxxxxxxxxxxxx' });
   });
 
+  it('redraws Google’s button in the matching style when the theme changes', async () => {
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '123-abc.apps.googleusercontent.com');
+    const themes: unknown[] = [];
+    window.google = {
+      accounts: { id: { initialize: () => undefined, renderButton: (_el, o) => themes.push(o.theme), cancel: () => undefined } },
+    };
+    mockApi((c) => (c.path === '/api/auth/google/nonce' ? ok({ nonce: 'n', nonceToken: 'ticket-xxxxxxxxxxxxxxxxxxxx' }) : undefined));
+    await renderApp('/login');
+    await waitFor(() => expect(themes).toContain('outline'));
+    await userEvent.click(screen.getByRole('button', { name: 'Dark mode' }));
+    await waitFor(() => expect(themes.at(-1)).toBe('filled_black'));
+    await userEvent.click(screen.getByRole('button', { name: 'Dark mode' }));
+    await waitFor(() => expect(themes.at(-1)).toBe('outline'));
+  });
+
   it('shows the server’s refusal (for example a staff email) and stays on the sign-in page', async () => {
     vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '123-abc.apps.googleusercontent.com');
     let callback: ((r: { credential?: string }) => void) | undefined;

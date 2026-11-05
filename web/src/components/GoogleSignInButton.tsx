@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getGoogleNonce } from '../api/client';
-import { getTheme } from '../theme/theme';
+import { getTheme, THEME_EVENT } from '../theme/theme';
 
 /** Minimal typing for Google Identity Services (https://accounts.google.com/gsi/client). */
 interface GoogleId {
@@ -54,6 +54,13 @@ export function GoogleSignInButton({ onCredential, disabled }: { onCredential: (
   const [attempt, setAttempt] = useState(0);
   const handler = useRef(onCredential);
   handler.current = onCredential;
+
+  // Google draws its own button, so redraw it (with a fresh nonce) when the theme changes.
+  useEffect(() => {
+    const redraw = () => setAttempt((n) => n + 1);
+    window.addEventListener(THEME_EVENT, redraw);
+    return () => window.removeEventListener(THEME_EVENT, redraw);
+  }, []);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return;

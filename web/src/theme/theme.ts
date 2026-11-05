@@ -16,11 +16,15 @@ export function readSavedTheme(): Theme {
   }
 }
 
+/** Fired on window whenever the theme is applied, so third-party widgets can restyle. */
+export const THEME_EVENT = 'noma:theme';
+
 export function applyTheme(theme: Theme): void {
   const root = document.documentElement;
   if (theme === 'dark') root.dataset.theme = 'dark';
   else delete root.dataset.theme;
   document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[theme]);
+  window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: theme }));
 }
 
 export function saveTheme(theme: Theme): void {
