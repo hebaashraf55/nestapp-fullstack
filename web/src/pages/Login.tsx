@@ -1,19 +1,23 @@
 import { type FormEvent, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { getSession } from '../auth/session';
+
+/** Staff land on the admin dashboard, customers on their cart, unless they were sent here from a page. */
+const homeFor = (role: string | undefined) => (role === 'ADMIN' || role === 'DEMO_VIEWER' ? '/admin' : '/cart');
 
 export function Login() {
   const { user, signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
-  const target = from && from.startsWith('/') && !from.startsWith('//') ? from : '/cart';
+  const safeFrom = from && from.startsWith('/') && !from.startsWith('//') ? from : null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (user) return <Navigate to={target} replace />;
+  if (user) return <Navigate to={safeFrom ?? homeFor(user.role)} replace />;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -21,7 +25,7 @@ export function Login() {
     setError(null);
     try {
       await signIn(email.trim(), password);
-      navigate(target, { replace: true });
+      navigate(safeFrom ?? homeFor(getSession()?.user.role), { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setBusy(false);

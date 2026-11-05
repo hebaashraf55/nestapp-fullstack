@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { ApiStatus } from '../components/ApiStatus';
 import { Featured } from '../components/Featured';
 
@@ -17,24 +18,32 @@ export function Home() {
       <section className="hero">
         <div className="hero__glow" aria-hidden="true" />
         <motion.p className="eyebrow" variants={rise} initial="hidden" animate="show" custom={0}>
-          Handmade homeware
+          Home decor & lifestyle
         </motion.p>
         <motion.h1 variants={rise} initial="hidden" animate="show" custom={1}>
-          Objects worth <em>lingering</em> over.
+          Thoughtful objects. <em>Timeless spaces.</em>
         </motion.h1>
         <motion.p className="lede" variants={rise} initial="hidden" animate="show" custom={2}>
-          Atelier Noor is a full-stack portfolio project: a NestJS API and this React storefront. Browse the
-          catalogue below: every piece is read live from the API and is synthetic demo data.
+          NOMA gathers ceramics, glassware, textiles and lighting made to be lived with. A portfolio storefront:
+          every piece is read live from the API and is synthetic demo data.
         </motion.p>
-        <motion.div variants={rise} initial="hidden" animate="show" custom={3}>
+        <motion.div className="hero__actions" variants={rise} initial="hidden" animate="show" custom={3}>
+          <Link to="/shop" className="btn">
+            Shop the collection
+          </Link>
+          <Link to="/about" className="btn btn--ghost">
+            About NOMA
+          </Link>
+        </motion.div>
+        <motion.div variants={rise} initial="hidden" animate="show" custom={4}>
           <ApiStatus />
         </motion.div>
         <motion.figure
           className="hero__media"
           aria-hidden="true"
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 1, ease: [0.22, 1, 0.36, 1] }}
         >
           <img src="/catalogue/dune-stoneware-vase.jpg" alt="" width="400" height="500" />
         </motion.figure>
@@ -51,11 +60,14 @@ export function Home() {
           <motion.article
             key={title}
             className="card"
-            initial={{ opacity: 0, y: 28 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ delay: 0.08 * i, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
+            <span className="card__num" aria-hidden="true">
+              0{i + 1}
+            </span>
             <h2>{title}</h2>
             <p>{body}</p>
           </motion.article>

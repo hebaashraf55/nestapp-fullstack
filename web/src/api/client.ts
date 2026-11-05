@@ -113,11 +113,26 @@ async function send<T>(path: string, options: SendOptions, canRetry = true): Pro
     const { statusCode, message, details } = body.error as Partial<ErrorBody>;
     throw new ApiError(
       typeof statusCode === 'number' ? statusCode : response.status,
-      typeof message === 'string' ? message : 'Request failed',
+      describeDetails(details) ?? (typeof message === 'string' ? message : 'Request failed'),
       details,
     );
   }
   throw new ApiError(response.status, 'Unexpected response from the server');
+}
+
+/**
+ * A validation failure arrives as a generic message ("Bad Request") plus per-field details.
+ * Show the details instead, e.g. "Phone: must be a valid phone number", so a form says what to fix.
+ */
+function describeDetails(details: unknown): string | undefined {
+  if (!Array.isArray(details)) return undefined;
+  const parts = details.flatMap((d) => {
+    if (!isRecord(d) || typeof d.message !== 'string') return [];
+    if (typeof d.field !== 'string' || d.field === '') return [d.message];
+    const label = d.field.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[._]/g, ' ');
+    return [`${label.charAt(0).toUpperCase()}${label.slice(1).toLowerCase()}: ${d.message}`];
+  });
+  return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
 export const apiGet = <T>(path: string, signal?: AbortSignal) => send<T>(path, { method: 'GET', signal });
@@ -455,3 +470,87 @@ export const setOrderStatus = (id: string, status: 'SHIPPED' | 'DELIVERED' | 'CA
 /** POST /api/order/:id/refund. Simulated: no money moves. */
 export const refundOrder = (id: string) =>
   orderCall(apiSend('POST', `/api/order/${encodeURIComponent(id)}/refund`, {}));
+
+// ---------------------------------------------------------------------------------------------
+// Admin catalogue management (ADMIN only; the API answers 403 to everyone else)
+// ---------------------------------------------------------------------------------------------
+
+/** Everything an admin may set on a product. The sale price is always computed by the server. */
+export interface ProductInput {
+  name: string;
+  description: string;
+  images: string[];
+  priceCents: number;
+  discountPercent: number;
+  stock: number;
+  categoryId: string;
+  brandId: string;
+}
+
+const isProduct = (v: unknown): v is Product => hasString(v, 'id') && hasString(v, 'name') && isRecord(v) && typeof v.stock === 'number';
+const productCall = async (call: Promise<unknown>): Promise<Product> => {
+  const data = await call;
+  if (!isProduct(data)) throw new ApiError(200, 'Unexpected response from the server');
+  return data;
+};
+
+/** POST /api/product/create */
+export const createProduct = (input: ProductInput) => productCall(apiSend('POST', '/api/product/create', input));
+
+/** PATCH /api/product/:id. Send only the fields that changed; the rest are kept. */
+export const updateProduct = (id: string, patch: Partial<ProductInput>) =>
+  productCall(apiSend('PATCH', `/api/product/${encodeURIComponent(id)}`, patch));
+
+/** PATCH /api/product/:id/stock. A relative change, applied atomically; stock never goes below zero. */
+export const adjustProductStock = (id: string, change: number) =>
+  productCall(apiSend('PATCH', `/api/product/${encodeURIComponent(id)}/stock`, { change }));
+
+/** DELETE /api/product/:id. Refused (409) while an unpaid or paid order still holds the product. */
+export const deleteProduct = (id: string) => apiSend<{ deleted: true }>('DELETE', `/api/product/${encodeURIComponent(id)}`);
+
+export type CouponStatus = 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discountType: 'PERCENT';
+  discountPercent: number;
+  expiresAt: string;
+  expired: boolean;
+  active: boolean;
+  status: CouponStatus;
+  ordersPlaced: number;
+  isDemo: boolean;
+  createdAt: string;
+}
+
+export interface CouponInput {
+  code: string;
+  discountPercent: number;
+  expiresAt: string; // ISO date-time
+  active: boolean;
+}
+
+const isCoupon = (v: unknown): v is Coupon => hasString(v, 'code') && hasString(v, 'status');
+const couponCall = async (call: Promise<unknown>): Promise<Coupon> => {
+  const data = await call;
+  if (!isCoupon(data)) throw new ApiError(200, 'Unexpected response from the server');
+  return data;
+};
+
+/** GET /api/coupon (administrators only) */
+export async function getCoupons(signal?: AbortSignal): Promise<Coupon[]> {
+  const data = await apiGet<unknown>('/api/coupon', signal);
+  if (!Array.isArray(data) || !data.every(isCoupon)) throw new ApiError(200, 'Unexpected response from the server');
+  return data;
+}
+
+/** POST /api/coupon */
+export const createCoupon = (input: CouponInput) => couponCall(apiSend('POST', '/api/coupon', input));
+
+/** PATCH /api/coupon/:id. The code itself can never change. */
+export const updateCoupon = (id: string, patch: Partial<Omit<CouponInput, 'code'>>) =>
+  couponCall(apiSend('PATCH', `/api/coupon/${encodeURIComponent(id)}`, patch));
+
+/** DELETE /api/coupon/:id. Placed orders keep their own copy of the code. */
+export const deleteCoupon = (id: string) => apiSend<{ deleted: true }>('DELETE', `/api/coupon/${encodeURIComponent(id)}`);

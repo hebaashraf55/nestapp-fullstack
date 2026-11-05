@@ -10,3 +10,6 @@ class FakeIntersectionObserver {
   }
 }
 globalThis.IntersectionObserver = FakeIntersectionObserver as unknown as typeof IntersectionObserver;
+
+// jsdom does not implement scrolling; the layout scrolls to the top on each navigation.
+window.scrollTo = (() => {}) as typeof window.scrollTo;

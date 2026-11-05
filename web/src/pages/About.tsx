@@ -4,8 +4,9 @@ export function About() {
   return (
     <section className="prose">
       <h1>About this build</h1>
+      <p className="lede">NOMA — thoughtful objects, timeless spaces.</p>
       <p>
-        Atelier Noor is a portfolio storefront: a NestJS + MongoDB API with a React front end. The
+        NOMA is a portfolio storefront: a NestJS + MongoDB API with a React front end. The
         brands, products and prices are invented for the demo.
       </p>
       <p>

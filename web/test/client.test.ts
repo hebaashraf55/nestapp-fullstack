@@ -30,6 +30,22 @@ describe('api client', () => {
     expect(error).toMatchObject({ statusCode: 400, message: 'Bad Request', details: ['x'] });
   });
 
+  it('explains a validation failure field by field instead of a bare "Bad Request"', async () => {
+    const details = [
+      { field: 'address', message: 'Too small: expected string to have >=5 characters' },
+      { field: 'phone', message: 'must be a valid phone number' },
+    ];
+    mockFetch(() =>
+      json({ success: false, error: { statusCode: 400, error: 'Bad Request', message: 'Bad Request', details }, timestamp: 't' }, 400),
+    );
+    const error = await apiGet('/api/x').catch((e: unknown) => e);
+    expect(error).toMatchObject({
+      statusCode: 400,
+      message: 'Address: Too small: expected string to have >=5 characters · Phone: must be a valid phone number',
+      details,
+    });
+  });
+
   it('reports an unreachable server', async () => {
     mockFetch(() => Promise.reject(new TypeError('failed')));
     await expect(apiGet('/api/x')).rejects.toMatchObject({ statusCode: 0, message: 'Cannot reach the server' });

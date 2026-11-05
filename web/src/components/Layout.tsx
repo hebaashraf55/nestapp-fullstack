@@ -1,9 +1,20 @@
 import { MotionConfig } from 'framer-motion';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useCart } from '../cart/CartContext';
+import { ThemeToggle } from './ThemeToggle';
+
+/** BrowserRouter keeps the old scroll position on navigation; start each new page at the top. */
+function useScrollToTopOnNavigate() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+}
 
 export function Layout() {
+  useScrollToTopOnNavigate();
   const { user, signOut } = useAuth();
   const { itemCount } = useCart();
   return (
@@ -15,8 +26,8 @@ export function Layout() {
         Portfolio demo · checkout is simulated · no payment is ever taken and no card details are collected
       </div>
       <header className="header">
-        <Link to="/" className="brand" aria-label="Atelier Noor home">
-          Atelier <em>Noor</em>
+        <Link to="/" className="brand" aria-label="NOMA home">
+          NOMA
         </Link>
         <nav aria-label="Primary">
           <NavLink to="/" end>
@@ -36,14 +47,21 @@ export function Layout() {
           ) : (
             <NavLink to="/login">Sign in</NavLink>
           )}
+          <ThemeToggle />
         </nav>
       </header>
       <main id="main">
         <Outlet />
       </main>
       <footer className="footer">
-        <span>© Atelier Noor — a portfolio project by heba.dev</span>
-        <span>Simulated checkout · synthetic data only</span>
+        <div>
+          <p className="footer__brand">NOMA</p>
+          <p className="footer__tagline">Thoughtful objects. Timeless spaces.</p>
+        </div>
+        <div className="footer__meta">
+          <span>© NOMA — a portfolio project by heba.dev</span>
+          <span>Simulated checkout · synthetic data only</span>
+        </div>
       </footer>
     </MotionConfig>
   );

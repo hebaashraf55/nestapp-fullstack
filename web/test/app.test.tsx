@@ -51,6 +51,17 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByRole('link', { name: 'About this build' })).toHaveAttribute('aria-current', 'page'));
   });
 
+  it('starts each new page at the top instead of keeping the old scroll position', async () => {
+    vi.stubGlobal('fetch', vi.fn(ok));
+    const scrollTo = vi.spyOn(window, 'scrollTo');
+    renderAt('/');
+    scrollTo.mockClear();
+    await userEvent.click(screen.getByRole('link', { name: 'About this build' }));
+    await screen.findByRole('heading', { name: 'About this build' });
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+    scrollTo.mockRestore();
+  });
+
   it('renders a not-found page for unknown routes', () => {
     vi.stubGlobal('fetch', vi.fn(ok));
     renderAt('/nope');

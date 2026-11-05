@@ -3,8 +3,11 @@ import { AuthProvider } from './auth/AuthContext';
 import { CartProvider } from './cart/CartContext';
 import { Layout } from './components/Layout';
 import { About } from './pages/About';
+import { AdminCoupons } from './pages/admin/AdminCoupons';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminOrders } from './pages/admin/AdminOrders';
+import { AdminProductForm } from './pages/admin/AdminProductForm';
+import { AdminProducts } from './pages/admin/AdminProducts';
 import { AuditLog } from './pages/admin/AuditLog';
 import { Customers } from './pages/admin/Customers';
 import { Dashboard } from './pages/admin/Dashboard';
@@ -33,7 +36,11 @@ export function App() {
             <Route path="orders/:id" element={<OrderDetail />} />
             <Route path="admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
+              <Route path="products" element={<AdminProducts />} />
+              <Route path="products/new" element={<AdminProductForm />} />
+              <Route path="products/:id" element={<AdminProductForm />} />
               <Route path="orders" element={<AdminOrders />} />
+              <Route path="coupons" element={<AdminCoupons />} />
               <Route path="customers" element={<Customers />} />
               <Route path="audit" element={<AuditLog />} />
             </Route>
