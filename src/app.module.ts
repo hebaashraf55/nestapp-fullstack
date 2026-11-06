@@ -1,3 +1,4 @@
+import { ReviewsModule } from './reviews/reviews.module';
 import { ShopperModule } from './shopper/shopper.module';
 import { DynamicModule, Module } from '@nestjs/common';
 import { AdminModule } from './admin/admin.module';
@@ -29,6 +30,7 @@ export class AppModule {
         OrdersModule.register(env),
         AuditModule.register(env),
         ShopperModule.register(env),
+        ReviewsModule.register(env),
         AdminModule.register(),
         OpenApiModule.register(env),
       ],

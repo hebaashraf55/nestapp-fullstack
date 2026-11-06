@@ -95,6 +95,17 @@ suite('order storage and stock reservation (real MongoDB)', () => {
     expect(await orders.countStockHoldingWithProduct({ $ne: '' } as unknown as string)).toBe(0);
   });
 
+  it('knows whether a user bought a product: paid, shipped or delivered orders only', async () => {
+    await orders.create(newOrder()); // unpaid
+    expect(await orders.hasPurchased('u1', oid(1))).toBe(false);
+    await orders.create(newOrder({ status: 'PAID', paymentStatus: 'SIMULATED_PAID' }));
+    expect(await orders.hasPurchased('u1', oid(1))).toBe(true);
+    expect(await orders.hasPurchased('u2', oid(1))).toBe(false);
+    expect(await orders.hasPurchased('u1', oid(2))).toBe(false);
+    expect(await orders.hasPurchased('u1', 'nope')).toBe(false);
+    expect(await orders.hasPurchased({ $ne: 'x' } as unknown as string, oid(1))).toBe(false);
+  });
+
   it('counts placed orders per coupon code', async () => {
     await orders.create(newOrder({ couponCode: 'SAVE10', couponPercent: 10 }));
     await orders.create(newOrder({ couponCode: 'SAVE10', couponPercent: 10, status: 'CANCELLED' }));

@@ -11,6 +11,7 @@ import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminOrders } from './pages/admin/AdminOrders';
 import { AdminProductForm } from './pages/admin/AdminProductForm';
 import { AdminProducts } from './pages/admin/AdminProducts';
+import { AdminReviews } from './pages/admin/AdminReviews';
 import { AuditLog } from './pages/admin/AuditLog';
 import { Customers } from './pages/admin/Customers';
 import { Dashboard } from './pages/admin/Dashboard';
@@ -48,6 +49,7 @@ export function App() {
               <Route path="products/:id" element={<AdminProductForm />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="coupons" element={<AdminCoupons />} />
+              <Route path="reviews" element={<AdminReviews />} />
               <Route path="customers" element={<Customers />} />
               <Route path="audit" element={<AuditLog />} />
             </Route>

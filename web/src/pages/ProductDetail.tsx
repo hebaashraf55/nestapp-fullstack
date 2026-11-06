@@ -4,6 +4,7 @@ import { ApiError, getProduct, type Product } from '../api/client';
 import { AddToCart } from '../components/AddToCart';
 import { WishButton } from '../components/ProductCard';
 import { ProductRow } from '../components/ProductRow';
+import { Reviews } from '../reviews/Reviews';
 import { useRemote } from '../hooks/useRemote';
 import { formatMoney } from '../lib/money';
 import { creditFor } from '../lib/photoCredits';
@@ -88,6 +89,7 @@ export function ProductDetail() {
   const shown = p.images[selected] ?? p.images[0];
   const credit = creditFor(shown);
   return (
+    <>
     <div className="page detail">
       <div className="detail__media">
         <img src={shown} alt={p.name} width="400" height="500" />
@@ -151,9 +153,11 @@ export function ProductDetail() {
           Checkout is simulated. No payment is ever taken.
         </p>
       </div>
-      <div className="detail__more">
-        <AlsoViewed current={p.id} />
-      </div>
     </div>
+    <div className="page detail__more">
+      <Reviews productId={p.id} />
+      <AlsoViewed current={p.id} />
+    </div>
+    </>
   );
 }

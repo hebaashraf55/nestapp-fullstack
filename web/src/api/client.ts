@@ -627,3 +627,66 @@ export const getRecentlyViewed = (signal?: AbortSignal) => apiGet<ProductList>('
 export const recordView = (id: string) => apiSend<ProductList>('POST', `/api/recently-viewed/${encodeURIComponent(id)}`);
 export const mergeRecentlyViewed = (productIds: string[]) =>
   apiSend<ProductList>('POST', '/api/recently-viewed/merge', { productIds });
+
+// ---------------------------------------------------------------------------------------------
+// Reviews
+// ---------------------------------------------------------------------------------------------
+
+export interface RatingSummary {
+  average: number | null;
+  count: number;
+  /** Approved reviews per star; index 0 = 1 star. */
+  distribution: [number, number, number, number, number];
+}
+export interface Review {
+  id: string;
+  authorName: string;
+  rating: number;
+  title: string;
+  body: string;
+  verifiedPurchase: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export interface OwnReview extends Review {
+  productId: string;
+  status: ReviewStatus;
+  moderationNote: string | null;
+}
+export interface ModerationReview extends OwnReview {
+  product: { id: string; name: string } | null;
+  moderatedAt: string | null;
+}
+export type ReviewSort = 'newest' | 'highest' | 'lowest';
+export interface ProductReviews {
+  summary: RatingSummary;
+  items: Review[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  mine: OwnReview | null;
+}
+export interface ReviewInput {
+  rating: number;
+  title: string;
+  body: string;
+}
+
+export async function getProductReviews(productId: string, sort: ReviewSort, page: number, signal?: AbortSignal) {
+  const data = await apiGet<unknown>(`/api/product/${encodeURIComponent(productId)}/reviews?sort=${sort}&page=${page}&limit=5`, signal);
+  if (!isRecord(data) || !Array.isArray(data.items) || !isRecord(data.summary)) throw new ApiError(200, 'Unexpected response from the server');
+  return data as unknown as ProductReviews;
+}
+export const writeReview = (productId: string, input: ReviewInput) =>
+  apiSend<OwnReview>('POST', `/api/product/${encodeURIComponent(productId)}/reviews`, input);
+export const editReview = (id: string, input: ReviewInput) => apiSend<OwnReview>('PATCH', `/api/reviews/${encodeURIComponent(id)}`, input);
+export const deleteReview = (id: string) => apiSend<{ deleted: true }>('DELETE', `/api/reviews/${encodeURIComponent(id)}`);
+export const getModerationQueue = (status: ReviewStatus | '', page: number, signal?: AbortSignal) =>
+  apiGet<{ items: ModerationReview[]; page: number; limit: number; total: number; totalPages: number }>(
+    `/api/reviews/moderation?page=${page}${status ? `&status=${status}` : ''}`,
+    signal,
+  );
+export const moderateReview = (id: string, status: 'APPROVED' | 'REJECTED', note?: string) =>
+  apiSend<OwnReview>('PATCH', `/api/reviews/${encodeURIComponent(id)}/moderation`, note ? { status, note } : { status });

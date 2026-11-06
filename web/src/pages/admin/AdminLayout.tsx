@@ -44,6 +44,7 @@ export function AdminLayout() {
         <NavLink to="/admin/products">Products</NavLink>
         <NavLink to="/admin/orders">Orders</NavLink>
         {!readOnly && <NavLink to="/admin/coupons">Coupons</NavLink>}
+        <NavLink to="/admin/reviews">Reviews</NavLink>
         <NavLink to="/admin/customers">Customers</NavLink>
         {!readOnly && <NavLink to="/admin/audit">Audit log</NavLink>}
       </nav>

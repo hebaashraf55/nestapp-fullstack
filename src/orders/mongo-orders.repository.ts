@@ -169,6 +169,19 @@ export class MongoOrdersRepository extends OrdersRepository {
     return rows.map((r) => ({ productId: r._id, units: r.units }));
   }
 
+  async hasPurchased(userId: string, productId: string) {
+    if (typeof userId !== 'string' || !isValidObjectId(productId)) return false;
+    const count = await this.model
+      .countDocuments({
+        userId: { $eq: userId },
+        status: { $in: ['PAID', 'SHIPPED', 'DELIVERED'] },
+        'items.productId': { $eq: productId },
+      })
+      .limit(1)
+      .exec();
+    return count > 0;
+  }
+
   async countByCouponCode() {
     const rows = await this.model
       .aggregate<{ _id: string; count: number }>([

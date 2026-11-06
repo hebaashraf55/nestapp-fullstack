@@ -90,6 +90,16 @@ export class InMemoryOrdersRepository extends OrdersRepository {
       .map(([productId, u]) => ({ productId, units: u }));
   }
 
+  async hasPurchased(userId: string, productId: string) {
+    this.check();
+    return [...this.records.values()].some(
+      (o) =>
+        o.userId === userId &&
+        ['PAID', 'SHIPPED', 'DELIVERED'].includes(o.status) &&
+        o.items.some((i) => i.productId === productId),
+    );
+  }
+
   async countByCouponCode() {
     this.check();
     const counts: Record<string, number> = {};

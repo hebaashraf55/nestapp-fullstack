@@ -7,12 +7,12 @@
 
 | Result | Count |
 |---|---|
-| Passed (EXECUTED) | 937 |
+| Passed (EXECUTED) | 979 |
 | Failed | 0 |
-| Skipped (NOT EXECUTED) | 58 |
-| Total | 995 |
+| Skipped (NOT EXECUTED) | 65 |
+| Total | 1044 |
 
-**MongoDB integration: NOT EXECUTED.** 58 tests in `test/db` were skipped because no real MongoDB was configured for this run (`MONGODB_TEST_URI` unset). Everything below that says EXECUTED ran against in-memory fakes, not MongoDB.
+**MongoDB integration: NOT EXECUTED.** 65 tests in `test/db` were skipped because no real MongoDB was configured for this run (`MONGODB_TEST_URI` unset). Everything below that says EXECUTED ran against in-memory fakes, not MongoDB.
 
 ## Per-suite results
 
@@ -41,17 +41,19 @@
 | `test/db/admin.mongo.spec.ts` | 0 | 0 | 6 |
 | `test/db/auth.mongo.spec.ts` | 0 | 0 | 12 |
 | `test/db/cart.mongo.spec.ts` | 0 | 0 | 6 |
-| `test/db/catalogue.mongo.spec.ts` | 0 | 0 | 4 |
+| `test/db/catalogue.mongo.spec.ts` | 0 | 0 | 5 |
 | `test/db/e2e-api.mongo.spec.ts` | 0 | 0 | 9 |
-| `test/db/orders.mongo.spec.ts` | 0 | 0 | 8 |
+| `test/db/orders.mongo.spec.ts` | 0 | 0 | 9 |
+| `test/db/reviews.mongo.spec.ts` | 0 | 0 | 5 |
 | `test/db/shopper.mongo.spec.ts` | 0 | 0 | 3 |
 | `test/db/users.mongo.spec.ts` | 0 | 0 | 10 |
-| `test/demo-readonly.spec.ts` | 32 | 0 | 0 |
+| `test/demo-readonly.spec.ts` | 36 | 0 | 0 |
 | `test/guards.spec.ts` | 4 | 0 | 0 |
-| `test/matrix.spec.ts` | 229 | 0 | 0 |
+| `test/matrix.spec.ts` | 258 | 0 | 0 |
 | `test/mongo-malformed-input.spec.ts` | 21 | 0 | 0 |
 | `test/openapi.spec.ts` | 14 | 0 | 0 |
 | `test/orders.spec.ts` | 87 | 0 | 0 |
+| `test/reviews.spec.ts` | 9 | 0 | 0 |
 | `test/shopper.spec.ts` | 15 | 0 | 0 |
 | `test/throttle.spec.ts` | 23 | 0 | 0 |
 
@@ -66,36 +68,36 @@
 | 5 | `GET /api/auth/profile` | ported | `GET /api/auth/profile` | matrix row below (3 feature suite(s)) |
 | 6 | `POST /api/auth/upload-file` | dropped | — | removed-route probe: EXECUTED |
 | 7 | `POST /api/auth/upload-files` | dropped | — | removed-route probe: EXECUTED |
-| 8 | `POST /api/brand/create` | ported | `POST /api/brand/create` | matrix row below (7 feature suite(s)) |
-| 9 | `GET /api/brand` | ported | `GET /api/brand` | matrix row below (7 feature suite(s)) |
-| 10 | `GET /api/brand/:id` | ported | `GET /api/brand/{id}` | matrix row below (7 feature suite(s)) |
-| 11 | `PATCH /api/brand/:id` | ported | `PATCH /api/brand/{id}` | matrix row below (7 feature suite(s)) |
-| 12 | `DELETE /api/brand/:id` | ported | `DELETE /api/brand/{id}` | matrix row below (7 feature suite(s)) |
-| 13 | `POST /api/category/create` | ported | `POST /api/category/create` | matrix row below (8 feature suite(s)) |
-| 14 | `GET /api/category` | ported | `GET /api/category` | matrix row below (8 feature suite(s)) |
-| 15 | `GET /api/category/:id` | ported | `GET /api/category/{id}` | matrix row below (8 feature suite(s)) |
-| 16 | `PATCH /api/category/:id` | ported | `PATCH /api/category/{id}` | matrix row below (8 feature suite(s)) |
-| 17 | `DELETE /api/category/:id` | ported | `DELETE /api/category/{id}` | matrix row below (8 feature suite(s)) |
-| 18 | `POST /api/product/create` | ported | `POST /api/product/create` | matrix row below (7 feature suite(s)) |
+| 8 | `POST /api/brand/create` | ported | `POST /api/brand/create` | matrix row below (8 feature suite(s)) |
+| 9 | `GET /api/brand` | ported | `GET /api/brand` | matrix row below (8 feature suite(s)) |
+| 10 | `GET /api/brand/:id` | ported | `GET /api/brand/{id}` | matrix row below (8 feature suite(s)) |
+| 11 | `PATCH /api/brand/:id` | ported | `PATCH /api/brand/{id}` | matrix row below (8 feature suite(s)) |
+| 12 | `DELETE /api/brand/:id` | ported | `DELETE /api/brand/{id}` | matrix row below (8 feature suite(s)) |
+| 13 | `POST /api/category/create` | ported | `POST /api/category/create` | matrix row below (9 feature suite(s)) |
+| 14 | `GET /api/category` | ported | `GET /api/category` | matrix row below (9 feature suite(s)) |
+| 15 | `GET /api/category/:id` | ported | `GET /api/category/{id}` | matrix row below (9 feature suite(s)) |
+| 16 | `PATCH /api/category/:id` | ported | `PATCH /api/category/{id}` | matrix row below (9 feature suite(s)) |
+| 17 | `DELETE /api/category/:id` | ported | `DELETE /api/category/{id}` | matrix row below (9 feature suite(s)) |
+| 18 | `POST /api/product/create` | ported | `POST /api/product/create` | matrix row below (8 feature suite(s)) |
 | 19 | `GET /api/product/test` | dropped (now captured by GET /api/product/{id}; "test" is not a valid id, so it is rejected with 400) | — | removed-route probe: EXECUTED |
 | 20 | `POST /api/coupon` | ported | `POST /api/coupon` | matrix row below (7 feature suite(s)) |
 | 21 | `GET /api/coupon` | ported | `GET /api/coupon` | matrix row below (7 feature suite(s)) |
 | 22 | `GET /api/coupon/:id` | ported | `GET /api/coupon/{id}` | matrix row below (7 feature suite(s)) |
 | 23 | `PATCH /api/coupon/:id` | ported | `PATCH /api/coupon/{id}` | matrix row below (7 feature suite(s)) |
 | 24 | `DELETE /api/coupon/:id` | ported | `DELETE /api/coupon/{id}` | matrix row below (7 feature suite(s)) |
-| 25 | `POST /api/cart` | ported | `POST /api/cart` | matrix row below (8 feature suite(s)) |
-| 26 | `GET /api/cart` | ported | `GET /api/cart` | matrix row below (8 feature suite(s)) |
-| 27 | `PATCH /api/cart/:productId` | ported | `PATCH /api/cart/{productId}` | matrix row below (8 feature suite(s)) |
-| 28 | `DELETE /api/cart/:productId` | ported | `DELETE /api/cart/{productId}` | matrix row below (8 feature suite(s)) |
+| 25 | `POST /api/cart` | ported | `POST /api/cart` | matrix row below (9 feature suite(s)) |
+| 26 | `GET /api/cart` | ported | `GET /api/cart` | matrix row below (9 feature suite(s)) |
+| 27 | `PATCH /api/cart/:productId` | ported | `PATCH /api/cart/{productId}` | matrix row below (9 feature suite(s)) |
+| 28 | `DELETE /api/cart/:productId` | ported | `DELETE /api/cart/{productId}` | matrix row below (9 feature suite(s)) |
 | 29 | `POST /api/cart/apply-coupon` | ported | `POST /api/cart/apply-coupon` | matrix row below (5 feature suite(s)) |
-| 30 | `POST /api/order` | ported | `POST /api/order` | matrix row below (6 feature suite(s)) |
-| 31 | `POST /api/order/checkout/:orderId` | replaced (Stripe removed) | `POST /api/order/{orderId}/simulate-payment` | matrix row below (6 feature suite(s)) |
-| 32 | `POST /api/order/refund/:orderId` | replaced (Stripe removed) | `POST /api/order/{orderId}/refund` | matrix row below (6 feature suite(s)) |
+| 30 | `POST /api/order` | ported | `POST /api/order` | matrix row below (7 feature suite(s)) |
+| 31 | `POST /api/order/checkout/:orderId` | replaced (Stripe removed) | `POST /api/order/{orderId}/simulate-payment` | matrix row below (7 feature suite(s)) |
+| 32 | `POST /api/order/refund/:orderId` | replaced (Stripe removed) | `POST /api/order/{orderId}/refund` | matrix row below (7 feature suite(s)) |
 | 33 | `GET /cats` | dropped | — | removed-route probe: EXECUTED |
 | 34 | `GET /uploads/* (static files)` | dropped | — | removed-route probe: EXECUTED |
 | 35 | `WebSocket gateway (public / sayHi)` | dropped | — | dependency-absence check: EXECUTED |
 
-## B. Every endpoint of this API (59) × cross-cutting checks
+## B. Every endpoint of this API (65) × cross-cutting checks
 
 Cells come from `test/matrix.spec.ts`, which builds its cases from the generated OpenAPI file. `n/a` = the check does not apply to that route.
 
@@ -117,22 +119,22 @@ Cells come from `test/matrix.spec.ts`, which builds its cases from the generated
 | `POST /api/auth/reset-password` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | auth-google.spec.ts (EXECUTED)<br>demo-readonly.spec.ts (EXECUTED) |
 | `POST /api/auth/signup` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | auth-google.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED) |
 | `POST /api/auth/verify-email` | public | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | EXECUTED | n/a | auth-google.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED) |
-| `GET /api/brand` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `POST /api/brand/create` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `DELETE /api/brand/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `GET /api/brand/{id}` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `PATCH /api/brand/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `GET /api/cart` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
-| `POST /api/cart` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `GET /api/brand` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `POST /api/brand/create` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `DELETE /api/brand/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `GET /api/brand/{id}` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `PATCH /api/brand/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `GET /api/cart` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `POST /api/cart` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
 | `POST /api/cart/apply-coupon` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
-| `DELETE /api/cart/{productId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
-| `PATCH /api/cart/{productId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `DELETE /api/cart/{productId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `PATCH /api/cart/{productId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
 | `GET /api/catalogue/home` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | shopper.spec.ts (EXECUTED) |
-| `GET /api/category` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `POST /api/category/create` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `DELETE /api/category/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `GET /api/category/{id}` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `PATCH /api/category/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `GET /api/category` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `POST /api/category/create` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `DELETE /api/category/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `GET /api/category/{id}` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `PATCH /api/category/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
 | `GET /api/coupon` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `POST /api/coupon` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `DELETE /api/coupon/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
@@ -140,22 +142,28 @@ Cells come from `test/matrix.spec.ts`, which builds its cases from the generated
 | `PATCH /api/coupon/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>auth-google.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED) |
 | `GET /api/health` | public | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | app.spec.ts (EXECUTED)<br>auth.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
 | `GET /api/openapi.json` | public | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | none (matrix only) |
-| `GET /api/order` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `POST /api/order` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `GET /api/order/{orderId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `POST /api/order/{orderId}/refund` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `POST /api/order/{orderId}/simulate-payment` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `PATCH /api/order/{orderId}/status` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `GET /api/product` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `GET /api/order` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `POST /api/order` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `GET /api/order/{orderId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `POST /api/order/{orderId}/refund` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `POST /api/order/{orderId}/simulate-payment` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `PATCH /api/order/{orderId}/status` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>admin.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `GET /api/product` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
 | `GET /api/product/compare` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | shopper.spec.ts (EXECUTED) |
-| `POST /api/product/create` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
-| `DELETE /api/product/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
-| `GET /api/product/{id}` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
-| `PATCH /api/product/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
-| `PATCH /api/product/{id}/stock` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `POST /api/product/create` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `DELETE /api/product/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `GET /api/product/{id}` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | EXECUTED | n/a | n/a | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `PATCH /api/product/{id}` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `PATCH /api/product/{id}/stock` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `GET /api/product/{productId}/reviews` | public (a valid token changes the result) | n/a | n/a | n/a | n/a | n/a | EXECUTED | n/a | n/a | EXECUTED | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
+| `POST /api/product/{productId}/reviews` | CUSTOMER | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | admin-management.spec.ts (EXECUTED)<br>cart.spec.ts (EXECUTED)<br>catalogue.spec.ts (EXECUTED)<br>db/e2e-api.mongo.spec.ts (NOT EXECUTED (skipped))<br>demo-readonly.spec.ts (EXECUTED)<br>orders.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED)<br>throttle.spec.ts (EXECUTED) |
 | `GET /api/recently-viewed` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | demo-readonly.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
 | `POST /api/recently-viewed/merge` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | demo-readonly.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
 | `POST /api/recently-viewed/{productId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | n/a | n/a | n/a | demo-readonly.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
+| `GET /api/reviews/moderation` | ADMIN or DEMO_VIEWER | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | EXECUTED | reviews.spec.ts (EXECUTED) |
+| `DELETE /api/reviews/{id}` | CUSTOMER or ADMIN | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | n/a | n/a | n/a | demo-readonly.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED) |
+| `PATCH /api/reviews/{id}` | CUSTOMER | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | demo-readonly.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED) |
+| `PATCH /api/reviews/{id}/moderation` | ADMIN | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | EXECUTED | n/a | demo-readonly.spec.ts (EXECUTED)<br>reviews.spec.ts (EXECUTED) |
 | `GET /api/wishlist` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | n/a | n/a | n/a | n/a | n/a | demo-readonly.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
 | `POST /api/wishlist/merge` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | n/a | EXECUTED | EXECUTED | n/a | demo-readonly.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |
 | `DELETE /api/wishlist/{productId}` | any signed-in user | EXECUTED | EXECUTED | n/a | n/a | EXECUTED | EXECUTED | n/a | n/a | n/a | demo-readonly.spec.ts (EXECUTED)<br>shopper.spec.ts (EXECUTED) |

@@ -33,6 +33,9 @@ How each backend feature is proven. Three kinds of automated evidence exist:
 | Wishlist (add, remove, merge guest list, 100 cap) | Yes | Yes (concurrent adds, no duplicates) | Own list only; sign-in required; viewer 403 | shopper, shopper.mongo | Real |
 | Recently viewed (newest first, 20 cap, merge) | Yes | Yes (order, cap, operator-object id) | Own history only | shopper, shopper.mongo | Real |
 | Product comparison (2–4) | Yes | Yes | Public | shopper | Real |
+| Reviews and ratings (one per customer per product, sort, paging, summary) | Yes | Yes (6 racing submissions → 1 review; summary; operator input) | Customers write; author edits; author or admin deletes; others 404 | reviews, reviews.mongo | Real |
+| Verified purchase | Yes | Yes (paid/shipped/delivered only) | Decided by the server; a client-sent flag is rejected (400) | reviews, orders.mongo | Real |
+| Review moderation (pending → approved/rejected, note, re-moderation on edit) | Yes | Yes | Admin decides (audited); viewer reads synthetic only; customer 403 | reviews, reviews.mongo, demo-readonly | Real |
 | Validation, 404, 409, error envelope | Yes | Yes | — | app, catalogue, orders, e2e | Real |
 | Rate limiting | Yes | In-memory counters | — | throttle, auth | Real, per process (not shared across instances) |
 | OpenAPI accuracy | Generated from the running app; a test fails if a route lacks a summary or the file drifts | — | — | openapi | Real |

@@ -8,6 +8,9 @@ import { FakeGoogleVerifier } from './fake-google-verifier';
 import { ShopperModule } from '../../src/shopper/shopper.module';
 import { ShopperListsRepository } from '../../src/shopper/shopper.repository';
 import { InMemoryShopperListsRepository } from './in-memory-shopper.repository';
+import { ReviewsModule } from '../../src/reviews/reviews.module';
+import { ReviewsRepository } from '../../src/reviews/reviews.repository';
+import { InMemoryReviewsRepository } from './in-memory-reviews.repository';
 import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AuthModule } from '../../src/auth/auth.module';
@@ -84,6 +87,7 @@ export interface AuthTestApp {
   /** Stands in for Google's ID-token verification (see fake-google-verifier.ts). */
   google: FakeGoogleVerifier;
   shopper: InMemoryShopperListsRepository;
+  reviews: InMemoryReviewsRepository;
   /** The request throttle's counters, so tests can inspect or move its clock. */
   throttler: RateLimiter;
   ordersService: OrdersService;
@@ -116,6 +120,7 @@ export async function createAuthApp(
   const mail = new CapturingMailSender();
   const google = new FakeGoogleVerifier();
   const shopper = new InMemoryShopperListsRepository();
+  const reviews = new InMemoryReviewsRepository();
   const moduleRef = await Test.createTestingModule({
     imports: [
       UsersModule.register(env),
@@ -127,6 +132,7 @@ export async function createAuthApp(
       OrdersModule.register(env),
       AuditModule.register(env),
       ShopperModule.register(env),
+      ReviewsModule.register(env),
       AdminModule.register(),
       OpenApiModule.register(env),
     ],
@@ -159,6 +165,8 @@ export async function createAuthApp(
     .useValue(google)
     .overrideProvider(ShopperListsRepository)
     .useValue(shopper)
+    .overrideProvider(ReviewsRepository)
+    .useValue(reviews)
     .compile();
   const app = moduleRef.createNestApplication();
   configureApp(app, env, throttler);
@@ -182,6 +190,7 @@ export async function createAuthApp(
     audit,
     google,
     shopper,
+    reviews,
     throttler,
     ordersService: moduleRef.get(OrdersService),
     couponLimiter: moduleRef.get(CouponAttemptLimiter),

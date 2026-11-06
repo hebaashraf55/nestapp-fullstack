@@ -70,6 +70,8 @@ export abstract class OrdersRepository {
     limit: number,
     demoOnly: boolean,
   ): Promise<{ productId: string; units: number }[]>;
+  /** Whether this user has a paid, shipped or delivered order containing the product. */
+  abstract hasPurchased(userId: string, productId: string): Promise<boolean>;
   /** Unpaid orders whose hold has run out. */
   abstract findOverdue(now: Date, limit: number): Promise<OrderRecord[]>;
   /**

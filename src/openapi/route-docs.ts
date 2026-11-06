@@ -114,6 +114,32 @@ export const ROUTE_DOCS: Record<string, RouteDoc> = {
     summary: 'Merge guest browsing history after sign-in (newest first)',
     returns: '{ productIds, items }',
   },
+  'GET /api/product/{productId}/reviews': {
+    summary:
+      'Approved reviews with the rating summary (average, count, stars); includes the caller’s own review in any state',
+    returns: '{ summary, items, page, limit, total, totalPages, mine }',
+  },
+  'POST /api/product/{productId}/reviews': {
+    summary:
+      'Write a review (customers; one per product; verified purchase is decided by the server; held for moderation)',
+    returns: 'your review',
+  },
+  'PATCH /api/reviews/{id}': {
+    summary: 'Edit your review; it goes back to moderation',
+    returns: 'your review',
+  },
+  'DELETE /api/reviews/{id}': {
+    summary: 'Delete your review (admins may delete any)',
+    returns: '{ deleted: true }',
+  },
+  'GET /api/reviews/moderation': {
+    summary: 'Reviews for moderation, newest first (?status=PENDING|APPROVED|REJECTED)',
+    returns: '{ items, page, limit, total, totalPages }',
+  },
+  'PATCH /api/reviews/{id}/moderation': {
+    summary: 'Approve or reject a review, with an optional note to the author (audited)',
+    returns: 'the review',
+  },
   'POST /api/coupon': {
     summary:
       'Create a coupon (code is immutable, 1–90 % off, must expire in the future, active by default)',
