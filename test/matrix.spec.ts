@@ -67,6 +67,8 @@ describe('route matrix: per-operation probes', () => {
     switch (op.method) {
       case 'POST':
         return agent.post(path);
+      case 'PUT':
+        return agent.put(path);
       case 'PATCH':
         return agent.patch(path);
       case 'DELETE':

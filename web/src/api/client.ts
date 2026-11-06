@@ -37,7 +37,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 interface SendOptions {
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   signal?: AbortSignal;
 }
@@ -136,7 +136,7 @@ function describeDetails(details: unknown): string | undefined {
 }
 
 export const apiGet = <T>(path: string, signal?: AbortSignal) => send<T>(path, { method: 'GET', signal });
-export const apiSend = <T>(method: 'POST' | 'PATCH' | 'DELETE', path: string, body?: unknown) =>
+export const apiSend = <T>(method: 'POST' | 'PUT' | 'PATCH' | 'DELETE', path: string, body?: unknown) =>
   send<T>(path, { method, body });
 
 export interface Health {
@@ -175,6 +175,9 @@ export interface Product {
   inStock: boolean;
   category: NamedRef | null;
   brand: NamedRef | null;
+  /** Material, colour, dimensions, care; any may be missing. */
+  specs?: { material?: string; color?: string; dimensions?: string; care?: string };
+  featured?: boolean;
   isDemo: boolean;
   createdAt: string;
 }
@@ -196,6 +199,8 @@ export interface ProductQuery {
   minPrice?: number; // cents
   maxPrice?: number; // cents
   inStock?: boolean;
+  featured?: boolean;
+  onSale?: boolean;
   sort?: ProductSort;
   page?: number;
   limit?: number;
@@ -581,3 +586,44 @@ export const updateCoupon = (id: string, patch: Partial<Omit<CouponInput, 'code'
 
 /** DELETE /api/coupon/:id. Placed orders keep their own copy of the code. */
 export const deleteCoupon = (id: string) => apiSend<{ deleted: true }>('DELETE', `/api/coupon/${encodeURIComponent(id)}`);
+
+// ---------------------------------------------------------------------------------------------
+// Homepage feed, comparison, wishlist and recently viewed
+// ---------------------------------------------------------------------------------------------
+
+export interface HomeCategory extends NamedRef {
+  count: number;
+  products: Product[];
+}
+export interface HomeFeed {
+  categories: HomeCategory[];
+  featured: Product[];
+  newArrivals: Product[];
+  onSale: Product[];
+  /** From real paid orders only; empty until something has sold. */
+  bestSellers: Product[];
+}
+
+/** GET /api/catalogue/home */
+export async function getHome(signal?: AbortSignal): Promise<HomeFeed> {
+  const data = await apiGet<unknown>('/api/catalogue/home', signal);
+  if (!isRecord(data) || !Array.isArray(data.categories)) throw new ApiError(200, 'Unexpected response from the server');
+  return data as unknown as HomeFeed;
+}
+
+/** GET /api/product/compare?ids=… (2–4 products, in this order) */
+export const compareProducts = (ids: string[], signal?: AbortSignal) =>
+  apiGet<Product[]>(`/api/product/compare?ids=${ids.map(encodeURIComponent).join(',')}`, signal);
+
+export interface ProductList {
+  productIds: string[];
+  items: Product[];
+}
+export const getWishlist = (signal?: AbortSignal) => apiGet<ProductList>('/api/wishlist', signal);
+export const addToWishlist = (id: string) => apiSend<ProductList>('PUT', `/api/wishlist/${encodeURIComponent(id)}`);
+export const removeFromWishlist = (id: string) => apiSend<ProductList>('DELETE', `/api/wishlist/${encodeURIComponent(id)}`);
+export const mergeWishlist = (productIds: string[]) => apiSend<ProductList>('POST', '/api/wishlist/merge', { productIds });
+export const getRecentlyViewed = (signal?: AbortSignal) => apiGet<ProductList>('/api/recently-viewed', signal);
+export const recordView = (id: string) => apiSend<ProductList>('POST', `/api/recently-viewed/${encodeURIComponent(id)}`);
+export const mergeRecentlyViewed = (productIds: string[]) =>
+  apiSend<ProductList>('POST', '/api/recently-viewed/merge', { productIds });

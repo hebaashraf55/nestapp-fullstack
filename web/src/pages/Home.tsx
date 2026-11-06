@@ -1,7 +1,13 @@
 import { motion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getHome, type HomeFeed } from '../api/client';
 import { ApiStatus } from '../components/ApiStatus';
-import { Featured } from '../components/Featured';
+import { ProductSkeletons } from '../components/ProductCard';
+import { ProductRow } from '../components/ProductRow';
+import { useRemote } from '../hooks/useRemote';
+import { useShopper } from '../shopper/ShopperContext';
+import { useProductsById } from '../shopper/useProducts';
 
 const rise = {
   hidden: { opacity: 0, y: 24 },
@@ -12,7 +18,105 @@ const rise = {
   }),
 };
 
+const sectionId = (slug: string) => `category-${slug}`;
+
+/** Highlights the category whose section is currently on screen. */
+function useActiveSection(ids: string[]): string | null {
+  const [active, setActive] = useState<string | null>(null);
+  const key = ids.join('|');
+  useEffect(() => {
+    if (!key || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { rootMargin: '-20% 0px -60% 0px' },
+    );
+    for (const id of key.split('|')) {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    }
+    return () => observer.disconnect();
+  }, [key]);
+  return active;
+}
+
+function CategoryNav({ feed, active }: { feed: HomeFeed; active: string | null }) {
+  const list = useRef<HTMLUListElement>(null);
+  // On phones the categories are a horizontal strip: keep the current one in view.
+  useEffect(() => {
+    const ul = list.current;
+    const chip = ul?.querySelector<HTMLElement>('[aria-current="true"]');
+    if (ul && chip && ul.scrollWidth > ul.clientWidth) ul.scrollTo({ left: chip.offsetLeft - ul.offsetLeft - 16, behavior: 'smooth' });
+  }, [active]);
+  return (
+    <nav className="catnav" aria-label="Shop by category">
+      <p className="catnav__title">Categories</p>
+      <ul ref={list}>
+        {feed.categories.map((c) => {
+          const id = sectionId(c.slug);
+          return (
+            <li key={c.id}>
+              <a href={`#${id}`} aria-current={active === id ? 'true' : undefined}>
+                <span>{c.name}</span>
+                <span className="catnav__count" aria-label={`${c.count} products`}>
+                  {c.count}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+      <Link to="/shop" className="catnav__all">
+        Browse everything
+      </Link>
+    </nav>
+  );
+}
+
+function RecentlyViewed() {
+  const { recent } = useShopper();
+  const { items } = useProductsById(recent.slice(0, 4));
+  return <ProductRow id="recently-viewed" title="Recently viewed" products={items} />;
+}
+
+function Feed({ feed }: { feed: HomeFeed }) {
+  const sections = feed.categories.filter((c) => c.products.length > 0);
+  const active = useActiveSection(sections.map((c) => sectionId(c.slug)));
+  if (feed.categories.every((c) => c.count === 0)) {
+    return <p className="notice">No products yet. Run the catalogue seed or add some as an admin.</p>;
+  }
+  return (
+    <div className="home">
+      <CategoryNav feed={feed} active={active} />
+      <div className="home__main">
+        <ProductRow id="featured" title="Featured" products={feed.featured.slice(0, 4)} more={{ to: '/shop?featured=true', label: 'View all' }} />
+        <ProductRow id="new-arrivals" title="New arrivals" products={feed.newArrivals.slice(0, 4)} more={{ to: '/shop?sort=newest', label: 'View all' }} />
+        <ProductRow
+          id="best-sellers"
+          title="Best sellers"
+          products={feed.bestSellers.slice(0, 4)}
+          note="Ranked by units in paid orders."
+        />
+        <ProductRow id="on-sale" title="On sale" products={feed.onSale.slice(0, 4)} more={{ to: '/shop?onSale=true', label: 'All offers' }} />
+        {sections.map((c) => (
+          <ProductRow
+            key={c.id}
+            id={sectionId(c.slug)}
+            title={c.name}
+            products={c.products}
+            more={{ to: `/shop?category=${c.id}`, label: `View all ${c.count}` }}
+          />
+        ))}
+        <RecentlyViewed />
+      </div>
+    </div>
+  );
+}
+
 export function Home() {
+  const feed = useRemote((s) => getHome(s), 'home');
   return (
     <>
       <section className="hero">
@@ -24,8 +128,8 @@ export function Home() {
           Thoughtful objects. <em>Timeless spaces.</em>
         </motion.h1>
         <motion.p className="lede" variants={rise} initial="hidden" animate="show" custom={2}>
-          NOMA gathers ceramics, glassware, textiles and lighting made to be lived with. A portfolio storefront:
-          every piece is read live from the API and is synthetic demo data.
+          Ceramics, glassware, textiles, lighting, furniture and kitchen pieces made to be lived with. A portfolio
+          storefront: every piece is read live from the API, and all products are invented demo data.
         </motion.p>
         <motion.div className="hero__actions" variants={rise} initial="hidden" animate="show" custom={3}>
           <Link to="/shop" className="btn">
@@ -49,30 +153,15 @@ export function Home() {
         </motion.figure>
       </section>
 
-      <Featured />
-
-      <section className="grid" aria-label="Project status">
-        {[
-          ['Shop', 'A live catalogue with search, filters and pagination, read straight from the API.'],
-          ['Checkout', 'Server-priced cart, coupons, orders and a simulated payment flow.'],
-          ['Always', 'No payment gateway. No card fields. Demo data is synthetic.'],
-        ].map(([title, body], i) => (
-          <motion.article
-            key={title}
-            className="card"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ delay: 0.08 * i, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <span className="card__num" aria-hidden="true">
-              0{i + 1}
-            </span>
-            <h2>{title}</h2>
-            <p>{body}</p>
-          </motion.article>
-        ))}
-      </section>
+      <div className="home-wrap">
+        {feed.phase === 'loading' && <ProductSkeletons count={8} />}
+        {feed.phase === 'error' && (
+          <p className="notice notice--bad" role="alert">
+            The catalogue is unavailable right now ({feed.error.message}).
+          </p>
+        )}
+        {feed.phase === 'ready' && <Feed feed={feed.data} />}
+      </div>
     </>
   );
 }

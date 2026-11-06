@@ -77,6 +77,19 @@ export class InMemoryOrdersRepository extends OrdersRepository {
       (o) => holding.includes(o.status) && o.items.some((i) => i.productId === productId),
     ).length;
   }
+  async bestSellers(limit: number, demoOnly: boolean) {
+    this.check();
+    const units = new Map<string, number>();
+    for (const o of this.records.values()) {
+      if (!['PAID', 'SHIPPED', 'DELIVERED'].includes(o.status) || (demoOnly && !o.isDemo)) continue;
+      for (const i of o.items) units.set(i.productId, (units.get(i.productId) ?? 0) + i.quantity);
+    }
+    return [...units.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, limit)
+      .map(([productId, u]) => ({ productId, units: u }));
+  }
+
   async countByCouponCode() {
     this.check();
     const counts: Record<string, number> = {};

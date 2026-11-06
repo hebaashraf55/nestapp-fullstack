@@ -5,6 +5,9 @@ import { AuditRepository } from '../../src/audit/audit.repository';
 import { InMemoryAuditRepository } from './in-memory-audit.repository';
 import { GoogleIdTokenVerifier } from '../../src/auth/google-id-token.verifier';
 import { FakeGoogleVerifier } from './fake-google-verifier';
+import { ShopperModule } from '../../src/shopper/shopper.module';
+import { ShopperListsRepository } from '../../src/shopper/shopper.repository';
+import { InMemoryShopperListsRepository } from './in-memory-shopper.repository';
 import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AuthModule } from '../../src/auth/auth.module';
@@ -80,6 +83,7 @@ export interface AuthTestApp {
   audit: InMemoryAuditRepository;
   /** Stands in for Google's ID-token verification (see fake-google-verifier.ts). */
   google: FakeGoogleVerifier;
+  shopper: InMemoryShopperListsRepository;
   /** The request throttle's counters, so tests can inspect or move its clock. */
   throttler: RateLimiter;
   ordersService: OrdersService;
@@ -111,6 +115,7 @@ export async function createAuthApp(
   const throttler = new RateLimiter();
   const mail = new CapturingMailSender();
   const google = new FakeGoogleVerifier();
+  const shopper = new InMemoryShopperListsRepository();
   const moduleRef = await Test.createTestingModule({
     imports: [
       UsersModule.register(env),
@@ -121,6 +126,7 @@ export async function createAuthApp(
       CartModule.register(env),
       OrdersModule.register(env),
       AuditModule.register(env),
+      ShopperModule.register(env),
       AdminModule.register(),
       OpenApiModule.register(env),
     ],
@@ -151,6 +157,8 @@ export async function createAuthApp(
     .useValue(mail)
     .overrideProvider(GoogleIdTokenVerifier)
     .useValue(google)
+    .overrideProvider(ShopperListsRepository)
+    .useValue(shopper)
     .compile();
   const app = moduleRef.createNestApplication();
   configureApp(app, env, throttler);
@@ -173,6 +181,7 @@ export async function createAuthApp(
     orders,
     audit,
     google,
+    shopper,
     throttler,
     ordersService: moduleRef.get(OrdersService),
     couponLimiter: moduleRef.get(CouponAttemptLimiter),

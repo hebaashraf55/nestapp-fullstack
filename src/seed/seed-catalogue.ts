@@ -19,7 +19,7 @@ import {
 export interface CatalogueSeedResult {
   brands: { created: number; existing: number };
   categories: { created: number; existing: number };
-  products: { created: number; existing: number; imagesUpdated: number };
+  products: { created: number; existing: number; imagesUpdated: number; specsAdded: number };
 }
 
 const SEEDER = 'seed';
@@ -63,6 +63,7 @@ export async function seedCatalogue(
   let created = 0;
   let existing = 0;
   let imagesUpdated = 0;
+  let specsAdded = 0;
   for (const p of SEED_PRODUCTS) {
     const slug = slugify(p.name);
     const found = await products.findBySlug(slug);
@@ -71,6 +72,15 @@ export async function seedCatalogue(
       if (found.images.length === 1 && found.images[0] === legacyImagePathFor(slug)) {
         await products.update(found.id, { images: [imagePathFor(slug)] });
         imagesUpdated++;
+      }
+      // Seeded products created before specifications existed get them once; anything an admin
+      // already set (specs or the featured flag) is left alone.
+      if (found.createdBy === SEEDER && Object.keys(found.specs ?? {}).length === 0) {
+        await products.update(found.id, {
+          specs: p.specs,
+          ...(found.featured ? {} : { featured: p.featured === true }),
+        });
+        specsAdded++;
       }
       continue;
     }
@@ -89,6 +99,8 @@ export async function seedCatalogue(
       stock: p.stock,
       categoryId: category.id,
       brandId: brand.id,
+      specs: p.specs,
+      featured: p.featured === true,
       isDemo: true,
       createdBy: SEEDER,
     });
@@ -97,6 +109,6 @@ export async function seedCatalogue(
   return {
     brands: { created: b.created, existing: b.existing },
     categories: { created: c.created, existing: c.existing },
-    products: { created, existing, imagesUpdated },
+    products: { created, existing, imagesUpdated, specsAdded },
   };
 }

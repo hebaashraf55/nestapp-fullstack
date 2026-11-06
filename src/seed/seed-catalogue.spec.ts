@@ -52,6 +52,7 @@ describe('seedCatalogue', () => {
       created: 0,
       existing: SEED_PRODUCTS.length,
       imagesUpdated: 0,
+      specsAdded: 0,
     });
     expect(r.products.records.size).toBe(SEED_PRODUCTS.length);
     expect(r.products.records.get(first.id)!.stock).toBe(999);
@@ -67,6 +68,25 @@ describe('seedCatalogue', () => {
     expect(again.products.imagesUpdated).toBe(1);
     expect(r.products.records.get(a!.id)!.images).toEqual([imagePathFor(a!.slug)]);
     expect(r.products.records.get(b!.id)!.images).toEqual(['/catalogue/admin-choice.webp']);
+  });
+
+  it('fills in specifications once for seeded products that predate them, never for admin data', async () => {
+    const r = repos();
+    await seedCatalogue(r.brands, r.categories, r.products);
+    const [seeded, adminEdited] = [...r.products.records.values()];
+    await r.products.update(seeded!.id, { specs: {} });
+    await r.products.update(adminEdited!.id, { specs: { material: 'Admin choice' } });
+    const again = await seedCatalogue(r.brands, r.categories, r.products);
+    expect(again.products.specsAdded).toBe(1);
+    expect(r.products.records.get(seeded!.id)!.specs?.material).toBeTruthy();
+    expect(r.products.records.get(adminEdited!.id)!.specs).toEqual({ material: 'Admin choice' });
+  });
+
+  it('gives every category eight products with specifications', () => {
+    for (const c of SEED_CATEGORIES) {
+      expect(SEED_PRODUCTS.filter((p) => p.category === c.name)).toHaveLength(8);
+    }
+    expect(SEED_PRODUCTS.every((p) => p.specs.material && p.specs.dimensions)).toBe(true);
   });
 
   it('has a photo file for every seeded product', () => {

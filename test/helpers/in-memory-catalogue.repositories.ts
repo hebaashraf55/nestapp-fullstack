@@ -118,7 +118,14 @@ export class InMemoryProductsRepository extends ProductsRepository {
         (filter.inStock === undefined || (filter.inStock ? p.stock > 0 : p.stock === 0)) &&
         (filter.minPriceCents === undefined || p.salePriceCents >= filter.minPriceCents) &&
         (filter.maxPriceCents === undefined || p.salePriceCents <= filter.maxPriceCents) &&
-        (!q || p.name.toLowerCase().includes(q)),
+        (filter.featured !== true || p.featured === true) &&
+        (filter.onSale !== true || p.discountPercent > 0) &&
+        (!filter.ids || filter.ids.includes(p.id)) &&
+        (!q ||
+          [p.name, p.description, p.specs?.material ?? '', p.specs?.color ?? ''].some((t) =>
+            t.toLowerCase().includes(q),
+          ) ||
+          (filter.matchTaxonomyIds ?? []).some((id) => id === p.categoryId || id === p.brandId)),
     );
     const order = {
       newest: (a: ProductRecord, b: ProductRecord) => b.createdAt.getTime() - a.createdAt.getTime(),

@@ -101,6 +101,36 @@ suite('catalogue storage (real MongoDB)', () => {
     expect(await products.countByBrand(b.id)).toBe(1);
   });
 
+  it('keeps specifications and the featured flag through every read path', async () => {
+    const c = await categories.create(tax('Specs cat'));
+    const b = await brands.create(tax('Specs brand'));
+    const specs = { material: 'Porcelain', color: 'White', dimensions: '1.2 l', care: 'Hand wash' };
+    const created = await products.create(
+      product({
+        name: 'Teapot',
+        slug: 'teapot',
+        categoryId: c.id,
+        brandId: b.id,
+        specs,
+        featured: true,
+      }),
+    );
+    expect(created).toMatchObject({ specs, featured: true });
+    expect((await products.findById(created.id))?.specs).toEqual(specs);
+    expect((await products.findBySlug('teapot'))?.specs).toEqual(specs);
+    const page = await products.findPage({
+      featured: true,
+      q: 'porcelain',
+      demoOnly: false,
+      sort: 'newest',
+      page: 1,
+      limit: 10,
+    });
+    expect(page.items.map((p) => p.specs)).toEqual([specs]);
+    const patched = await products.update(created.id, { specs: { material: 'Stoneware' } });
+    expect(patched?.specs).toEqual({ material: 'Stoneware' });
+  });
+
   it('searches names literally, filters, sorts and paginates', async () => {
     const c = await categories.create(tax('Cat'));
     const b = await brands.create(tax('Brand'));

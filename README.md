@@ -11,7 +11,10 @@ NOMA is a portfolio e-commerce project: a **NestJS + MongoDB API** and a **React
 ## Features
 
 **Storefront**
-- Catalogue with search, category/brand filters, price range, sorting and pagination
+- Homepage with a sticky category sidebar (chips on phones), eight pieces per category, and featured, new, on-sale, best-selling (from real paid orders) and recently viewed rows
+- Catalogue of 56 pieces in 7 categories, with search (also by material, colour, category and maker), filters, price range, sorting and pagination
+- Wishlist and recently viewed: kept in the browser for guests, merged into the account at sign-in
+- Side-by-side comparison of up to four pieces with their specifications
 - Product pages with photography and server-computed sale prices
 - Cart priced by the server on every read, stock checks, coupons
 - Checkout that reserves stock for 30 minutes, then a one-click *simulated* payment
@@ -62,7 +65,7 @@ npm ci && (cd web && npm ci)
 cp .env.example .env      # then set your own passwords and a JWT secret: openssl rand -base64 48
 npm run db:up             # MongoDB on 127.0.0.1 only
 npm run seed              # admin + demo accounts
-npm run seed:catalogue    # 3 brands, 7 categories, 24 synthetic products (safe to re-run)
+npm run seed:catalogue    # 3 brands, 7 categories, 56 products (safe to re-run, never overwrites)
 npm run start:dev         # API on http://localhost:5000 (PORT in .env)
 cd web && npm run dev     # storefront on http://localhost:5173, proxies /api to the API
 ```

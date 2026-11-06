@@ -11,6 +11,8 @@ import {
   productQuerySchema,
   ProductUpdateDto,
   productUpdateSchema,
+  CompareQueryDto,
+  compareQuerySchema,
   StockAdjustDto,
   stockAdjustSchema,
   TaxonomyCreateDto,
@@ -26,6 +28,18 @@ import { ParseObjectIdPipe } from './object-id.pipe';
  * enforced by the global guards. @OptionalAuth only lets a signed-in demo viewer be recognised so it
  * sees synthetic records only. Paths keep the original API's `/create` convention for ported routes.
  */
+
+@Controller('catalogue')
+export class CatalogueHomeController {
+  constructor(private readonly products: ProductsService) {}
+
+  @Public()
+  @OptionalAuth()
+  @Get('home')
+  home(@CurrentUser() user?: AuthenticatedUser) {
+    return this.products.home(user);
+  }
+}
 
 @Controller('brand')
 export class BrandController {
@@ -124,6 +138,16 @@ export class CategoryController {
 @Controller('product')
 export class ProductController {
   constructor(private readonly products: ProductsService) {}
+
+  @Public()
+  @OptionalAuth()
+  @Get('compare')
+  compare(
+    @Query(new ZodPipe(compareQuerySchema)) query: CompareQueryDto,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return this.products.compare(query.ids, user);
+  }
 
   @Roles(Role.ADMIN)
   @Audited('product.create')

@@ -11,6 +11,7 @@ import {
   ProductFilter,
   ProductPatch,
   ProductRecord,
+  ProductSpecs,
   ProductsRepository,
   TaxonomyPatch,
   TaxonomyRecord,
@@ -135,10 +136,23 @@ interface ProductDoc {
   stock: number;
   categoryId: Types.ObjectId;
   brandId: Types.ObjectId;
+  specs?: { material?: string; color?: string; dimensions?: string; care?: string };
+  featured?: boolean;
   isDemo: boolean;
   createdBy: string;
   createdAt: Date;
 }
+
+const SPEC_KEYS = ['material', 'color', 'dimensions', 'care'] as const;
+/** Reads the four fields by name: a hydrated subdocument is not a plain object, so its entries cannot be listed. */
+const cleanSpecs = (s: ProductDoc['specs']): ProductSpecs => {
+  const out: ProductSpecs = {};
+  for (const key of SPEC_KEYS) {
+    const value: unknown = s?.[key];
+    if (typeof value === 'string' && value !== '') out[key] = value;
+  }
+  return out;
+};
 
 function toProduct(doc: ProductDoc): ProductRecord {
   return {
@@ -153,6 +167,8 @@ function toProduct(doc: ProductDoc): ProductRecord {
     stock: doc.stock,
     categoryId: doc.categoryId.toString(),
     brandId: doc.brandId.toString(),
+    specs: cleanSpecs(doc.specs),
+    featured: doc.featured === true,
     isDemo: doc.isDemo,
     createdBy: doc.createdBy,
     createdAt: doc.createdAt,
@@ -210,6 +226,9 @@ export class MongoProductsRepository extends ProductsRepository {
     if (filter.brandId && isValidObjectId(filter.brandId)) query.brandId = filter.brandId;
     if (filter.inStock === true) query.stock = { $gt: 0 };
     if (filter.inStock === false) query.stock = 0;
+    if (filter.featured === true) query.featured = true;
+    if (filter.onSale === true) query.discountPercent = { $gt: 0 };
+    if (filter.ids) query._id = { $in: filter.ids.filter((id) => isValidObjectId(id)) };
     if (filter.minPriceCents !== undefined || filter.maxPriceCents !== undefined) {
       query.salePriceCents = {
         ...(filter.minPriceCents !== undefined ? { $gte: filter.minPriceCents } : {}),
@@ -217,7 +236,23 @@ export class MongoProductsRepository extends ProductsRepository {
       };
     }
     // The search text is escaped, so it is always matched literally (no regex injection, no ReDoS).
-    if (filter.q) query.name = { $regex: escapeRegExp(filter.q), $options: 'i' };
+    // Name, description, material and colour are searched; ids of matching brands and categories
+    // are resolved by the service. Escaped text keeps every match literal.
+    if (filter.q) {
+      const re = { $regex: escapeRegExp(filter.q), $options: 'i' };
+      query.$or = [
+        { name: re },
+        { description: re },
+        { 'specs.material': re },
+        { 'specs.color': re },
+        ...(filter.matchTaxonomyIds?.length
+          ? [
+              { categoryId: { $in: filter.matchTaxonomyIds } },
+              { brandId: { $in: filter.matchTaxonomyIds } },
+            ]
+          : []),
+      ];
+    }
 
     const [docs, total] = await Promise.all([
       this.model

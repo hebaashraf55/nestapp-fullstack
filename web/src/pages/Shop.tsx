@@ -38,6 +38,8 @@ export function Shop() {
     minPrice: toCents(params.get('min')),
     maxPrice: toCents(params.get('max')),
     inStock: get('stock') === '1' ? true : undefined,
+    onSale: get('onSale') === 'true' ? true : undefined,
+    featured: get('featured') === 'true' ? true : undefined,
     sort,
     page,
     limit: PAGE_SIZE,
@@ -70,7 +72,7 @@ export function Shop() {
     setMax('');
     setParams(new URLSearchParams());
   };
-  const hasFilters = ['q', 'category', 'brand', 'min', 'max', 'stock'].some((k) => params.has(k));
+  const hasFilters = ['q', 'category', 'brand', 'min', 'max', 'stock', 'onSale', 'featured'].some((k) => params.has(k));
 
   return (
     <div className="page">
@@ -129,6 +131,10 @@ export function Shop() {
         <label className="check">
           <input type="checkbox" checked={get('stock') === '1'} onChange={(e) => update({ stock: e.target.checked ? '1' : null })} />
           In stock only
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={get('onSale') === 'true'} onChange={(e) => update({ onSale: e.target.checked ? 'true' : null })} />
+          On sale only
         </label>
         <div className="filters__actions">
           <button type="submit" className="btn">

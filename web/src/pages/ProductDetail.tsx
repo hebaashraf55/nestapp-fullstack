@@ -1,15 +1,63 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ApiError, getProduct } from '../api/client';
+import { ApiError, getProduct, type Product } from '../api/client';
 import { AddToCart } from '../components/AddToCart';
+import { WishButton } from '../components/ProductCard';
+import { ProductRow } from '../components/ProductRow';
 import { useRemote } from '../hooks/useRemote';
 import { formatMoney } from '../lib/money';
 import { creditFor } from '../lib/photoCredits';
+import { COMPARE_MAX, useShopper } from '../shopper/ShopperContext';
+import { useProductsById } from '../shopper/useProducts';
+
+function Specs({ specs }: { specs: NonNullable<Product['specs']> }) {
+  const rows = (
+    [
+      ['Material', specs.material],
+      ['Colour', specs.color],
+      ['Dimensions', specs.dimensions],
+      ['Care', specs.care],
+    ] as const
+  ).filter(([, v]) => v);
+  if (rows.length === 0) return null;
+  return (
+    <dl className="specs">
+      {rows.map(([k, v]) => (
+        <div key={k}>
+          <dt>{k}</dt>
+          <dd>{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function CompareButton({ id }: { id: string }) {
+  const { compare, toggleCompare } = useShopper();
+  const on = compare.includes(id);
+  const full = !on && compare.length >= COMPARE_MAX;
+  return (
+    <button type="button" className="btn btn--ghost" aria-pressed={on} disabled={full} onClick={() => toggleCompare(id)} title={full ? `Compare holds ${COMPARE_MAX} pieces` : undefined}>
+      {on ? 'Added to compare' : 'Compare'}
+    </button>
+  );
+}
+
+function AlsoViewed({ current }: { current: string }) {
+  const { recent } = useShopper();
+  const { items } = useProductsById(recent.filter((x) => x !== current).slice(0, 4));
+  return <ProductRow id="recently-viewed" title="Recently viewed" products={items} />;
+}
 
 export function ProductDetail() {
   const { id = '' } = useParams();
   const product = useRemote((s) => getProduct(id, s), id);
   const [selected, setSelected] = useState(0);
+  const { recordView } = useShopper();
+  const loadedId = product.phase === 'ready' ? product.data.id : null;
+  useEffect(() => {
+    if (loadedId) recordView(loadedId);
+  }, [loadedId, recordView]);
 
   if (product.phase === 'loading') {
     return (
@@ -94,9 +142,17 @@ export function ProductDetail() {
         </p>
         {p.description && <p className="lede lede--small">{p.description}</p>}
         <AddToCart product={p} />
+        <div className="detail__actions">
+          <WishButton product={p} withLabel />
+          <CompareButton id={p.id} />
+        </div>
+        {p.specs && <Specs specs={p.specs} />}
         <p className="notice">
           Checkout is simulated. No payment is ever taken.
         </p>
+      </div>
+      <div className="detail__more">
+        <AlsoViewed current={p.id} />
       </div>
     </div>
   );

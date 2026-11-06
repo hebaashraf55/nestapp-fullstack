@@ -77,6 +77,43 @@ export const ROUTE_DOCS: Record<string, RouteDoc> = {
     summary: 'Delete a product; refused (409) while an unpaid or paid order still holds its stock',
   },
 
+  'GET /api/catalogue/home': {
+    summary:
+      'Homepage data: every category with its count and first 8 products, plus featured, new, sale and best-selling rows',
+    returns: '{ categories[], featured[], newArrivals[], onSale[], bestSellers[] }',
+  },
+  'GET /api/product/compare': {
+    summary: 'Compare 2–4 products side by side (?ids=a,b,c); missing specifications stay empty',
+    returns: 'product[]',
+  },
+  'GET /api/wishlist': {
+    summary: 'The caller’s wishlist (deleted products are left out)',
+    returns: '{ productIds, items }',
+  },
+  'PUT /api/wishlist/{productId}': {
+    summary: 'Add a product (idempotent; 100 items max)',
+    returns: '{ productIds, items }',
+  },
+  'DELETE /api/wishlist/{productId}': {
+    summary: 'Remove a product',
+    returns: '{ productIds, items }',
+  },
+  'POST /api/wishlist/merge': {
+    summary: 'Merge a guest wishlist after sign-in; unknown ids are ignored',
+    returns: '{ productIds, items }',
+  },
+  'GET /api/recently-viewed': {
+    summary: 'The caller’s recently viewed products, newest first (20 max)',
+    returns: '{ productIds, items }',
+  },
+  'POST /api/recently-viewed/{productId}': {
+    summary: 'Record a product view (moves it to the front)',
+    returns: '{ productIds, items }',
+  },
+  'POST /api/recently-viewed/merge': {
+    summary: 'Merge guest browsing history after sign-in (newest first)',
+    returns: '{ productIds, items }',
+  },
   'POST /api/coupon': {
     summary:
       'Create a coupon (code is immutable, 1–90 % off, must expire in the future, active by default)',

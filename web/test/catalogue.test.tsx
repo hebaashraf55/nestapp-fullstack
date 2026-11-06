@@ -216,23 +216,55 @@ describe('Product detail', () => {
   });
 });
 
-describe('Home featured products', () => {
-  it('reads new arrivals from the API', async () => {
-    const calls = mockApi({ products: () => envelope(page([make({ name: 'Fresh Throw' })], { limit: 4 })) });
+describe('Home', () => {
+  const home = (over = {}) => ({
+    categories: [
+      { id: 'c'.repeat(24), name: 'Ceramics', slug: 'ceramics', count: 9, products: Array.from({ length: 8 }, (_, i) => make({ id: String(i).repeat(24).slice(0, 24).padEnd(24, '0'), name: `Bowl ${i}` })) },
+      { id: 'd'.repeat(24), name: 'Lighting', slug: 'lighting', count: 0, products: [] },
+    ],
+    featured: [make({ id: 'e'.repeat(24), name: 'Featured Lamp' })],
+    newArrivals: [make({ id: '1'.repeat(24), name: 'Fresh Throw' })],
+    onSale: [],
+    bestSellers: [],
+    ...over,
+  });
+  const mockHome = (res: () => Response) => {
+    const calls = mockApi({});
+    const inner = vi.mocked(fetch);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
+        new URL(String(input), 'http://localhost').pathname === '/api/catalogue/home' ? Promise.resolve(res()) : inner(input, init),
+      ),
+    );
+    return calls;
+  };
+
+  it('shows category sections of eight with counts, and only the rows that have products', async () => {
+    mockHome(() => envelope(home()));
     renderAt('/');
-    const section = await screen.findByRole('region', { name: 'New arrivals' });
-    expect(await within(section).findByRole('heading', { name: 'Fresh Throw' })).toBeInTheDocument();
-    expect(calls).toContain('/api/product?sort=newest&limit=4');
+    const nav = await screen.findByRole('navigation', { name: 'Shop by category' });
+    expect(within(nav).getByRole('link', { name: /Ceramics/ })).toHaveAttribute('href', '#category-ceramics');
+    expect(within(nav).getByLabelText('9 products')).toBeInTheDocument();
+    const ceramics = screen.getByRole('region', { name: 'Ceramics' });
+    expect(within(ceramics).getAllByRole('article')).toHaveLength(8);
+    expect(within(ceramics).getByRole('link', { name: 'View all 9' })).toHaveAttribute('href', `/shop?category=${'c'.repeat(24)}`);
+    expect(within(screen.getByRole('region', { name: 'New arrivals' })).getByRole('heading', { name: 'Fresh Throw' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Featured' })).toBeInTheDocument();
+    // No invented rows: nothing on sale, nothing sold yet, an empty category has no section.
+    expect(screen.queryByRole('region', { name: 'On sale' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Best sellers' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Lighting' })).not.toBeInTheDocument();
   });
 
   it('shows an honest empty state, never filler products', async () => {
-    mockApi({});
+    mockHome(() => envelope(home({ categories: [], featured: [], newArrivals: [] })));
     renderAt('/');
     expect(await screen.findByText(/No products yet/)).toBeInTheDocument();
   });
 
   it('shows an error when the catalogue is down', async () => {
-    mockApi({ products: () => failure(503, 'Service Unavailable') });
+    mockHome(() => failure(503, 'Service Unavailable'));
     renderAt('/');
     expect(await screen.findByText(/catalogue is unavailable/i)).toBeInTheDocument();
   });

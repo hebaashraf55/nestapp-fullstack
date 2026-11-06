@@ -232,7 +232,7 @@ describe('Add to cart', () => {
     await userEvent.selectOptions(await screen.findByLabelText('Quantity'), '3');
     await userEvent.click(screen.getByRole('button', { name: 'Add to cart' }));
     expect(await screen.findByText(/Added\./)).toBeInTheDocument();
-    expect(calls.find((c) => c.method === 'POST')!.body).toEqual({ productId: PID, quantity: 3 });
+    expect(calls.find((c) => c.method === 'POST' && c.path === '/api/cart')!.body).toEqual({ productId: PID, quantity: 3 });
     expect(await screen.findByLabelText('3 items')).toBeInTheDocument();
   });
 

@@ -28,8 +28,13 @@ How each backend feature is proven. Three kinds of automated evidence exist:
 | Simulated payment, duplicate payment, refund | Yes | Yes (two concurrent payments → one 200, one 409) | Owner pays; admin refunds | orders, e2e | **Simulated** by design: no gateway, card data refused |
 | Admin dashboard figures | Yes | Yes (derived from DB, e2e) | Admin all, viewer synthetic only, customer 403 | admin, admin.mongo, e2e | Real |
 | Audit log | Yes | Yes (survives restart) | Admin-only | admin, e2e | Real |
+| Homepage feed (categories with counts, featured, new, sale, best sellers) | Yes | Yes (repo filters) | Public; demo viewer sees synthetic only | shopper, catalogue.mongo | Real: best sellers come only from paid orders |
+| Product specifications and featured flag | Yes | Yes (every read path) | Admin-only writes | catalogue, catalogue.mongo | Real |
+| Wishlist (add, remove, merge guest list, 100 cap) | Yes | Yes (concurrent adds, no duplicates) | Own list only; sign-in required; viewer 403 | shopper, shopper.mongo | Real |
+| Recently viewed (newest first, 20 cap, merge) | Yes | Yes (order, cap, operator-object id) | Own history only | shopper, shopper.mongo | Real |
+| Product comparison (2–4) | Yes | Yes | Public | shopper | Real |
 | Validation, 404, 409, error envelope | Yes | Yes | — | app, catalogue, orders, e2e | Real |
 | Rate limiting | Yes | In-memory counters | — | throttle, auth | Real, per process (not shared across instances) |
 | OpenAPI accuracy | Generated from the running app; a test fails if a route lacks a summary or the file drifts | — | — | openapi | Real |
 
-**Demo data:** the seeds create the admin, two demo accounts and 24 synthetic products (flagged `isDemo`). **Simulated:** payments and refunds only.
+**Demo data:** the seeds create the admin, two demo accounts and 56 products across 7 categories (8 each) (flagged `isDemo`). **Simulated:** payments and refunds only.

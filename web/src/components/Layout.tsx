@@ -3,7 +3,27 @@ import { useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useCart } from '../cart/CartContext';
+import { useShopper } from '../shopper/ShopperContext';
 import { ThemeToggle } from './ThemeToggle';
+
+function CompareTray() {
+  const { compare, clearCompare } = useShopper();
+  const { pathname } = useLocation();
+  if (compare.length === 0 || pathname === '/compare') return null;
+  return (
+    <aside className="tray" aria-label="Comparison">
+      <span>
+        {compare.length} {compare.length === 1 ? 'piece' : 'pieces'} to compare
+      </span>
+      <Link to="/compare" className="btn btn--small">
+        Compare
+      </Link>
+      <button type="button" className="link" onClick={clearCompare}>
+        Clear
+      </button>
+    </aside>
+  );
+}
 
 /** BrowserRouter keeps the old scroll position on navigation; start each new page at the top. */
 function useScrollToTopOnNavigate() {
@@ -17,6 +37,7 @@ export function Layout() {
   useScrollToTopOnNavigate();
   const { user, signOut } = useAuth();
   const { itemCount } = useCart();
+  const { wishlist } = useShopper();
   return (
     <MotionConfig reducedMotion="user">
       <a className="skip" href="#main">
@@ -35,6 +56,9 @@ export function Layout() {
           </NavLink>
           <NavLink to="/shop">Shop</NavLink>
           <NavLink to="/about">About this build</NavLink>
+          <NavLink to="/wishlist">
+            Wishlist{wishlist.length > 0 && <span className="badge" aria-label={`${wishlist.length} saved`}>{wishlist.length}</span>}
+          </NavLink>
           <NavLink to="/cart">
             Cart{itemCount > 0 && <span className="badge" aria-label={`${itemCount} items`}>{itemCount}</span>}
           </NavLink>
@@ -53,6 +77,7 @@ export function Layout() {
       <main id="main">
         <Outlet />
       </main>
+      <CompareTray />
       <footer className="footer">
         <div>
           <p className="footer__brand">NOMA</p>

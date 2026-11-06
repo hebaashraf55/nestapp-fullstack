@@ -31,6 +31,14 @@ export abstract class TaxonomyRepository {
 export abstract class BrandsRepository extends TaxonomyRepository {}
 export abstract class CategoriesRepository extends TaxonomyRepository {}
 
+/** Optional product facts used for comparison and search. Every field may be missing. */
+export interface ProductSpecs {
+  material?: string;
+  color?: string;
+  dimensions?: string;
+  care?: string;
+}
+
 export interface ProductRecord {
   id: string;
   name: string;
@@ -44,6 +52,10 @@ export interface ProductRecord {
   stock: number;
   categoryId: string;
   brandId: string;
+  /** Material, colour, dimensions, care. Empty object when unknown. */
+  specs?: ProductSpecs;
+  /** Hand-picked for the homepage "Featured" row. */
+  featured?: boolean;
   isDemo: boolean;
   createdBy: string;
   createdAt: Date;
@@ -62,6 +74,8 @@ export type ProductPatch = Partial<
     | 'stock'
     | 'categoryId'
     | 'brandId'
+    | 'specs'
+    | 'featured'
   >
 >;
 
@@ -75,6 +89,13 @@ export interface ProductFilter {
   minPriceCents?: number;
   maxPriceCents?: number;
   inStock?: boolean;
+  featured?: boolean;
+  /** Only products with a discount. */
+  onSale?: boolean;
+  /** Restrict to these ids (for comparison). */
+  ids?: string[];
+  /** Category and brand ids whose names match `q`, so "lighting" finds every lamp. */
+  matchTaxonomyIds?: string[];
   demoOnly: boolean;
   sort: ProductSort;
   page: number;

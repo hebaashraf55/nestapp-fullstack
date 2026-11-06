@@ -14,7 +14,12 @@ import {
   Product,
   ProductSchema,
 } from './catalogue.schemas';
-import { BrandController, CategoryController, ProductController } from './catalogue.controllers';
+import {
+  BrandController,
+  CatalogueHomeController,
+  CategoryController,
+  ProductController,
+} from './catalogue.controllers';
 import { BrandsService, CategoriesService, ProductsService } from './catalogue.services';
 import {
   MongoBrandsRepository,
@@ -44,7 +49,12 @@ export class CatalogueModule {
             ]),
           ]
         : [],
-      controllers: [BrandController, CategoryController, ProductController],
+      controllers: [
+        BrandController,
+        CategoryController,
+        ProductController,
+        CatalogueHomeController,
+      ],
       providers: [
         {
           provide: BrandsRepository,

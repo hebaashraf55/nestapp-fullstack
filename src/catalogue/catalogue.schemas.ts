@@ -71,6 +71,21 @@ export class Product {
   @Prop({ type: Types.ObjectId, ref: 'Brand', required: true, index: true })
   brandId!: Types.ObjectId;
 
+  @Prop({
+    type: {
+      material: { type: String, maxlength: 120 },
+      color: { type: String, maxlength: 120 },
+      dimensions: { type: String, maxlength: 120 },
+      care: { type: String, maxlength: 200 },
+    },
+    _id: false,
+    default: {},
+  })
+  specs!: { material?: string; color?: string; dimensions?: string; care?: string };
+
+  @Prop({ required: true, default: false, index: true })
+  featured!: boolean;
+
   @Prop({ required: true, default: false, index: true })
   isDemo!: boolean;
 
@@ -79,3 +94,5 @@ export class Product {
 }
 export const ProductSchema = SchemaFactory.createForClass(Product);
 ProductSchema.index({ createdAt: -1 });
+ProductSchema.index({ categoryId: 1, createdAt: -1 });
+ProductSchema.index({ discountPercent: -1 });

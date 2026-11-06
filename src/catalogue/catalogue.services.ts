@@ -11,6 +11,7 @@ import {
   CategoriesRepository,
   DuplicateKeyError,
   ProductRecord,
+  ProductSpecs,
   ProductsRepository,
   TaxonomyRecord,
   TaxonomyRepository,
@@ -170,8 +171,19 @@ export interface ProductView {
   inStock: boolean;
   category: { id: string; name: string; slug: string } | null;
   brand: { id: string; name: string; slug: string } | null;
+  specs: ProductSpecs;
+  featured: boolean;
   isDemo: boolean;
   createdAt: Date;
+}
+
+export interface HomeView {
+  categories: { id: string; name: string; slug: string; count: number; products: ProductView[] }[];
+  featured: ProductView[];
+  newArrivals: ProductView[];
+  onSale: ProductView[];
+  /** From real paid orders only; empty until something sells. */
+  bestSellers: ProductView[];
 }
 
 export interface ProductPage {
@@ -199,6 +211,11 @@ export class ProductsService {
   async list(query: ProductQueryDto, user?: AuthenticatedUser): Promise<ProductPage> {
     const { items, total } = await this.products.findPage({
       q: query.q,
+      matchTaxonomyIds: query.q
+        ? await this.taxonomyIdsMatching(query.q, demoOnly(user))
+        : undefined,
+      featured: query.featured === 'true' ? true : undefined,
+      onSale: query.onSale === 'true' ? true : undefined,
       categoryId: query.categoryId?.toLowerCase(),
       brandId: query.brandId?.toLowerCase(),
       minPriceCents: query.minPrice,
@@ -215,6 +232,69 @@ export class ProductsService {
       limit: query.limit,
       total,
       totalPages: Math.max(1, Math.ceil(total / query.limit)),
+    };
+  }
+
+  /** Products by id that exist and the caller may see, in no particular order. Unknown ids are skipped. */
+  async findVisible(ids: string[], user?: AuthenticatedUser): Promise<ProductView[]> {
+    const unique = [...new Set(ids.map((i) => i.toLowerCase()))];
+    if (unique.length === 0) return [];
+    const found = (await this.products.findByIds(unique)).filter((p) => visible(user, p));
+    return this.toViews(found);
+  }
+
+  /** Side-by-side comparison of 2–4 products, in the order requested. Missing specs stay empty. */
+  async compare(ids: string[], user?: AuthenticatedUser): Promise<ProductView[]> {
+    const views = await this.findVisible(ids, user);
+    const byId = new Map(views.map((v) => [v.id, v]));
+    return ids.map((id) => byId.get(id.toLowerCase())).filter((v): v is ProductView => !!v);
+  }
+
+  /**
+   * Everything the homepage needs in one call: each category with its count and first eight
+   * products, plus featured, new, on-sale and best-selling rows. Best sellers come only from real
+   * paid orders; the row is empty (and hidden) until something has sold.
+   */
+  async home(user?: AuthenticatedUser): Promise<HomeView> {
+    const scope = demoOnly(user);
+    const page = (extra: Partial<Parameters<ProductsRepository['findPage']>[0]>) =>
+      this.products.findPage({ demoOnly: scope, sort: 'newest', page: 1, limit: 8, ...extra });
+    const cats = (await this.categories.findAll(scope)).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+    const [perCategory, featured, newest, onSale, sold] = await Promise.all([
+      Promise.all(cats.map((c) => page({ categoryId: c.id }))),
+      page({ featured: true }),
+      page({}),
+      page({ onSale: true, sort: 'price-asc' }),
+      this.orders.bestSellers(8, scope),
+    ]);
+    const soldRecords = (await this.products.findByIds(sold.map((s) => s.productId))).filter((p) =>
+      visible(user, p),
+    );
+    const soldById = new Map(soldRecords.map((p) => [p.id, p]));
+    const bestSellers = sold
+      .map((s) => soldById.get(s.productId))
+      .filter((p): p is ProductRecord => !!p);
+    const [featuredV, newestV, saleV, bestV, ...catViews] = await Promise.all([
+      this.toViews(featured.items),
+      this.toViews(newest.items),
+      this.toViews(onSale.items),
+      this.toViews(bestSellers),
+      ...perCategory.map((r) => this.toViews(r.items)),
+    ]);
+    return {
+      categories: cats.map((c, i) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        count: perCategory[i]!.total,
+        products: catViews[i]!,
+      })),
+      featured: featuredV,
+      newArrivals: newestV,
+      onSale: saleV,
+      bestSellers: bestV,
     };
   }
 
@@ -236,6 +316,8 @@ export class ProductsService {
       stock: dto.stock,
       categoryId: dto.categoryId.toLowerCase(),
       brandId: dto.brandId.toLowerCase(),
+      specs: dto.specs,
+      featured: dto.featured,
       isDemo: false, // clients can never create synthetic-flagged records
       createdBy: adminId,
     };
@@ -272,6 +354,8 @@ export class ProductsService {
       ...(dto.stock !== undefined ? { stock: dto.stock } : {}),
       ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId.toLowerCase() } : {}),
       ...(dto.brandId !== undefined ? { brandId: dto.brandId.toLowerCase() } : {}),
+      ...(dto.specs !== undefined ? { specs: dto.specs } : {}),
+      ...(dto.featured !== undefined ? { featured: dto.featured } : {}),
       priceCents,
       discountPercent,
       salePriceCents: computeSalePriceCents(priceCents, discountPercent),
@@ -344,6 +428,18 @@ export class ProductsService {
     }
   }
 
+  /** Category and brand ids whose name contains the search text (small collections, filtered in memory). */
+  private async taxonomyIdsMatching(q: string, demoOnlyScope: boolean): Promise<string[]> {
+    const needle = q.toLowerCase();
+    const [cats, brands] = await Promise.all([
+      this.categories.findAll(demoOnlyScope),
+      this.brands.findAll(demoOnlyScope),
+    ]);
+    return [...cats, ...brands]
+      .filter((t) => t.name.toLowerCase().includes(needle))
+      .map((t) => t.id);
+  }
+
   private async toViews(items: ProductRecord[]): Promise<ProductView[]> {
     if (items.length === 0) return [];
     const [cats, brands] = await Promise.all([
@@ -368,6 +464,8 @@ export class ProductsService {
       inStock: p.stock > 0,
       category: ref(catMap.get(p.categoryId)),
       brand: ref(brandMap.get(p.brandId)),
+      specs: p.specs ?? {},
+      featured: p.featured === true,
       isDemo: p.isDemo,
       createdAt: p.createdAt,
     }));

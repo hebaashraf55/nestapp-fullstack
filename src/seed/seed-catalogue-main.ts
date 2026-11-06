@@ -28,6 +28,9 @@ async function run(): Promise<void> {
     for (const [kind, r] of Object.entries(result)) {
       console.log(`${kind.padEnd(11)} created ${r.created}, already present ${r.existing}`);
     }
+    if (result.products.specsAdded > 0) {
+      console.log(`products    ${result.products.specsAdded} received specifications`);
+    }
     if (result.products.imagesUpdated > 0) {
       console.log(
         `products    ${result.products.imagesUpdated} switched from the old SVG to a photo`,

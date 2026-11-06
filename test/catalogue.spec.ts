@@ -350,6 +350,7 @@ describe('catalogue API', () => {
           'currency',
           'description',
           'discountPercent',
+          'featured',
           'id',
           'images',
           'inStock',
@@ -358,6 +359,7 @@ describe('catalogue API', () => {
           'priceCents',
           'salePriceCents',
           'slug',
+          'specs',
           'stock',
         ].sort(),
       );

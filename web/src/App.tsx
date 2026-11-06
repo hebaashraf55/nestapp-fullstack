@@ -2,6 +2,9 @@ import { Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { CartProvider } from './cart/CartContext';
 import { Layout } from './components/Layout';
+import { ShopperProvider } from './shopper/ShopperContext';
+import { Compare } from './pages/Compare';
+import { Wishlist } from './pages/Wishlist';
 import { About } from './pages/About';
 import { AdminCoupons } from './pages/admin/AdminCoupons';
 import { AdminLayout } from './pages/admin/AdminLayout';
@@ -26,11 +29,14 @@ export function App() {
   return (
     <AuthProvider>
       <CartProvider>
+        <ShopperProvider>
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="shop" element={<Shop />} />
             <Route path="shop/:id" element={<ProductDetail />} />
+            <Route path="wishlist" element={<Wishlist />} />
+            <Route path="compare" element={<Compare />} />
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
             <Route path="orders" element={<Orders />} />
@@ -54,6 +60,7 @@ export function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
+        </ShopperProvider>
       </CartProvider>
     </AuthProvider>
   );
