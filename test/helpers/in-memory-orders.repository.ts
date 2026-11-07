@@ -1,7 +1,12 @@
 import { randomBytes } from 'node:crypto';
-import { STOCK_HOLDING_STATUSES, type OrderStatus } from '../../src/orders/order-status';
+import {
+  STOCK_HOLDING_STATUSES,
+  type OrderStatus,
+  type ReturnStatus,
+} from '../../src/orders/order-status';
 import {
   NewOrder,
+  OrderEvent,
   OrderPageFilter,
   OrderPatch,
   OrderRecord,
@@ -22,6 +27,10 @@ export class InMemoryOrdersRepository extends OrdersRepository {
     const created: OrderRecord = {
       ...order,
       bundleSavingsCents: order.bundleSavingsCents ?? 0,
+      guestEmail: order.guestEmail ?? null,
+      guestTokenHash: order.guestTokenHash ?? null,
+      events: [{ type: 'PLACED', at: new Date(), note: null }],
+      returnRequest: null,
       id: randomBytes(12).toString('hex'),
       createdAt: new Date(Date.now() + this.tick++),
     };
@@ -116,12 +125,51 @@ export class InMemoryOrdersRepository extends OrdersRepository {
       .slice(0, limit)
       .map((o) => ({ ...o }));
   }
-  async transition(id: string, from: readonly OrderStatus[], patch: OrderPatch) {
+  async transition(
+    id: string,
+    from: readonly OrderStatus[],
+    patch: OrderPatch,
+    event?: OrderEvent,
+  ) {
     this.check();
     const current = this.records.get(id);
     if (!current || !from.includes(current.status)) return null;
-    const next = { ...current, ...patch };
+    const next = {
+      ...current,
+      ...patch,
+      events: event ? [...current.events, event] : current.events,
+    };
     this.records.set(id, next);
     return { ...next };
+  }
+
+  async updateReturn(
+    id: string,
+    fromReturn: ReturnStatus | null,
+    patch: OrderPatch,
+    event: OrderEvent,
+  ) {
+    this.check();
+    const current = this.records.get(id);
+    if (!current || current.status !== 'DELIVERED') return null;
+    if ((current.returnRequest?.status ?? null) !== fromReturn) return null;
+    const next = { ...current, ...patch, events: [...current.events, event] };
+    this.records.set(id, next);
+    return { ...next };
+  }
+
+  async findReturns(status: ReturnStatus | undefined, demoOnly: boolean, limit: number) {
+    this.check();
+    return [...this.records.values()]
+      .filter(
+        (o) =>
+          o.returnRequest &&
+          (!status || o.returnRequest.status === status) &&
+          (!demoOnly || o.isDemo),
+      )
+      .sort(
+        (a, b) => b.returnRequest!.requestedAt.getTime() - a.returnRequest!.requestedAt.getTime(),
+      )
+      .slice(0, limit);
   }
 }

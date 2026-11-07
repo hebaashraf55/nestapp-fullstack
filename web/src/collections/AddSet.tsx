@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useCart } from '../cart/CartContext';
 
@@ -7,18 +7,8 @@ import { useCart } from '../cart/CartContext';
 export function AddSet({ items, label }: { items: { productId: string; quantity: number }[]; label: string }) {
   const { user } = useAuth();
   const { addMany } = useCart();
-  const location = useLocation();
   const [state, setState] = useState<{ phase: 'idle' | 'busy' | 'done' | 'error'; message?: string }>({ phase: 'idle' });
-  if (!user)
-    return (
-      <p className="muted small">
-        <Link to="/login" state={{ from: location.pathname }}>
-          Sign in
-        </Link>{' '}
-        to add the set to your cart.
-      </p>
-    );
-  if (user.role !== 'CUSTOMER') return null;
+  if (user && user.role !== 'CUSTOMER') return null;
   const click = async () => {
     setState({ phase: 'busy' });
     try {

@@ -1,4 +1,19 @@
-import type { OrderStatus, PaymentStatus } from './order-status';
+import type { OrderEventType, OrderStatus, PaymentStatus, ReturnStatus } from './order-status';
+
+export interface OrderEvent {
+  type: OrderEventType;
+  at: Date;
+  note: string | null;
+}
+
+export interface ReturnRequest {
+  status: ReturnStatus;
+  reason: string;
+  requestedAt: Date;
+  decidedAt: Date | null;
+  /** The shop's note to the customer (why it was rejected, what happens next). */
+  note: string | null;
+}
 
 export interface OrderItemRecord {
   productId: string;
@@ -31,13 +46,34 @@ export interface OrderRecord {
   refundedAt: Date | null;
   cancelledAt: Date | null;
   createdAt: Date;
+  /** Newest last. Older orders have none; their timeline is rebuilt from the timestamps above. */
+  events: OrderEvent[];
+  returnRequest: ReturnRequest | null;
+  /** Guest checkout only: the address the confirmation was sent to. */
+  guestEmail: string | null;
+  /** SHA-256 of the guest's tracking code. The code itself is never stored. */
+  guestTokenHash: string | null;
 }
 
-export type NewOrder = Omit<OrderRecord, 'id' | 'createdAt' | 'bundleSavingsCents'> & {
+export type NewOrder = Omit<
+  OrderRecord,
+  | 'id'
+  | 'createdAt'
+  | 'bundleSavingsCents'
+  | 'events'
+  | 'returnRequest'
+  | 'guestEmail'
+  | 'guestTokenHash'
+> & {
   bundleSavingsCents?: number;
+  guestEmail?: string | null;
+  guestTokenHash?: string | null;
 };
 export type OrderPatch = Partial<
-  Pick<OrderRecord, 'status' | 'paymentStatus' | 'paidAt' | 'refundedAt' | 'cancelledAt'>
+  Pick<
+    OrderRecord,
+    'status' | 'paymentStatus' | 'paidAt' | 'refundedAt' | 'cancelledAt' | 'returnRequest'
+  >
 >;
 
 export interface OrderPageFilter {
@@ -82,9 +118,27 @@ export abstract class OrdersRepository {
    * Compare-and-set: applies `patch` only if the order is still in one of `from`. Returns the updated
    * order, or null when another request already moved it (so only one caller wins a transition).
    */
+  /**
+   * Compare-and-set on the return request: applies only while the return is still in `fromReturn`
+   * (null = no request yet) and the order is DELIVERED, appending `event` in the same update.
+   */
+  abstract updateReturn(
+    id: string,
+    fromReturn: ReturnStatus | null,
+    patch: OrderPatch,
+    event: OrderEvent,
+  ): Promise<OrderRecord | null>;
+  /** Orders with a return request, newest request first. */
+  abstract findReturns(
+    status: ReturnStatus | undefined,
+    demoOnly: boolean,
+    limit: number,
+  ): Promise<OrderRecord[]>;
+  /** `event`, when given, is appended to the timeline in the same atomic update. */
   abstract transition(
     id: string,
     from: readonly OrderStatus[],
     patch: OrderPatch,
+    event?: OrderEvent,
   ): Promise<OrderRecord | null>;
 }

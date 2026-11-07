@@ -23,7 +23,11 @@ NOMA is a portfolio e-commerce project: a **NestJS + MongoDB API** and a **React
 - Product pages with photography and server-computed sale prices
 - Cart priced by the server on every read, stock checks, coupons
 - Checkout that reserves stock for 30 minutes, then a one-click *simulated* payment
-- Order history and order detail; unpaid orders expire automatically and release their stock
+- **Guest checkout:** visitors keep a cart in the browser (priced by the server) and get a private tracking link; signing in merges the cart into the account
+- Order history with a tracking timeline; unpaid orders expire automatically and release their stock
+- Cancel before shipping, return within 30 days of delivery, and “Buy again” (all refunds simulated)
+- Address book with a default address used at checkout
+- Notification center for shipping, delivery, return and review updates
 - Light mode by default, dark mode as a remembered choice; responsive down to phone widths
 
 **Admin** (`/admin`)
@@ -31,6 +35,7 @@ NOMA is a portfolio e-commerce project: a **NestJS + MongoDB API** and a **React
 - **Products:** list with search and filters, create, edit (only changed fields are sent), relative stock changes that never go below zero, delete with confirmation (refused while an open order still holds the product)
 - **Coupons:** percentage coupons with expiry, edit, pause/activate, delete, orders-per-code
 - Orders: status changes along a state machine, simulated refunds that restore stock
+- **Returns:** approve or decline requests, then mark them received (simulated refund, stock restored)
 - **Sets and looks:** create, pause and delete; variant group and label on products
 - **Reviews:** moderation queue to approve or reject (with a note to the author)
 - Customers with masked names and emails, and an append-only audit log of every admin change

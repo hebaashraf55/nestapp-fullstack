@@ -187,9 +187,8 @@ describe('Product detail', () => {
     expect(screen.getByText('Only 3 left')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ceramics' })).toHaveAttribute('href', `/shop?category=${'c'.repeat(24)}`);
     expect(screen.getAllByText(/no payment is ever taken/i).length).toBeGreaterThan(0);
-    // signed out: no purchase button, a sign-in prompt instead
-    expect(screen.queryByRole('button', { name: /add to cart/i })).not.toBeInTheDocument();
-    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Sign in' })).toBeInTheDocument();
+    // Visitors can buy too: their cart is kept in the browser and priced by the server.
+    expect(screen.getByRole('button', { name: 'Add to cart' })).toBeInTheDocument();
   });
 
   it('switches gallery images', async () => {

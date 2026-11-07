@@ -27,19 +27,71 @@ export function containsCardNumber(text: string): boolean {
  * Orders only ever need a delivery address and a phone number. strictObject rejects every other field,
  * so card fields (cardNumber, cvv, expiry, ...) are a 400; a card number pasted into the address is too.
  */
-export const createOrderSchema = z.strictObject({
-  address: z
-    .string()
-    .trim()
-    .min(5)
-    .max(200)
-    .refine((v) => !containsCardNumber(v), { error: 'must not contain a card number' }),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\+?[0-9][0-9 ()-]{5,18}[0-9]$/, { error: 'must be a valid phone number' })
-    .refine((v) => v.replace(/\D/g, '').length <= 15, { error: 'must be a valid phone number' }),
+const addressText = z
+  .string()
+  .trim()
+  .min(5)
+  .max(200)
+  .refine((v) => !containsCardNumber(v), { error: 'must not contain a card number' });
+const phone = z
+  .string()
+  .trim()
+  .regex(/^\+?[0-9][0-9 ()-]{5,18}[0-9]$/, { error: 'must be a valid phone number' })
+  .refine((v) => v.replace(/\D/g, '').length <= 15, { error: 'must be a valid phone number' });
+const objectId = z
+  .string()
+  .regex(/^[0-9a-fA-F]{24}$/, { error: 'must be a valid id' })
+  .transform((s) => s.toLowerCase());
+
+/** Either a typed address and phone, or one of the customer's saved addresses. */
+export const createOrderSchema = z.union([
+  z.strictObject({ address: addressText, phone }),
+  z.strictObject({ addressId: objectId }),
+]);
+
+/** Guest checkout: the browser cart, a delivery address and an email for the confirmation. */
+export const guestOrderSchema = z.strictObject({
+  email: z.email().trim().toLowerCase().max(254),
+  items: z
+    .array(z.strictObject({ productId: objectId, quantity: z.number().int().min(1).max(99) }))
+    .min(1)
+    .max(50),
+  address: addressText,
+  phone,
 });
+export type GuestOrderDto = z.infer<typeof guestOrderSchema>;
+
+/** A guest proves access with the order number and the tracking code from the confirmation. */
+export const trackSchema = z.strictObject({
+  orderId: objectId,
+  token: z.string().regex(/^[0-9a-f]{32}$/, { error: 'must be a valid tracking code' }),
+});
+export type TrackDto = z.infer<typeof trackSchema>;
+
+const plain = (max: number, min: number) =>
+  z
+    .string()
+    .trim()
+    .min(min)
+    .max(max)
+    // eslint-disable-next-line no-control-regex
+    .refine((s) => !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(s), {
+      error: 'must not contain control characters',
+    });
+
+export const returnRequestSchema = z.strictObject({ reason: plain(500, 10) });
+export type ReturnRequestDto = z.infer<typeof returnRequestSchema>;
+
+export const returnDecisionSchema = z.strictObject({
+  decision: z.enum(['APPROVED', 'REJECTED', 'RECEIVED']),
+  note: plain(300, 1).optional(),
+});
+export type ReturnDecisionDto = z.infer<typeof returnDecisionSchema>;
+
+export const returnsQuerySchema = z.strictObject({
+  status: z.enum(['REQUESTED', 'APPROVED', 'REJECTED', 'RECEIVED']).optional(),
+});
+export type ReturnsQueryDto = z.infer<typeof returnsQuerySchema>;
 
 /** simulate-payment and refund take no body at all: anything sent is refused. */
 export const emptyBodySchema = z.strictObject({});

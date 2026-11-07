@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import type { Product } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { useCart } from '../cart/CartContext';
@@ -8,22 +8,11 @@ import { useCart } from '../cart/CartContext';
 export function AddToCart({ product }: { product: Product }) {
   const { user } = useAuth();
   const { add } = useCart();
-  const location = useLocation();
   const [quantity, setQuantity] = useState(1);
   const [state, setState] = useState<{ phase: 'idle' | 'busy' | 'done' | 'error'; message?: string }>({ phase: 'idle' });
 
   if (!product.inStock) return <p className="notice">This piece is sold out.</p>;
-  if (!user) {
-    return (
-      <p className="notice">
-        <Link to="/login" state={{ from: location.pathname }}>
-          Sign in
-        </Link>{' '}
-        to add this to your cart.
-      </p>
-    );
-  }
-  if (user.role === 'DEMO_VIEWER') {
+  if (user?.role === 'DEMO_VIEWER') {
     return <p className="notice">The demo viewer account is read-only, so it cannot add to a cart.</p>;
   }
 

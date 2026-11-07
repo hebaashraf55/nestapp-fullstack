@@ -217,7 +217,7 @@ describe('Login', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Sign out/ }));
     await waitFor(() => expect(getSession()).toBeNull());
     expect(calls.find((c) => c.path === '/api/auth/logout')!.body).toEqual({ refreshToken: 'refresh-1-aaaaaaaaaaaa' });
-    expect(await screen.findByText(/to see your cart/)).toBeInTheDocument();
+    expect(await screen.findByText(/kept in this browser/)).toBeInTheDocument();
   });
 });
 
@@ -252,12 +252,33 @@ describe('Add to cart', () => {
     expect(await screen.findByText('Only 3 available')).toBeInTheDocument();
   });
 
-  it('asks signed-out visitors to sign in instead of showing a buy button', async () => {
-    mockApi(detail(product()));
+  it('lets visitors add to a browser cart that the server prices, without touching any account cart', async () => {
+    localStorage.clear();
+    const calls = mockApi(detail(product(), (c) => (c.path === '/api/cart/quote' ? ok(cartOf({ itemCount: 2 })) : undefined)));
     renderAt(`/shop/${PID}`);
-    await screen.findByRole('heading', { level: 1, name: 'Dune Vase' });
-    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Sign in' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Add to cart' })).not.toBeInTheDocument();
+    await userEvent.selectOptions(await screen.findByLabelText('Quantity'), '2');
+    await userEvent.click(screen.getByRole('button', { name: 'Add to cart' }));
+    expect(await screen.findByText(/Added\./)).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('noma-cart')!)).toEqual([{ productId: PID, quantity: 2 }]);
+    expect(calls.find((c) => c.path === '/api/cart/quote')!.body).toEqual({ items: [{ productId: PID, quantity: 2 }] });
+    expect(calls.some((c) => c.path === '/api/cart' && c.method === 'POST')).toBe(false);
+    localStorage.clear();
+  });
+
+  it('refuses a guest quantity the server says is not in stock', async () => {
+    localStorage.clear();
+    mockApi(
+      detail(product(), (c) =>
+        c.path === '/api/cart/quote'
+          ? ok(cartOf({ items: [{ productId: PID, name: 'Dune Vase', slug: 'dune-vase', image: null, quantity: 3, unitPriceCents: 8000, lineTotalCents: 24000, availableStock: 2, status: 'insufficient-stock' }], hasIssues: true }))
+          : undefined,
+      ),
+    );
+    renderAt(`/shop/${PID}`);
+    await userEvent.selectOptions(await screen.findByLabelText('Quantity'), '3');
+    await userEvent.click(screen.getByRole('button', { name: 'Add to cart' }));
+    expect(await screen.findByText('Only 2 available')).toBeInTheDocument();
+    expect(localStorage.getItem('noma-cart')).toBeNull();
   });
 
   it('is read-only for the demo viewer', async () => {
@@ -278,10 +299,12 @@ describe('Add to cart', () => {
 });
 
 describe('Cart page', () => {
-  it('asks signed-out visitors to sign in and makes no cart request', async () => {
+  it('shows visitors their browser cart and never reads an account cart', async () => {
+    localStorage.clear();
     const calls = mockApi();
     renderAt('/cart');
-    expect(await screen.findByText(/to see your cart/)).toBeInTheDocument();
+    expect(await screen.findByText(/kept in this browser/)).toBeInTheDocument();
+    expect(screen.getByText(/your cart is empty/i)).toBeInTheDocument();
     expect(calls.some((c) => c.path === '/api/cart')).toBe(false);
   });
 

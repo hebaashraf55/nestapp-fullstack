@@ -22,6 +22,15 @@ import {
   InMemoryLooksRepository,
   InMemoryMoodboardsRepository,
 } from './in-memory-batch2.repositories';
+import { AddressesModule } from '../../src/addresses/addresses.module';
+import { AddressesRepository } from '../../src/addresses/addresses.repository';
+import { NotificationsModule } from '../../src/notifications/notifications.module';
+import { NotificationsRepository } from '../../src/notifications/notifications.repository';
+import { GuestOrderLimiter } from '../../src/orders/orders.service';
+import {
+  InMemoryAddressesRepository,
+  InMemoryNotificationsRepository,
+} from './in-memory-batch3.repositories';
 import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AuthModule } from '../../src/auth/auth.module';
@@ -102,6 +111,9 @@ export interface AuthTestApp {
   bundles: InMemoryBundlesRepository;
   looks: InMemoryLooksRepository;
   moodboards: InMemoryMoodboardsRepository;
+  addresses: InMemoryAddressesRepository;
+  notifications: InMemoryNotificationsRepository;
+  guestLimiter: GuestOrderLimiter;
   /** The request throttle's counters, so tests can inspect or move its clock. */
   throttler: RateLimiter;
   ordersService: OrdersService;
@@ -138,6 +150,8 @@ export async function createAuthApp(
   const bundles = new InMemoryBundlesRepository();
   const looks = new InMemoryLooksRepository();
   const moodboards = new InMemoryMoodboardsRepository();
+  const addresses = new InMemoryAddressesRepository();
+  const notifications = new InMemoryNotificationsRepository();
   const moduleRef = await Test.createTestingModule({
     imports: [
       UsersModule.register(env),
@@ -153,6 +167,8 @@ export async function createAuthApp(
       BundlesModule.register(env),
       LooksModule.register(env),
       MoodboardsModule.register(env),
+      AddressesModule.register(env),
+      NotificationsModule.register(env),
       AdminModule.register(),
       OpenApiModule.register(env),
     ],
@@ -193,6 +209,10 @@ export async function createAuthApp(
     .useValue(looks)
     .overrideProvider(MoodboardsRepository)
     .useValue(moodboards)
+    .overrideProvider(AddressesRepository)
+    .useValue(addresses)
+    .overrideProvider(NotificationsRepository)
+    .useValue(notifications)
     .compile();
   const app = moduleRef.createNestApplication();
   configureApp(app, env, throttler);
@@ -220,6 +240,9 @@ export async function createAuthApp(
     bundles,
     looks,
     moodboards,
+    addresses,
+    notifications,
+    guestLimiter: moduleRef.get(GuestOrderLimiter),
     throttler,
     ordersService: moduleRef.get(OrdersService),
     couponLimiter: moduleRef.get(CouponAttemptLimiter),

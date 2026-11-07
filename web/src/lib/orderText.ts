@@ -1,4 +1,4 @@
-import type { OrderStatus, PaymentStatus } from '../api/client';
+import type { OrderEventType, OrderStatus, PaymentStatus, ReturnRequest } from '../api/client';
 
 export const STATUS_LABEL: Record<OrderStatus, string> = {
   PENDING_PAYMENT: 'Awaiting simulated payment',
@@ -26,3 +26,24 @@ export function formatRemaining(ms: number): string {
   const s = total % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 }
+
+export const EVENT_LABEL: Record<OrderEventType, string> = {
+  PLACED: 'Order placed',
+  PAID: 'Paid (simulated)',
+  SHIPPED: 'Shipped',
+  DELIVERED: 'Delivered',
+  CANCELLED: 'Cancelled',
+  EXPIRED: 'Expired',
+  REFUNDED: 'Refunded (simulated)',
+  RETURN_REQUESTED: 'Return requested',
+  RETURN_APPROVED: 'Return approved',
+  RETURN_REJECTED: 'Return declined',
+  RETURN_RECEIVED: 'Return received, refunded (simulated)',
+};
+
+export const RETURN_LABEL: Record<ReturnRequest['status'], string> = {
+  REQUESTED: 'Return requested: waiting for the shop',
+  APPROVED: 'Return approved: please send the items back',
+  REJECTED: 'Return declined',
+  RECEIVED: 'Return received and refunded (simulated)',
+};

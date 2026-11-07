@@ -226,6 +226,86 @@ export const ROUTE_DOCS: Record<string, RouteDoc> = {
     summary: 'A shared moodboard, read-only, without any owner details',
     returns: '{ name, note, products, updatedAt }',
   },
+  'POST /api/cart/quote': {
+    summary: "Price a guest's browser cart (nothing stored; coupons need an account)",
+    returns: 'a priced cart',
+  },
+  'POST /api/cart/merge': {
+    summary:
+      'Merge a guest cart after sign-in; what is still available is added, the rest is listed',
+    returns: '{ cart, added, skipped }',
+  },
+  'POST /api/order/guest': {
+    summary:
+      'Guest checkout: server-priced, stock reserved; returns the tracking code once (only its hash is stored)',
+    returns: '{ order, trackingToken, trackPath }',
+  },
+  'POST /api/order/track': {
+    summary:
+      'Track a guest order with its number and tracking code (wrong codes look like unknown orders)',
+    returns: 'the order',
+  },
+  'POST /api/order/track/simulate-payment': {
+    summary: 'Simulated payment for a guest order',
+    returns: 'the order',
+  },
+  'POST /api/order/track/cancel': {
+    summary: 'Cancel a guest order before it ships (paid orders: simulated refund)',
+    returns: 'the order',
+  },
+  'GET /api/order/returns': {
+    summary: 'Orders with a return request (?status=REQUESTED|APPROVED|REJECTED|RECEIVED)',
+    returns: 'order[]',
+  },
+  'POST /api/order/{orderId}/cancel': {
+    summary: 'Cancel your order before it ships (paid orders: simulated refund, stock restored)',
+    returns: 'the order',
+  },
+  'POST /api/order/{orderId}/return': {
+    summary: 'Request a return within 30 days of delivery',
+    returns: 'the order',
+  },
+  'POST /api/order/{orderId}/reorder': {
+    summary: "Add what is still available from a past order to the cart, at today's prices",
+    returns: '{ cart, added, skipped }',
+  },
+  'PATCH /api/order/{orderId}/return': {
+    summary:
+      'Approve, reject or mark a return received (received: simulated refund, stock restored; audited)',
+    returns: 'the order',
+  },
+  'GET /api/addresses': {
+    summary: 'Your saved addresses, default first',
+    returns: 'address[]',
+  },
+  'POST /api/addresses': {
+    summary: 'Save an address (10 max; the first becomes the default)',
+    returns: 'the address',
+  },
+  'PATCH /api/addresses/{id}': {
+    summary: 'Change a saved address',
+    returns: 'the address',
+  },
+  'POST /api/addresses/{id}/default': {
+    summary: 'Make this your default address',
+    returns: 'the address',
+  },
+  'DELETE /api/addresses/{id}': {
+    summary: 'Delete a saved address',
+    returns: '{ deleted: true }',
+  },
+  'GET /api/notifications': {
+    summary: 'Your latest 50 notifications and the unread count',
+    returns: '{ items, unread }',
+  },
+  'POST /api/notifications/read-all': {
+    summary: 'Mark every notification read',
+    returns: '{ unread: 0 }',
+  },
+  'POST /api/notifications/{id}/read': {
+    summary: 'Mark one notification read',
+    returns: '{ unread }',
+  },
   'POST /api/coupon': {
     summary:
       'Create a coupon (code is immutable, 1–90 % off, must expire in the future, active by default)',

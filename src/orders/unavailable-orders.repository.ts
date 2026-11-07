@@ -20,4 +20,6 @@ export class UnavailableOrdersRepository extends OrdersRepository {
   hasPurchased = fail;
   findOverdue = fail;
   transition = fail;
+  updateReturn = fail;
+  findReturns = fail;
 }

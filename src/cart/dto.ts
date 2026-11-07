@@ -31,6 +31,16 @@ export const addManyToCartSchema = z.strictObject({
 });
 export type AddManyToCartDto = z.infer<typeof addManyToCartSchema>;
 
+/** A guest's browser cart, for pricing or for merging at sign-in. */
+export const cartLinesSchema = z.strictObject({
+  items: z
+    .array(
+      z.strictObject({ productId: objectId, quantity: z.number().int().min(1).max(MAX_QUANTITY) }),
+    )
+    .max(MAX_LINES),
+});
+export type CartLinesDto = z.infer<typeof cartLinesSchema>;
+
 export type AddToCartDto = z.infer<typeof addToCartSchema>;
 export type UpdateCartDto = z.infer<typeof updateCartSchema>;
 export type ApplyCouponDto = z.infer<typeof applyCouponSchema>;

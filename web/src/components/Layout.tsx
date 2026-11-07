@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { useCart } from '../cart/CartContext';
+import { useNotifications } from '../notifications/NotificationsContext';
 import { useShopper } from '../shopper/ShopperContext';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -38,6 +39,7 @@ export function Layout() {
   const { user, signOut } = useAuth();
   const { itemCount } = useCart();
   const { wishlist } = useShopper();
+  const { unread } = useNotifications();
   return (
     <MotionConfig reducedMotion="user">
       <a className="skip" href="#main">
@@ -65,7 +67,17 @@ export function Layout() {
             Cart{itemCount > 0 && <span className="badge" aria-label={`${itemCount} items`}>{itemCount}</span>}
           </NavLink>
           {user?.role === 'CUSTOMER' && <NavLink to="/moodboards">Moodboards</NavLink>}
+          {user?.role === 'CUSTOMER' && (
+            <NavLink to="/notifications" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}>
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" className="bell">
+                <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0" />
+              </svg>
+              {unread > 0 && <span className="badge" aria-hidden="true">{unread}</span>}
+            </NavLink>
+          )}
           {user && user.role !== 'DEMO_VIEWER' && user.role !== 'ADMIN' && <NavLink to="/orders">Orders</NavLink>}
+          {user?.role === 'CUSTOMER' && <NavLink to="/account/addresses">Addresses</NavLink>}
+          {!user && <NavLink to="/track">Track order</NavLink>}
           {user && (user.role === 'ADMIN' || user.role === 'DEMO_VIEWER') && <NavLink to="/admin">Admin</NavLink>}
           {user ? (
             <button type="button" className="link link--nav" onClick={() => void signOut()}>

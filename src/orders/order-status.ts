@@ -55,4 +55,25 @@ export const ORDER_TTL_MS = 30 * 60 * 1000;
 /** Cap on unpaid orders per user, so one account cannot lock up the stock. */
 export const MAX_PENDING_ORDERS = 3;
 
+/** What can appear on an order's timeline. */
+export const ORDER_EVENT_TYPES = [
+  'PLACED',
+  'PAID',
+  'SHIPPED',
+  'DELIVERED',
+  'CANCELLED',
+  'EXPIRED',
+  'REFUNDED',
+  'RETURN_REQUESTED',
+  'RETURN_APPROVED',
+  'RETURN_REJECTED',
+  'RETURN_RECEIVED',
+] as const;
+export type OrderEventType = (typeof ORDER_EVENT_TYPES)[number];
+
+export const RETURN_STATUSES = ['REQUESTED', 'APPROVED', 'REJECTED', 'RECEIVED'] as const;
+export type ReturnStatus = (typeof RETURN_STATUSES)[number];
+/** Returns can be requested this long after delivery. */
+export const RETURN_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
 export const SIMULATION_NOTICE = 'Simulated payment: no payment was taken and no card was charged.';

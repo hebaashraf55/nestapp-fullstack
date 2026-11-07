@@ -142,13 +142,15 @@ describe('OpenAPI description', () => {
       expect(Object.keys(schema.properties).sort()).toEqual(['email', 'name', 'password']);
     });
 
-    it('placing an order takes only address and phone, and payment routes take no body fields', () => {
+    it('placing an order takes an address and phone or a saved address id only, and payment routes take no body fields', () => {
       const create = body('POST /api/order') as {
-        properties: Record<string, unknown>;
-        additionalProperties: unknown;
+        anyOf: { properties: Record<string, unknown>; additionalProperties: unknown }[];
       };
-      expect(Object.keys(create.properties).sort()).toEqual(['address', 'phone']);
-      expect(create.additionalProperties).toBe(false);
+      expect(create.anyOf.map((o) => Object.keys(o.properties).sort())).toEqual([
+        ['address', 'phone'],
+        ['addressId'],
+      ]);
+      expect(create.anyOf.every((o) => o.additionalProperties === false)).toBe(true);
       const pay = body('POST /api/order/{orderId}/simulate-payment') as {
         properties: Record<string, unknown>;
         additionalProperties: unknown;

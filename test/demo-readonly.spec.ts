@@ -24,6 +24,11 @@ const PUBLIC_WRITES: Record<string, string> = {
   'POST /api/auth/reset-password': 'public: needs a mailed code',
   'POST /api/auth/google':
     'public: needs a Google-signed ID token; only ever reaches CUSTOMER accounts',
+  'POST /api/cart/quote': 'public: prices a browser cart, stores nothing',
+  'POST /api/order/guest': 'public and anonymous (never tied to the viewer), throttled per client',
+  'POST /api/order/track': 'public: needs the guest order’s tracking code; reads only',
+  'POST /api/order/track/simulate-payment': 'public: needs the guest order’s tracking code',
+  'POST /api/order/track/cancel': 'public: needs the guest order’s tracking code',
 };
 
 /** Authenticated write routes → a body that would otherwise be valid, so only the guard can say 403. */
@@ -70,6 +75,17 @@ const FORBIDDEN_FOR_VIEWER: Record<string, object> = {
   'DELETE /api/moodboards/:id/products/:productId': {},
   'POST /api/moodboards/:id/share': {},
   'DELETE /api/moodboards/:id/share': {},
+  'POST /api/cart/merge': { items: [] },
+  'POST /api/order/:orderId/cancel': {},
+  'POST /api/order/:orderId/return': { reason: 'It arrived chipped at the rim.' },
+  'POST /api/order/:orderId/reorder': {},
+  'PATCH /api/order/:orderId/return': { decision: 'APPROVED' },
+  'POST /api/addresses': {},
+  'PATCH /api/addresses/:id': { label: 'Home' },
+  'POST /api/addresses/:id/default': {},
+  'DELETE /api/addresses/:id': {},
+  'POST /api/notifications/read-all': {},
+  'POST /api/notifications/:id/read': {},
   'POST /api/recently-viewed/merge': { productIds: [] },
   'POST /api/recently-viewed/:productId': {},
   'DELETE /api/product/:id': {},

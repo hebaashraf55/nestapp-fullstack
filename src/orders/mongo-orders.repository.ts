@@ -2,9 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
 import { Order } from './order.schema';
-import { STOCK_HOLDING_STATUSES, type OrderStatus, type PaymentStatus } from './order-status';
+import {
+  STOCK_HOLDING_STATUSES,
+  type OrderStatus,
+  type PaymentStatus,
+  type ReturnStatus,
+} from './order-status';
 import {
   NewOrder,
+  OrderEvent,
   OrderPageFilter,
   OrderPatch,
   OrderRecord,
@@ -39,6 +45,16 @@ interface OrderDoc {
   refundedAt?: Date | null;
   cancelledAt?: Date | null;
   createdAt: Date;
+  events?: { type: string; at: Date; note?: string | null }[];
+  returnRequest?: {
+    status: string;
+    reason: string;
+    requestedAt: Date;
+    decidedAt?: Date | null;
+    note?: string | null;
+  } | null;
+  guestEmail?: string | null;
+  guestTokenHash?: string | null;
 }
 
 const toRecord = (d: OrderDoc): OrderRecord => ({
@@ -68,6 +84,22 @@ const toRecord = (d: OrderDoc): OrderRecord => ({
   refundedAt: d.refundedAt ?? null,
   cancelledAt: d.cancelledAt ?? null,
   createdAt: d.createdAt,
+  events: (d.events ?? []).map((e) => ({
+    type: e.type as OrderEvent['type'],
+    at: e.at,
+    note: e.note ?? null,
+  })),
+  returnRequest: d.returnRequest
+    ? {
+        status: d.returnRequest.status as ReturnStatus,
+        reason: d.returnRequest.reason,
+        requestedAt: d.returnRequest.requestedAt,
+        decidedAt: d.returnRequest.decidedAt ?? null,
+        note: d.returnRequest.note ?? null,
+      }
+    : null,
+  guestEmail: d.guestEmail ?? null,
+  guestTokenHash: d.guestTokenHash ?? null,
 });
 
 @Injectable()
@@ -77,7 +109,12 @@ export class MongoOrdersRepository extends OrdersRepository {
   }
 
   async create(order: NewOrder) {
-    return toRecord((await this.model.create(order)) as unknown as OrderDoc);
+    const doc = await this.model.create({
+      ...order,
+      events: [{ type: 'PLACED', at: new Date(), note: null }],
+      returnRequest: null,
+    });
+    return toRecord(doc as unknown as OrderDoc);
   }
 
   async findById(id: string) {
@@ -202,11 +239,56 @@ export class MongoOrdersRepository extends OrdersRepository {
     return docs.map((d) => toRecord(d as unknown as OrderDoc));
   }
 
-  async transition(id: string, from: readonly OrderStatus[], patch: OrderPatch) {
+  async transition(
+    id: string,
+    from: readonly OrderStatus[],
+    patch: OrderPatch,
+    event?: OrderEvent,
+  ) {
     if (!isValidObjectId(id)) return null;
     const doc = await this.model
-      .findOneAndUpdate({ _id: id, status: { $in: [...from] } }, { $set: patch }, { new: true })
+      .findOneAndUpdate(
+        { _id: id, status: { $in: [...from] } },
+        { $set: patch, ...(event ? { $push: { events: event } } : {}) },
+        { new: true, runValidators: true },
+      )
       .exec();
     return doc ? toRecord(doc as unknown as OrderDoc) : null;
+  }
+
+  async updateReturn(
+    id: string,
+    fromReturn: ReturnStatus | null,
+    patch: OrderPatch,
+    event: OrderEvent,
+  ) {
+    if (!isValidObjectId(id)) return null;
+    const doc = await this.model
+      .findOneAndUpdate(
+        {
+          _id: id,
+          status: 'DELIVERED',
+          ...(fromReturn === null
+            ? { returnRequest: null }
+            : { 'returnRequest.status': fromReturn }),
+        },
+        { $set: patch, $push: { events: event } },
+        { new: true, runValidators: true },
+      )
+      .exec();
+    return doc ? toRecord(doc as unknown as OrderDoc) : null;
+  }
+
+  async findReturns(status: ReturnStatus | undefined, demoOnly: boolean, limit: number) {
+    const docs = await this.model
+      .find({
+        returnRequest: { $ne: null },
+        ...(status ? { 'returnRequest.status': status } : {}),
+        ...(demoOnly ? { isDemo: true } : {}),
+      })
+      .sort({ 'returnRequest.requestedAt': -1 })
+      .limit(limit)
+      .exec();
+    return docs.map((d) => toRecord(d as unknown as OrderDoc));
   }
 }

@@ -383,7 +383,38 @@ export interface Order {
   cancelledAt: string | null;
   createdAt: string;
   isDemo: boolean;
+  /** Older API versions omit these; the UI treats them as absent. */
+  timeline?: OrderEvent[];
+  returnRequest?: ReturnRequest | null;
+  returnable?: boolean;
+  cancellable?: boolean;
+  isGuest?: boolean;
+  guestEmail?: string | null;
   payment: { mode: 'SIMULATED'; notice: string };
+}
+export type OrderEventType =
+  | 'PLACED'
+  | 'PAID'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'EXPIRED'
+  | 'REFUNDED'
+  | 'RETURN_REQUESTED'
+  | 'RETURN_APPROVED'
+  | 'RETURN_REJECTED'
+  | 'RETURN_RECEIVED';
+export interface OrderEvent {
+  type: OrderEventType;
+  at: string;
+  note: string | null;
+}
+export interface ReturnRequest {
+  status: 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'RECEIVED';
+  reason: string;
+  requestedAt: string;
+  decidedAt: string | null;
+  note: string | null;
 }
 
 const isOrder = (value: unknown): value is Order =>
@@ -398,6 +429,48 @@ async function orderCall(promise: Promise<unknown>): Promise<Order> {
 /** POST /api/order: turns the signed-in user's server-priced cart into an order. Only address and phone are sent. */
 export const createOrder = (address: string, phone: string) =>
   orderCall(apiSend('POST', '/api/order', { address, phone }));
+/** POST /api/order with one of the customer's saved addresses. */
+export const createOrderFromAddress = (addressId: string) => orderCall(apiSend('POST', '/api/order', { addressId }));
+
+export interface CartLineInput {
+  productId: string;
+  quantity: number;
+}
+export interface AddAvailableResult {
+  cart: Cart;
+  added: number;
+  skipped: { productId: string; name: string | null; reason: string }[];
+}
+/** POST /api/cart/quote: the server prices a guest's browser cart; nothing is stored. */
+export const quoteCart = (items: CartLineInput[]) => cartCall(apiSend('POST', '/api/cart/quote', { items }));
+/** POST /api/cart/merge: after sign-in, adds what is still available from the browser cart. */
+export const mergeCart = (items: CartLineInput[]) => apiSend<AddAvailableResult>('POST', '/api/cart/merge', { items });
+
+export interface GuestOrderResult {
+  order: Order;
+  trackingToken: string;
+  /** /track/<id>#<code>: the code is after #, so browsers never send it to a server. */
+  trackPath: string;
+}
+export const placeGuestOrder = (input: { email: string; items: CartLineInput[]; address: string; phone: string }) =>
+  apiSend<GuestOrderResult>('POST', '/api/order/guest', input);
+export const trackOrder = (orderId: string, token: string) => orderCall(apiSend('POST', '/api/order/track', { orderId, token }));
+export const trackPay = (orderId: string, token: string) =>
+  orderCall(apiSend('POST', '/api/order/track/simulate-payment', { orderId, token }));
+export const trackCancel = (orderId: string, token: string) =>
+  orderCall(apiSend('POST', '/api/order/track/cancel', { orderId, token }));
+
+export const cancelOrder = (id: string) => orderCall(apiSend('POST', `/api/order/${encodeURIComponent(id)}/cancel`, {}));
+export const requestReturn = (id: string, reason: string) =>
+  orderCall(apiSend('POST', `/api/order/${encodeURIComponent(id)}/return`, { reason }));
+export const reorder = (id: string) => apiSend<AddAvailableResult>('POST', `/api/order/${encodeURIComponent(id)}/reorder`, {});
+export async function getReturns(status: ReturnRequest['status'] | '', signal?: AbortSignal): Promise<Order[]> {
+  const data = await apiGet<unknown>(`/api/order/returns${status ? `?status=${status}` : ''}`, signal);
+  if (!Array.isArray(data) || !data.every(isOrder)) throw new ApiError(200, 'Unexpected response from the server');
+  return data;
+}
+export const decideReturn = (id: string, decision: 'APPROVED' | 'REJECTED' | 'RECEIVED', note?: string) =>
+  orderCall(apiSend('PATCH', `/api/order/${encodeURIComponent(id)}/return`, note ? { decision, note } : { decision }));
 
 /** GET /api/order */
 export async function getOrders(signal?: AbortSignal): Promise<Order[]> {
@@ -824,3 +897,47 @@ export const shareMoodboard = (id: string) => apiSend<Moodboard>('POST', `${mb(i
 export const unshareMoodboard = (id: string) => apiSend<Moodboard>('DELETE', `${mb(id)}/share`);
 export const getSharedMoodboard = (token: string, signal?: AbortSignal) =>
   apiGet<SharedMoodboard>(`/api/moodboards/shared/${encodeURIComponent(token)}`, signal);
+
+// ---------------------------------------------------------------------------------------------
+// Address book and notifications
+// ---------------------------------------------------------------------------------------------
+
+export interface AddressFields {
+  label: string;
+  fullName: string;
+  line1: string;
+  line2: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+}
+export interface SavedAddress extends AddressFields {
+  id: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+export const getAddresses = (signal?: AbortSignal) => listOf<SavedAddress>(apiGet<unknown>('/api/addresses', signal));
+export const createAddress = (fields: AddressFields & { isDefault?: boolean }) => apiSend<SavedAddress>('POST', '/api/addresses', fields);
+export const updateAddress = (id: string, fields: Partial<AddressFields>) =>
+  apiSend<SavedAddress>('PATCH', `/api/addresses/${encodeURIComponent(id)}`, fields);
+export const setDefaultAddress = (id: string) => apiSend<SavedAddress>('POST', `/api/addresses/${encodeURIComponent(id)}/default`, {});
+export const deleteAddress = (id: string) => apiSend<{ deleted: true }>('DELETE', `/api/addresses/${encodeURIComponent(id)}`);
+/** Same one-line format the server uses on the order. */
+export const formatAddress = (a: AddressFields) =>
+  [a.fullName, a.line1, a.line2, `${a.postalCode} ${a.city}`, a.country].filter((x) => x.trim() !== '').join(', ');
+
+export interface AppNotification {
+  id: string;
+  type: 'order' | 'return' | 'review';
+  title: string;
+  body: string;
+  link: string | null;
+  read: boolean;
+  createdAt: string;
+}
+export const getNotifications = (signal?: AbortSignal) =>
+  apiGet<{ items: AppNotification[]; unread: number }>('/api/notifications', signal);
+export const markNotificationRead = (id: string) =>
+  apiSend<{ unread: number }>('POST', `/api/notifications/${encodeURIComponent(id)}/read`, {});
+export const markAllNotificationsRead = () => apiSend<{ unread: number }>('POST', '/api/notifications/read-all', {});

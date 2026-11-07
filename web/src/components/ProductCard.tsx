@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import type { Product } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { useCart } from '../cart/CartContext';
@@ -34,14 +34,9 @@ export function WishButton({ product, withLabel = false }: { product: Product; w
 function QuickAdd({ product }: { product: Product }) {
   const { user } = useAuth();
   const { add } = useCart();
-  const navigate = useNavigate();
   const [state, setState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
   if (!product.inStock || user?.role === 'DEMO_VIEWER' || user?.role === 'ADMIN') return null;
   const click = async () => {
-    if (!user) {
-      navigate('/login', { state: { from: `/shop/${product.id}` } });
-      return;
-    }
     setState('busy');
     try {
       await add(product.id, 1);

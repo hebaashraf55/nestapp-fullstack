@@ -121,6 +121,82 @@ export class CartService {
     });
   }
 
+  /**
+   * Prices a cart that is not stored (a guest's browser cart). Same rules as a stored cart, coupons
+   * excluded. Duplicate lines are combined.
+   */
+  async quote(lines: { productId: string; quantity: number }[]): Promise<CartView> {
+    const merged = new Map<string, number>();
+    for (const l of lines) {
+      const id = l.productId.toLowerCase();
+      merged.set(id, Math.min(MAX_QUANTITY, (merged.get(id) ?? 0) + l.quantity));
+    }
+    return this.render({
+      userId: '',
+      items: [...merged].map(([productId, quantity]) => ({ productId, quantity })),
+      couponId: null,
+      version: 0,
+    });
+  }
+
+  /**
+   * Adds what can be added (reorder, or a guest cart merged at sign-in): each line is capped by the
+   * stock left after what is already in the cart; missing or sold-out products are reported, not added.
+   */
+  async addAvailable(
+    userId: string,
+    lines: { productId: string; quantity: number }[],
+  ): Promise<{
+    cart: CartView;
+    added: number;
+    skipped: { productId: string; name: string | null; reason: string }[];
+  }> {
+    const ids = [...new Set(lines.map((l) => l.productId.toLowerCase()))];
+    const found = new Map((await this.products.findByIds(ids)).map((p) => [p.id, p]));
+    let skipped: { productId: string; name: string | null; reason: string }[] = [];
+    let added = 0;
+    const cart = await this.mutate(userId, (current) => {
+      skipped = [];
+      added = 0;
+      let items = current.items;
+      for (const line of lines) {
+        const id = line.productId.toLowerCase();
+        const product = found.get(id);
+        if (!product) {
+          skipped.push({ productId: id, name: null, reason: 'no longer available' });
+          continue;
+        }
+        const existing = items.find((l) => l.productId === id)?.quantity ?? 0;
+        const room = Math.min(product.stock, MAX_QUANTITY) - existing;
+        const take = Math.min(line.quantity, room);
+        if (take <= 0) {
+          skipped.push({
+            productId: id,
+            name: product.name,
+            reason: product.stock === 0 ? 'sold out' : 'no more in stock',
+          });
+          continue;
+        }
+        if (take < line.quantity)
+          skipped.push({
+            productId: id,
+            name: product.name,
+            reason: `only ${take} more could be added`,
+          });
+        if (existing === 0 && items.length >= MAX_LINES) {
+          skipped.push({ productId: id, name: product.name, reason: 'your cart is full' });
+          continue;
+        }
+        added += take;
+        items = existing
+          ? items.map((l) => (l.productId === id ? { ...l, quantity: existing + take } : l))
+          : [...items, { productId: id, quantity: take }];
+      }
+      return { items, couponId: current.couponId };
+    });
+    return { cart, added, skipped };
+  }
+
   async update(userId: string, productId: string, quantity: number): Promise<CartView> {
     const id = productId.toLowerCase();
     const product = quantity > 0 ? await this.products.findById(id) : null;

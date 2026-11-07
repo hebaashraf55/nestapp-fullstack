@@ -7,6 +7,7 @@ import {
 import { AuthenticatedUser } from '../auth/auth.types';
 import { demoScope } from '../auth/demo-scope';
 import { ProductsService } from '../catalogue/catalogue.services';
+import { NotificationsService } from '../notifications/notifications.service';
 import { OrdersRepository } from '../orders/orders.repository';
 import { Role } from '../users/role';
 import { UsersRepository } from '../users/users.repository';
@@ -72,6 +73,7 @@ export class ReviewsService {
     private readonly products: ProductsService,
     private readonly orders: OrdersRepository,
     private readonly users: UsersRepository,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** Approved reviews only, with the rating summary, plus the caller's own review in any state. */
@@ -175,6 +177,13 @@ export class ReviewsService {
   async moderate(id: string, dto: ModerateDto, admin: AuthenticatedUser): Promise<OwnReview> {
     const updated = await this.reviews.moderate(id, dto.status, dto.note ?? null, admin.id);
     if (!updated) throw new NotFoundException('Review not found');
+    await this.notifications.notify(updated.userId, {
+      type: 'review',
+      title:
+        dto.status === 'APPROVED' ? 'Your review is published' : 'Your review was not published',
+      body: dto.note ?? `“${updated.title}”`,
+      link: `/shop/${updated.productId}#reviews-title`,
+    });
     return ownView(updated);
   }
 }

@@ -6,7 +6,7 @@ import { OrderExpirySweeper } from './order-expiry.sweeper';
 import { Order, OrderSchema } from './order.schema';
 import { OrdersController } from './orders.controller';
 import { OrdersRepository } from './orders.repository';
-import { OrdersService } from './orders.service';
+import { GuestOrderLimiter, OrdersService } from './orders.service';
 import { UnavailableOrdersRepository } from './unavailable-orders.repository';
 
 /** Global so the admin reporting module can read orders without re-importing the module. */
@@ -28,6 +28,7 @@ export class OrdersModule {
           useClass: connected ? MongoOrdersRepository : UnavailableOrdersRepository,
         },
         OrdersService,
+        GuestOrderLimiter,
         OrderExpirySweeper,
       ],
       exports: [OrdersRepository],

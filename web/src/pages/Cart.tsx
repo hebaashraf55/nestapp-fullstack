@@ -14,25 +14,12 @@ const STATUS_TEXT: Record<CartLine['status'], string | null> = {
 
 export function Cart() {
   const { user } = useAuth();
-  const { cart, status, error, setQuantity, remove, applyCode, reload } = useCart();
+  const { cart, status, error, setQuantity, remove, applyCode, reload, isGuest, mergeNotice } = useCart();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const readOnly = user?.role === 'DEMO_VIEWER';
 
-  if (!user) {
-    return (
-      <div className="page">
-        <h1 className="h1--small">Your cart</h1>
-        <p className="notice">
-          <Link to="/login" state={{ from: '/cart' }}>
-            Sign in
-          </Link>{' '}
-          to see your cart.
-        </p>
-      </div>
-    );
-  }
 
   const act = async (work: () => Promise<void>) => {
     setBusy(true);
@@ -67,6 +54,21 @@ export function Cart() {
         </div>
       )}
       {readOnly && <p className="notice">The demo viewer account is read-only, so the cart cannot be changed.</p>}
+      {isGuest && (
+        <p className="notice">
+          Your cart is kept in this browser. You can check out as a guest, or{' '}
+          <Link to="/login" state={{ from: '/cart' }}>
+            sign in
+          </Link>{' '}
+          to keep it on your account and use coupons.
+        </p>
+      )}
+      {mergeNotice && (
+        <p className="notice" role="status">
+          We added your saved cart to your account. Not everything could be carried over:{' '}
+          {mergeNotice.map((s) => `${s.name ?? 'an item'} (${s.reason})`).join(', ')}.
+        </p>
+      )}
 
       {cart && cart.items.length === 0 && (
         <div className="notice">
@@ -154,7 +156,7 @@ export function Cart() {
                 <dd>{formatMoney(cart.totalCents, cart.currency)}</dd>
               </div>
             </dl>
-            {!readOnly && (
+            {!readOnly && !isGuest && (
               <form className="coupon" onSubmit={submitCoupon}>
                 <label className="field field--grow">
                   <span>Coupon code</span>

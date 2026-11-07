@@ -1,6 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
-import { ORDER_STATUSES, PAYMENT_STATUSES } from './order-status';
+import {
+  ORDER_EVENT_TYPES,
+  ORDER_STATUSES,
+  PAYMENT_STATUSES,
+  RETURN_STATUSES,
+} from './order-status';
 
 @Schema({ _id: false })
 export class OrderItem {
@@ -16,6 +21,32 @@ export class OrderItem {
   lineTotalCents!: number;
 }
 export const OrderItemSchema = SchemaFactory.createForClass(OrderItem);
+
+@Schema({ _id: false })
+export class OrderEventDoc {
+  @Prop({ required: true, enum: ORDER_EVENT_TYPES })
+  type!: string;
+  @Prop({ required: true, type: Date })
+  at!: Date;
+  @Prop({ type: String, default: null, maxlength: 500 })
+  note!: string | null;
+}
+export const OrderEventSchema = SchemaFactory.createForClass(OrderEventDoc);
+
+@Schema({ _id: false })
+export class ReturnRequestDoc {
+  @Prop({ required: true, enum: RETURN_STATUSES })
+  status!: string;
+  @Prop({ required: true, maxlength: 500 })
+  reason!: string;
+  @Prop({ required: true, type: Date })
+  requestedAt!: Date;
+  @Prop({ type: Date, default: null })
+  decidedAt!: Date | null;
+  @Prop({ type: String, default: null, maxlength: 300 })
+  note!: string | null;
+}
+export const ReturnRequestSchema = SchemaFactory.createForClass(ReturnRequestDoc);
 
 @Schema({ collection: 'orders', timestamps: { createdAt: true, updatedAt: true } })
 export class Order {
@@ -72,8 +103,21 @@ export class Order {
 
   @Prop({ type: Date, default: null })
   cancelledAt!: Date | null;
+
+  @Prop({ type: [OrderEventSchema], default: [] })
+  events!: OrderEventDoc[];
+
+  @Prop({ type: ReturnRequestSchema, default: null })
+  returnRequest!: ReturnRequestDoc | null;
+
+  @Prop({ type: String, default: null, maxlength: 254 })
+  guestEmail!: string | null;
+
+  @Prop({ type: String, default: null })
+  guestTokenHash!: string | null;
 }
 export const OrderSchema = SchemaFactory.createForClass(Order);
 OrderSchema.index({ userId: 1, createdAt: -1 });
 OrderSchema.index({ status: 1, expiresAt: 1 });
+OrderSchema.index({ 'returnRequest.status': 1, createdAt: -1 });
 OrderSchema.index({ isDemo: 1, status: 1, createdAt: -1 });

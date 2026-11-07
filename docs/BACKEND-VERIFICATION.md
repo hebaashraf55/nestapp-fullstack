@@ -42,8 +42,16 @@ How each backend feature is proven. Three kinds of automated evidence exist:
 | Batch add to cart (all or nothing) | Yes | via cart repo | Own cart; viewer 403 | batch2 | Real |
 | Shop the Look (curated products, optional photo spots) | Yes | Yes | Admin-only writes (audited) | batch2, batch2.mongo | Real |
 | Moodboards (private, 20 per customer, 50 pieces, revocable share links) | Yes | Yes (owner-scoped writes, 6 racing pins → 1, unique token) | Customers only; others 404; shared view shows no owner data | batch2, batch2.mongo | Real |
+| Address book (10 per customer, one default, checkout by saved address) | Yes | Yes (5 racing "make default" → 1 default, owner scoping) | Own addresses only; others 404; card numbers refused | batch3, batch3.mongo | Real |
+| Guest cart pricing and guest checkout | Yes | via orders repo | Public; client prices refused; per-client limit (10/hour); unpaid cap per email | batch3 | Real; confirmation email uses the configured mail transport |
+| Guest tracking (order number + 128-bit code; only a SHA-256 hash stored; constant-time check) | Yes | — | Wrong codes = unknown orders (404); failures counted per client | batch3 | Real |
+| Order timeline (event written in the same update as the status) | Yes | Yes (losing transitions add nothing) | Owner or admin | batch3, batch3.mongo | Real; older orders get a timeline rebuilt from their timestamps |
+| Customer cancellation (unpaid: cancel; paid: simulated refund; stock restored) | Yes | Yes (transition CAS) | Owner only | batch3 | Real; refund **simulated** |
+| Returns (30 days after delivery; requested → approved/rejected → received) | Yes | Yes (6 racing requests → 1) | Customer requests; admin decides (audited); viewer reads synthetic only | batch3, batch3.mongo | Real; refund **simulated** |
+| Reorder (adds what is still available at today's prices) | Yes | via cart repo | Owner only | batch3 | Real |
+| Notifications (order, return and review updates; read state) | Yes | Yes (owner scoping, first read time kept, 180-day expiry) | Own only; guests never notified; a failed save never fails the action | batch3, batch3.mongo | Real (in-app; no push or email) |
 | Validation, 404, 409, error envelope | Yes | Yes | — | app, catalogue, orders, e2e | Real |
 | Rate limiting | Yes | In-memory counters | — | throttle, auth | Real, per process (not shared across instances) |
 | OpenAPI accuracy | Generated from the running app; a test fails if a route lacks a summary or the file drifts | — | — | openapi | Real |
 
-**Demo data:** the seeds create the admin, two demo accounts and 56 products across 7 categories (8 each) (flagged `isDemo`). **Simulated:** payments and refunds only.
+**Demo data:** the seeds create the admin, two demo accounts and 56 products across 7 categories (8 each) (flagged `isDemo`). **Simulated:** payments and refunds only (including cancellations and returns).

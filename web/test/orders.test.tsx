@@ -106,13 +106,14 @@ describe('checkout', () => {
     expect(await screen.findByText(/your cart is empty/i)).toBeInTheDocument();
   });
 
-  it('has no card or payment inputs, only address and phone', async () => {
+  it('has no card or payment inputs, only delivery details', async () => {
     signIn();
     mockApi((c) => (c.path === '/api/cart' ? ok(cart(2)) : undefined));
     renderAt('/checkout');
     await screen.findByRole('button', { name: /place order \(simulated\)/i });
-    const labels = screen.getAllByRole('textbox').concat(screen.getAllByRole('textbox')).map((e) => e.getAttribute('autocomplete'));
-    expect(new Set(labels)).toEqual(new Set(['street-address', 'tel']));
+    const labels = screen.getAllByRole('textbox').map((e) => e.getAttribute('autocomplete'));
+    const allowed = ['name', 'address-line1', 'address-line2', 'postal-code', 'address-level2', 'country-name', 'tel'];
+    expect(labels.every((l) => allowed.includes(l ?? ''))).toBe(true);
     expect(document.querySelector('input[autocomplete^="cc-"]')).toBeNull();
     expect(screen.queryByLabelText(/card|cvv|expiry/i)).not.toBeInTheDocument();
   });
@@ -127,12 +128,34 @@ describe('checkout', () => {
     });
     const user = userEvent.setup();
     renderAt('/checkout');
-    await user.type(await screen.findByLabelText('Delivery address'), '  12 Nile Street, Cairo ');
+    await user.type(await screen.findByLabelText('Full name'), 'Ada Lovelace');
+    await user.type(screen.getByLabelText('Street and number'), '  12 Nile Street ');
+    await user.type(screen.getByLabelText('Postal code'), '11511');
+    await user.type(screen.getByLabelText('City'), 'Cairo');
+    await user.type(screen.getByLabelText('Country'), 'Egypt');
     await user.type(screen.getByLabelText('Phone number'), '+201000000000');
+    await user.click(screen.getByLabelText('Save to my address book'));
     await user.click(screen.getByRole('button', { name: /place order \(simulated\)/i }));
     expect(await screen.findByText(NOTICE)).toBeInTheDocument();
     const post = calls.find((c) => c.method === 'POST' && c.path === '/api/order');
-    expect(post?.body).toEqual({ address: '12 Nile Street, Cairo', phone: '+201000000000' });
+    expect(post?.body).toEqual({ address: 'Ada Lovelace, 12 Nile Street, 11511 Cairo, Egypt', phone: '+201000000000' });
+  });
+
+  it('orders to a saved address by its id only', async () => {
+    signIn();
+    const saved = { id: 'a'.repeat(24), label: 'Home', fullName: 'Ada', line1: '12 Nile Street', line2: '', city: 'Cairo', postalCode: '11511', country: 'Egypt', phone: '+201000000000', isDefault: true, createdAt: 't' };
+    const calls = mockApi((c) => {
+      if (c.path === '/api/cart') return ok(cart(2));
+      if (c.path === '/api/addresses') return ok([saved]);
+      if (c.method === 'POST' && c.path === '/api/order') return ok(order(), 201);
+      if (c.path === `/api/order/${OID}`) return ok(order());
+      return undefined;
+    });
+    renderAt('/checkout');
+    expect(await screen.findByRole('radio', { name: /Home/ })).toBeChecked();
+    await userEvent.click(screen.getByRole('button', { name: /place order \(simulated\)/i }));
+    expect(await screen.findByText(NOTICE)).toBeInTheDocument();
+    expect(calls.find((c) => c.method === 'POST' && c.path === '/api/order')!.body).toEqual({ addressId: saved.id });
   });
 
   it('shows the server error and keeps the form when placing fails', async () => {
@@ -144,8 +167,13 @@ describe('checkout', () => {
     });
     const user = userEvent.setup();
     renderAt('/checkout');
-    await user.type(await screen.findByLabelText('Delivery address'), '12 Nile Street');
+    await user.type(await screen.findByLabelText('Full name'), 'Ada');
+    await user.type(screen.getByLabelText('Street and number'), '12 Nile Street');
+    await user.type(screen.getByLabelText('Postal code'), '11511');
+    await user.type(screen.getByLabelText('City'), 'Cairo');
+    await user.type(screen.getByLabelText('Country'), 'Egypt');
     await user.type(screen.getByLabelText('Phone number'), '+201000000000');
+    await user.click(screen.getByLabelText('Save to my address book'));
     await user.click(screen.getByRole('button', { name: /place order/i }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Not enough stock for Dune Vase');
     expect(screen.getByRole('button', { name: /place order/i })).toBeEnabled();

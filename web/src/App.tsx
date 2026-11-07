@@ -3,6 +3,11 @@ import { AuthProvider } from './auth/AuthContext';
 import { CartProvider } from './cart/CartContext';
 import { Layout } from './components/Layout';
 import { ShopperProvider } from './shopper/ShopperContext';
+import { NotificationsProvider } from './notifications/NotificationsContext';
+import { Addresses } from './pages/Addresses';
+import { Notifications } from './pages/Notifications';
+import { TrackOrder } from './pages/TrackOrder';
+import { AdminReturns } from './pages/admin/AdminReturns';
 import { Compare } from './pages/Compare';
 import { Wishlist } from './pages/Wishlist';
 import { Bundles } from './pages/Bundles';
@@ -36,6 +41,7 @@ export function App() {
     <AuthProvider>
       <CartProvider>
         <ShopperProvider>
+        <NotificationsProvider>
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Home />} />
@@ -53,6 +59,10 @@ export function App() {
             <Route path="checkout" element={<Checkout />} />
             <Route path="orders" element={<Orders />} />
             <Route path="orders/:id" element={<OrderDetail />} />
+            <Route path="track" element={<TrackOrder />} />
+            <Route path="track/:id" element={<TrackOrder />} />
+            <Route path="account/addresses" element={<Addresses />} />
+            <Route path="notifications" element={<Notifications />} />
             <Route path="admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="products" element={<AdminProducts />} />
@@ -61,6 +71,7 @@ export function App() {
               <Route path="orders" element={<AdminOrders />} />
               <Route path="coupons" element={<AdminCoupons />} />
               <Route path="reviews" element={<AdminReviews />} />
+              <Route path="returns" element={<AdminReturns />} />
               <Route path="bundles" element={<AdminBundles />} />
               <Route path="looks" element={<AdminLooks />} />
               <Route path="customers" element={<Customers />} />
@@ -75,6 +86,7 @@ export function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
+        </NotificationsProvider>
         </ShopperProvider>
       </CartProvider>
     </AuthProvider>
