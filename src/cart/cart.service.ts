@@ -8,6 +8,8 @@ import { ProductRecord, ProductsRepository } from '../catalogue/catalogue.reposi
 import { CURRENCY } from '../catalogue/catalogue.services';
 import { RateLimiter } from '../auth/rate-limiter';
 import { TooManyAttemptsException } from '../auth/too-many-attempts.exception';
+import { applyBundles, AppliedBundle } from '../bundles/bundle-pricing';
+import { BundlesRepository } from '../bundles/bundles.repository';
 import { CouponsRepository, isCouponUsable } from '../coupons/coupons.repository';
 import { CartData, CartRecord, CartsRepository, VersionConflictError } from './cart.repository';
 import { MAX_LINES, MAX_QUANTITY } from './dto';
@@ -39,7 +41,11 @@ export interface CartView {
   items: CartLineView[];
   itemCount: number;
   subtotalCents: number;
+  /** Bundle discounts found by the server: complete sets in the cart. */
+  bundles: AppliedBundle[];
+  bundleSavingsCents: number;
   coupon: { code: string; discountPercent: number } | null;
+  /** Coupon discount, taken after bundle savings. */
   discountCents: number;
   totalCents: number;
   currency: string;
@@ -55,6 +61,7 @@ export class CartService {
     private readonly products: ProductsRepository,
     private readonly coupons: CouponsRepository,
     private readonly limiter: CouponAttemptLimiter,
+    private readonly bundles: BundlesRepository,
   ) {}
 
   async get(userId: string): Promise<CartView> {
@@ -80,6 +87,36 @@ export class CartService {
       const items = existing
         ? cart.items.map((l) => (l.productId === id ? { ...l, quantity: next } : l))
         : [...cart.items, { productId: id, quantity: next }];
+      return { items, couponId: cart.couponId };
+    });
+  }
+
+  /**
+   * Adds several products in one cart write (a bundle or a look). All or nothing: if any product is
+   * missing or short on stock, nothing is added.
+   */
+  async addMany(
+    userId: string,
+    lines: { productId: string; quantity: number }[],
+  ): Promise<CartView> {
+    const ids = [...new Set(lines.map((l) => l.productId.toLowerCase()))];
+    if (ids.length !== lines.length)
+      throw new BadRequestException('Each product may appear only once');
+    const found = new Map((await this.products.findByIds(ids)).map((p) => [p.id, p]));
+    if (found.size !== ids.length) throw new NotFoundException('Product not found');
+    return this.mutate(userId, (cart) => {
+      let items = cart.items;
+      for (const line of lines) {
+        const id = line.productId.toLowerCase();
+        const existing = items.find((l) => l.productId === id);
+        const next = (existing?.quantity ?? 0) + line.quantity;
+        this.assertQuantity(found.get(id) as ProductRecord, next);
+        items = existing
+          ? items.map((l) => (l.productId === id ? { ...l, quantity: next } : l))
+          : [...items, { productId: id, quantity: next }];
+      }
+      if (items.length > MAX_LINES)
+        throw new BadRequestException(`A cart can hold at most ${MAX_LINES} different items`);
       return { items, couponId: cart.couponId };
     });
   }
@@ -196,6 +233,15 @@ export class CartService {
     });
 
     const subtotalCents = items.reduce((sum, i) => sum + i.lineTotalCents, 0);
+    const okLines = items.filter((i) => i.status === 'ok');
+    const appliedBundles = okLines.length
+      ? applyBundles(
+          okLines,
+          await this.bundles.findActiveContaining(okLines.map((i) => i.productId)),
+        )
+      : [];
+    const bundleSavingsCents = appliedBundles.reduce((sum, b) => sum + b.savingsCents, 0);
+    const afterBundles = subtotalCents - bundleSavingsCents;
     const warnings: string[] = [];
     let coupon: CartView['coupon'] = null;
     let discountCents = 0;
@@ -203,7 +249,7 @@ export class CartService {
       const record = await this.coupons.findById(cart.couponId);
       if (record && isCouponUsable(record)) {
         coupon = { code: record.code, discountPercent: record.discountPercent };
-        discountCents = Math.round((subtotalCents * record.discountPercent) / 100);
+        discountCents = Math.round((afterBundles * record.discountPercent) / 100);
       } else {
         warnings.push('Your coupon is no longer valid and was not applied.');
       }
@@ -215,9 +261,11 @@ export class CartService {
       items,
       itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
       subtotalCents,
+      bundles: appliedBundles,
+      bundleSavingsCents,
       coupon,
       discountCents,
-      totalCents: subtotalCents - discountCents,
+      totalCents: afterBundles - discountCents,
       currency: CURRENCY,
       hasIssues: items.some((i) => i.status !== 'ok'),
       warnings,

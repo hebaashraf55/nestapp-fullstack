@@ -21,6 +21,7 @@ export class InMemoryOrdersRepository extends OrdersRepository {
     this.check();
     const created: OrderRecord = {
       ...order,
+      bundleSavingsCents: order.bundleSavingsCents ?? 0,
       id: randomBytes(12).toString('hex'),
       createdAt: new Date(Date.now() + this.tick++),
     };

@@ -24,6 +24,7 @@ interface OrderDoc {
     lineTotalCents: number;
   }[];
   subtotalCents: number;
+  bundleSavingsCents?: number;
   couponCode?: string | null;
   couponPercent?: number | null;
   discountCents: number;
@@ -52,6 +53,7 @@ const toRecord = (d: OrderDoc): OrderRecord => ({
     lineTotalCents: i.lineTotalCents,
   })),
   subtotalCents: d.subtotalCents,
+  bundleSavingsCents: d.bundleSavingsCents ?? 0,
   couponCode: d.couponCode ?? null,
   couponPercent: d.couponPercent ?? null,
   discountCents: d.discountCents,

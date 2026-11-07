@@ -131,6 +131,32 @@ suite('catalogue storage (real MongoDB)', () => {
     expect(patched?.specs).toEqual({ material: 'Stoneware' });
   });
 
+  it('finds the products of a variant group, and nothing for operator input', async () => {
+    const c = await categories.create(tax('Variant cat'));
+    const b = await brands.create(tax('Variant brand'));
+    for (const [slug, label] of [
+      ['throw-sage', 'Sage'],
+      ['throw-oat', 'Oat'],
+    ] as const)
+      await products.create(
+        product({
+          name: slug,
+          slug,
+          categoryId: c.id,
+          brandId: b.id,
+          variantGroup: 'throw',
+          variantLabel: label,
+        }),
+      );
+    await products.create(
+      product({ name: 'Other', slug: 'other', categoryId: c.id, brandId: b.id }),
+    );
+    const group = await products.findByVariantGroup('throw');
+    expect(group.map((p) => p.variantLabel).sort()).toEqual(['Oat', 'Sage']);
+    expect(await products.findByVariantGroup({ $ne: null } as unknown as string)).toEqual([]);
+    expect((await products.findBySlug('other'))?.variantGroup).toBeNull();
+  });
+
   it('searches names literally, filters, sorts and paginates', async () => {
     const c = await categories.create(tax('Cat'));
     const b = await brands.create(tax('Brand'));

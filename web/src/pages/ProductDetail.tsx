@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ApiError, getProduct, type Product } from '../api/client';
+import { ApiError, getBundles, getLooks, getProduct, type Product } from '../api/client';
+import { BundleCard } from '../collections/BundleCard';
+import { LookCard } from '../collections/LookCard';
+import { SaveToMoodboard } from '../collections/SaveToMoodboard';
 import { AddToCart } from '../components/AddToCart';
 import { WishButton } from '../components/ProductCard';
 import { ProductRow } from '../components/ProductRow';
@@ -41,6 +44,66 @@ function CompareButton({ id }: { id: string }) {
     <button type="button" className="btn btn--ghost" aria-pressed={on} disabled={full} onClick={() => toggleCompare(id)} title={full ? `Compare holds ${COMPARE_MAX} pieces` : undefined}>
       {on ? 'Added to compare' : 'Compare'}
     </button>
+  );
+}
+
+function Variants({ product }: { product: Product }) {
+  if (!product.variants || product.variants.length < 2) return null;
+  return (
+    <fieldset className="variants">
+      <legend>Options</legend>
+      <ul>
+        {product.variants.map((v) => (
+          <li key={v.id}>
+            <Link
+              to={`/shop/${v.id}`}
+              replace
+              aria-current={v.id === product.id ? 'true' : undefined}
+              data-soldout={!v.inStock}
+              title={v.inStock ? v.label : `${v.label} (sold out)`}
+            >
+              {v.label}
+              {!v.inStock && <span className="sr-only"> (sold out)</span>}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </fieldset>
+  );
+}
+
+function CompleteTheSet({ productId, currency }: { productId: string; currency: string }) {
+  const bundles = useRemote((s) => getBundles({ productId }, s), `bundles:${productId}`);
+  if (bundles.phase !== 'ready' || bundles.data.length === 0) return null;
+  return (
+    <section className="row" aria-labelledby="sets-title">
+      <div className="section-head">
+        <h2 id="sets-title">Complete the set</h2>
+      </div>
+      <div className="bundles">
+        {bundles.data.map((b) => (
+          <BundleCard key={b.id} bundle={b} currency={currency} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function InLooks({ productId }: { productId: string }) {
+  const looks = useRemote((s) => getLooks({ productId }, s), `looks:${productId}`);
+  if (looks.phase !== 'ready' || looks.data.length === 0) return null;
+  return (
+    <section className="row" aria-labelledby="in-looks-title">
+      <div className="section-head">
+        <h2 id="in-looks-title">Seen in these looks</h2>
+        <Link to="/looks">All looks</Link>
+      </div>
+      <div className="looks">
+        {looks.data.slice(0, 3).map((l) => (
+          <LookCard key={l.id} look={l} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -143,10 +206,12 @@ export function ProductDetail() {
           {!p.inStock ? 'Sold out' : p.stock <= 5 ? `Only ${p.stock} left` : 'In stock'}
         </p>
         {p.description && <p className="lede lede--small">{p.description}</p>}
+        <Variants product={p} />
         <AddToCart product={p} />
         <div className="detail__actions">
           <WishButton product={p} withLabel />
           <CompareButton id={p.id} />
+          <SaveToMoodboard productId={p.id} />
         </div>
         {p.specs && <Specs specs={p.specs} />}
         <p className="notice">
@@ -155,7 +220,9 @@ export function ProductDetail() {
       </div>
     </div>
     <div className="page detail__more">
+      <CompleteTheSet productId={p.id} currency={p.currency} />
       <Reviews productId={p.id} />
+      <InLooks productId={p.id} />
       <AlsoViewed current={p.id} />
     </div>
     </>

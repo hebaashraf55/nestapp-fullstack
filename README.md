@@ -15,6 +15,10 @@ NOMA is a portfolio e-commerce project: a **NestJS + MongoDB API** and a **React
 - Catalogue of 56 pieces in 7 categories, with search (also by material, colour, category and maker), filters, price range, sorting and pagination
 - Wishlist and recently viewed: kept in the browser for guests, merged into the account at sign-in
 - Side-by-side comparison of up to four pieces with their specifications
+- Product variants (colour, size…) as linked options, each with its own price and stock
+- **Sets:** bundles priced by the server, with the saving applied automatically in the cart while it holds the full set
+- **Shop the Look:** curated rooms, with “add the whole look” in one step
+- **Moodboards:** private boards of pieces, shareable through a revocable read-only link
 - Reviews with star ratings, a rating breakdown and a “verified purchase” badge decided by the server from paid orders; every review is moderated before it appears
 - Product pages with photography and server-computed sale prices
 - Cart priced by the server on every read, stock checks, coupons
@@ -27,6 +31,7 @@ NOMA is a portfolio e-commerce project: a **NestJS + MongoDB API** and a **React
 - **Products:** list with search and filters, create, edit (only changed fields are sent), relative stock changes that never go below zero, delete with confirmation (refused while an open order still holds the product)
 - **Coupons:** percentage coupons with expiry, edit, pause/activate, delete, orders-per-code
 - Orders: status changes along a state machine, simulated refunds that restore stock
+- **Sets and looks:** create, pause and delete; variant group and label on products
 - **Reviews:** moderation queue to approve or reject (with a note to the author)
 - Customers with masked names and emails, and an append-only audit log of every admin change
 
@@ -67,7 +72,7 @@ npm ci && (cd web && npm ci)
 cp .env.example .env      # then set your own passwords and a JWT secret: openssl rand -base64 48
 npm run db:up             # MongoDB on 127.0.0.1 only
 npm run seed              # admin + demo accounts
-npm run seed:catalogue    # 3 brands, 7 categories, 56 products (safe to re-run, never overwrites)
+npm run seed:catalogue    # 3 brands, 7 categories, 56 products, 3 sets, 3 looks (safe to re-run, never overwrites)
 npm run start:dev         # API on http://localhost:5000 (PORT in .env)
 cd web && npm run dev     # storefront on http://localhost:5173, proxies /api to the API
 ```

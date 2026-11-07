@@ -25,9 +25,22 @@ interface Draft {
   stock: string;
   categoryId: string;
   brandId: string;
+  variantGroup: string;
+  variantLabel: string;
 }
 
-const EMPTY: Draft = { name: '', description: '', images: '', price: '', discountPercent: '0', stock: '0', categoryId: '', brandId: '' };
+const EMPTY: Draft = {
+  name: '',
+  description: '',
+  images: '',
+  price: '',
+  discountPercent: '0',
+  stock: '0',
+  categoryId: '',
+  brandId: '',
+  variantGroup: '',
+  variantLabel: '',
+};
 
 const toDraft = (p: Product): Draft => ({
   name: p.name,
@@ -38,6 +51,8 @@ const toDraft = (p: Product): Draft => ({
   stock: String(p.stock),
   categoryId: p.category?.id ?? '',
   brandId: p.brand?.id ?? '',
+  variantGroup: p.variantGroup ?? '',
+  variantLabel: p.variantLabel ?? '',
 });
 
 /** Mirrors the API's rules so mistakes show up before a round trip; the server still decides. */
@@ -62,6 +77,13 @@ function validate(d: Draft, creating: boolean): { input?: ProductInput; errors: 
     errors.stock = 'Use a whole number from 0 to 1,000,000.';
   if (!d.categoryId) errors.categoryId = 'Choose a category.';
   if (!d.brandId) errors.brandId = 'Choose a brand.';
+  const variantGroup = d.variantGroup.trim().toLowerCase();
+  const variantLabel = d.variantLabel.trim();
+  if (variantGroup && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(variantGroup))
+    errors.variantGroup = 'Use lower-case letters, digits and dashes, for example linen-throw.';
+  if (Boolean(variantGroup) !== Boolean(variantLabel))
+    errors[variantGroup ? 'variantLabel' : 'variantGroup'] = 'Fill in both variant fields, or neither.';
+  if (variantLabel.length > 40) errors.variantLabel = 'Keep it under 40 characters.';
   if (Object.keys(errors).length > 0) return { errors };
   return {
     errors,
@@ -74,6 +96,7 @@ function validate(d: Draft, creating: boolean): { input?: ProductInput; errors: 
       stock,
       categoryId: d.categoryId,
       brandId: d.brandId,
+      ...(variantGroup ? { variantGroup, variantLabel } : {}),
     },
   };
 }
@@ -88,6 +111,8 @@ function changedFields(before: Product, input: ProductInput): Partial<ProductInp
   if (input.discountPercent !== before.discountPercent) patch.discountPercent = input.discountPercent;
   if (input.categoryId !== before.category?.id) patch.categoryId = input.categoryId;
   if (input.brandId !== before.brand?.id) patch.brandId = input.brandId;
+  if ((input.variantGroup ?? null) !== (before.variantGroup ?? null)) patch.variantGroup = input.variantGroup ?? null;
+  if ((input.variantLabel ?? null) !== (before.variantLabel ?? null)) patch.variantLabel = input.variantLabel ?? null;
   return patch;
 }
 
@@ -204,6 +229,15 @@ function ProductForm({ product }: { product: Product | null }) {
             </FormField>
           )}
         </div>
+        <div className="form__row">
+          <FormField id="product-variantGroup" label="Variant group (optional)" error={errors.variantGroup}>
+            <input value={draft.variantGroup} onChange={set('variantGroup')} placeholder="linen-throw" maxLength={60} />
+          </FormField>
+          <FormField id="product-variantLabel" label="Variant label" error={errors.variantLabel}>
+            <input value={draft.variantLabel} onChange={set('variantLabel')} placeholder="Sage" maxLength={40} />
+          </FormField>
+        </div>
+        <p className="muted">Products with the same variant group appear as options of one another (colour, size…). Each keeps its own price and stock.</p>
         <FormField id="product-images" label="Images (one per line)" error={errors.images}>
           <textarea rows={3} value={draft.images} onChange={set('images')} placeholder="/catalogue/name.jpg or https://…" />
         </FormField>

@@ -7,7 +7,10 @@ import {
   ProductsRepository,
 } from '../catalogue/catalogue.repositories';
 import { EnvValidationError, loadEnv } from '../config/env';
+import { BundlesRepository } from '../bundles/bundles.repository';
+import { LooksRepository } from '../looks/looks.repository';
 import { seedCatalogue } from './seed-catalogue';
+import { seedCollections } from './seed-collections';
 
 /** `npm run seed:catalogue`: synthetic demo brands, categories and products (all flagged isDemo). */
 async function run(): Promise<void> {
@@ -30,6 +33,14 @@ async function run(): Promise<void> {
     }
     if (result.products.specsAdded > 0) {
       console.log(`products    ${result.products.specsAdded} received specifications`);
+    }
+    const collections = await seedCollections(
+      app.get(ProductsRepository),
+      app.get(BundlesRepository),
+      app.get(LooksRepository),
+    );
+    for (const [kind, r] of Object.entries(collections)) {
+      console.log(`${kind.padEnd(11)} created ${r.created}, already present ${r.existing}`);
     }
     if (result.products.imagesUpdated > 0) {
       console.log(

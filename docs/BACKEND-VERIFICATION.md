@@ -36,6 +36,12 @@ How each backend feature is proven. Three kinds of automated evidence exist:
 | Reviews and ratings (one per customer per product, sort, paging, summary) | Yes | Yes (6 racing submissions → 1 review; summary; operator input) | Customers write; author edits; author or admin deletes; others 404 | reviews, reviews.mongo | Real |
 | Verified purchase | Yes | Yes (paid/shipped/delivered only) | Decided by the server; a client-sent flag is rejected (400) | reviews, orders.mongo | Real |
 | Review moderation (pending → approved/rejected, note, re-moderation on edit) | Yes | Yes | Admin decides (audited); viewer reads synthetic only; customer 403 | reviews, reviews.mongo, demo-readonly | Real |
+| Variants (products sharing a variant group, each with its own price and stock) | Yes | Yes (group lookup, operator input) | Admin-only writes; group and label required together | batch2, catalogue.mongo | Real |
+| Bundles (2–6 products, 1–50 %, server-priced, automatic in the cart) | Yes | Yes (round trip, unique slug, limits) | Admin-only writes (audited); client prices rejected | batch2 (incl. pricing unit tests), batch2.mongo | Real |
+| Bundle savings at checkout (before the coupon, kept on the order) | Yes | Yes (order field; 0 for older orders) | — | batch2, orders.mongo | Real |
+| Batch add to cart (all or nothing) | Yes | via cart repo | Own cart; viewer 403 | batch2 | Real |
+| Shop the Look (curated products, optional photo spots) | Yes | Yes | Admin-only writes (audited) | batch2, batch2.mongo | Real |
+| Moodboards (private, 20 per customer, 50 pieces, revocable share links) | Yes | Yes (owner-scoped writes, 6 racing pins → 1, unique token) | Customers only; others 404; shared view shows no owner data | batch2, batch2.mongo | Real |
 | Validation, 404, 409, error envelope | Yes | Yes | — | app, catalogue, orders, e2e | Real |
 | Rate limiting | Yes | In-memory counters | — | throttle, auth | Real, per process (not shared across instances) |
 | OpenAPI accuracy | Generated from the running app; a test fails if a route lacks a summary or the file drifts | — | — | openapi | Real |

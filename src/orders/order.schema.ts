@@ -31,6 +31,9 @@ export class Order {
   @Prop({ required: true, min: 0 })
   subtotalCents!: number;
 
+  @Prop({ required: true, min: 0, default: 0 })
+  bundleSavingsCents!: number;
+
   @Prop({ type: String, default: null })
   couponCode!: string | null;
 

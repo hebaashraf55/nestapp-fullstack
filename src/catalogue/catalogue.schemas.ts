@@ -86,6 +86,12 @@ export class Product {
   @Prop({ required: true, default: false, index: true })
   featured!: boolean;
 
+  @Prop({ type: String, default: null, maxlength: 60, index: true })
+  variantGroup!: string | null;
+
+  @Prop({ type: String, default: null, maxlength: 40 })
+  variantLabel!: string | null;
+
   @Prop({ required: true, default: false, index: true })
   isDemo!: boolean;
 

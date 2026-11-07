@@ -11,6 +11,17 @@ import { InMemoryShopperListsRepository } from './in-memory-shopper.repository';
 import { ReviewsModule } from '../../src/reviews/reviews.module';
 import { ReviewsRepository } from '../../src/reviews/reviews.repository';
 import { InMemoryReviewsRepository } from './in-memory-reviews.repository';
+import { BundlesModule } from '../../src/bundles/bundles.module';
+import { BundlesRepository } from '../../src/bundles/bundles.repository';
+import { LooksModule } from '../../src/looks/looks.module';
+import { LooksRepository } from '../../src/looks/looks.repository';
+import { MoodboardsModule } from '../../src/moodboards/moodboards.module';
+import { MoodboardsRepository } from '../../src/moodboards/moodboards.repository';
+import {
+  InMemoryBundlesRepository,
+  InMemoryLooksRepository,
+  InMemoryMoodboardsRepository,
+} from './in-memory-batch2.repositories';
 import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AuthModule } from '../../src/auth/auth.module';
@@ -88,6 +99,9 @@ export interface AuthTestApp {
   google: FakeGoogleVerifier;
   shopper: InMemoryShopperListsRepository;
   reviews: InMemoryReviewsRepository;
+  bundles: InMemoryBundlesRepository;
+  looks: InMemoryLooksRepository;
+  moodboards: InMemoryMoodboardsRepository;
   /** The request throttle's counters, so tests can inspect or move its clock. */
   throttler: RateLimiter;
   ordersService: OrdersService;
@@ -121,6 +135,9 @@ export async function createAuthApp(
   const google = new FakeGoogleVerifier();
   const shopper = new InMemoryShopperListsRepository();
   const reviews = new InMemoryReviewsRepository();
+  const bundles = new InMemoryBundlesRepository();
+  const looks = new InMemoryLooksRepository();
+  const moodboards = new InMemoryMoodboardsRepository();
   const moduleRef = await Test.createTestingModule({
     imports: [
       UsersModule.register(env),
@@ -133,6 +150,9 @@ export async function createAuthApp(
       AuditModule.register(env),
       ShopperModule.register(env),
       ReviewsModule.register(env),
+      BundlesModule.register(env),
+      LooksModule.register(env),
+      MoodboardsModule.register(env),
       AdminModule.register(),
       OpenApiModule.register(env),
     ],
@@ -167,6 +187,12 @@ export async function createAuthApp(
     .useValue(shopper)
     .overrideProvider(ReviewsRepository)
     .useValue(reviews)
+    .overrideProvider(BundlesRepository)
+    .useValue(bundles)
+    .overrideProvider(LooksRepository)
+    .useValue(looks)
+    .overrideProvider(MoodboardsRepository)
+    .useValue(moodboards)
     .compile();
   const app = moduleRef.createNestApplication();
   configureApp(app, env, throttler);
@@ -191,6 +217,9 @@ export async function createAuthApp(
     google,
     shopper,
     reviews,
+    bundles,
+    looks,
+    moodboards,
     throttler,
     ordersService: moduleRef.get(OrdersService),
     couponLimiter: moduleRef.get(CouponAttemptLimiter),

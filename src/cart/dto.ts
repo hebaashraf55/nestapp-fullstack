@@ -20,6 +20,17 @@ export const applyCouponSchema = z.strictObject({
   code: z.string().trim().toUpperCase().min(1).max(64),
 });
 
+/** Several products at once (a bundle or a look); still only references and quantities. */
+export const addManyToCartSchema = z.strictObject({
+  items: z
+    .array(
+      z.strictObject({ productId: objectId, quantity: z.number().int().min(1).max(MAX_QUANTITY) }),
+    )
+    .min(1)
+    .max(10),
+});
+export type AddManyToCartDto = z.infer<typeof addManyToCartSchema>;
+
 export type AddToCartDto = z.infer<typeof addToCartSchema>;
 export type UpdateCartDto = z.infer<typeof updateCartSchema>;
 export type ApplyCouponDto = z.infer<typeof applyCouponSchema>;

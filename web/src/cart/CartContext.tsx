@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
+  addManyToCart,
   addToCart,
   applyCoupon,
   type Cart,
@@ -16,6 +17,8 @@ interface CartValue {
   error: string | null;
   itemCount: number;
   add: (productId: string, quantity: number) => Promise<void>;
+  /** Several products in one step (a bundle or a look): all or nothing. */
+  addMany: (items: { productId: string; quantity: number }[]) => Promise<void>;
   setQuantity: (productId: string, quantity: number) => Promise<void>;
   remove: (productId: string) => Promise<void>;
   applyCode: (code: string) => Promise<void>;
@@ -68,6 +71,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       error,
       itemCount: cart?.itemCount ?? 0,
       add: (id, q) => run(() => addToCart(id, q)),
+      addMany: (items) => run(() => addManyToCart(items)),
       setQuantity: (id, q) => run(() => updateCartItem(id, q)),
       remove: (id) => run(() => removeCartItem(id)),
       applyCode: (code) => run(() => applyCoupon(code)),

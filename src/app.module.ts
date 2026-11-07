@@ -1,3 +1,6 @@
+import { BundlesModule } from './bundles/bundles.module';
+import { LooksModule } from './looks/looks.module';
+import { MoodboardsModule } from './moodboards/moodboards.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { ShopperModule } from './shopper/shopper.module';
 import { DynamicModule, Module } from '@nestjs/common';
@@ -31,6 +34,9 @@ export class AppModule {
         AuditModule.register(env),
         ShopperModule.register(env),
         ReviewsModule.register(env),
+        BundlesModule.register(env),
+        LooksModule.register(env),
+        MoodboardsModule.register(env),
         AdminModule.register(),
         OpenApiModule.register(env),
       ],

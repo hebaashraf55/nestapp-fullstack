@@ -55,6 +55,8 @@ export function Layout() {
             Home
           </NavLink>
           <NavLink to="/shop">Shop</NavLink>
+          <NavLink to="/looks">Looks</NavLink>
+          <NavLink to="/sets">Sets</NavLink>
           <NavLink to="/about">About this build</NavLink>
           <NavLink to="/wishlist">
             Wishlist{wishlist.length > 0 && <span className="badge" aria-label={`${wishlist.length} saved`}>{wishlist.length}</span>}
@@ -62,6 +64,7 @@ export function Layout() {
           <NavLink to="/cart">
             Cart{itemCount > 0 && <span className="badge" aria-label={`${itemCount} items`}>{itemCount}</span>}
           </NavLink>
+          {user?.role === 'CUSTOMER' && <NavLink to="/moodboards">Moodboards</NavLink>}
           {user && user.role !== 'DEMO_VIEWER' && user.role !== 'ADMIN' && <NavLink to="/orders">Orders</NavLink>}
           {user && (user.role === 'ADMIN' || user.role === 'DEMO_VIEWER') && <NavLink to="/admin">Admin</NavLink>}
           {user ? (

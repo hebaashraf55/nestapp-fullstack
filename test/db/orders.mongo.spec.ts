@@ -106,6 +106,13 @@ suite('order storage and stock reservation (real MongoDB)', () => {
     expect(await orders.hasPurchased({ $ne: 'x' } as unknown as string, oid(1))).toBe(false);
   });
 
+  it('stores bundle savings, and reads 0 for orders saved before bundles existed', async () => {
+    const withBundle = await orders.create(newOrder({ bundleSavingsCents: 400 }));
+    expect((await orders.findById(withBundle.id))?.bundleSavingsCents).toBe(400);
+    const old = await orders.create(newOrder());
+    expect((await orders.findById(old.id))?.bundleSavingsCents).toBe(0);
+  });
+
   it('counts placed orders per coupon code', async () => {
     await orders.create(newOrder({ couponCode: 'SAVE10', couponPercent: 10 }));
     await orders.create(newOrder({ couponCode: 'SAVE10', couponPercent: 10, status: 'CANCELLED' }));

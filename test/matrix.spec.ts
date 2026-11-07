@@ -49,7 +49,9 @@ describe('route matrix: per-operation probes', () => {
   let tokens: Record<'customer' | 'admin' | 'viewer', string>;
 
   beforeAll(async () => {
-    t = await createAuthApp([], { JWT_SECRET: TEST_SECRET });
+    // Every probe comes from one client address; lift the per-address throttle for this sweep only
+    // (throttling itself is covered by throttle.spec).
+    t = await createAuthApp([], { JWT_SECRET: TEST_SECRET, THROTTLE_LIMIT: '100000' });
     tokens = {
       customer: (await t.login(Role.CUSTOMER)).token,
       admin: (await t.login(Role.ADMIN)).token,
@@ -84,7 +86,15 @@ describe('route matrix: per-operation probes', () => {
   const needsAuth = cases.filter((o) => !isPublic(o));
   const adminOnly = cases.filter((o) => o.access === 'ADMIN');
   const writesNeedingAuth = needsAuth.filter((o) => o.method !== 'GET');
-  const withId = cases.filter((o) => o.params.some((p) => p.in === 'path'));
+  // Slugs and share tokens are not object ids: a malformed one is simply "not found" (covered per feature).
+  const SLUG_ROUTES = [
+    '/api/bundles/{slug}',
+    '/api/looks/{slug}',
+    '/api/moodboards/shared/{token}',
+  ];
+  const withId = cases.filter(
+    (o) => o.params.some((p) => p.in === 'path') && !SLUG_ROUTES.includes(o.path),
+  );
   const withBody = cases.filter((o) => o.hasBody);
   const withLimit = cases.filter((o) =>
     o.params.some((p) => p.in === 'query' && p.name === 'limit'),

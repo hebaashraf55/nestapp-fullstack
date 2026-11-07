@@ -173,8 +173,20 @@ export interface ProductView {
   brand: { id: string; name: string; slug: string } | null;
   specs: ProductSpecs;
   featured: boolean;
+  variantGroup: string | null;
+  variantLabel: string | null;
+  /** Product detail only: the other options of this product, in label order (includes this one). */
+  variants?: VariantOption[];
   isDemo: boolean;
   createdAt: Date;
+}
+
+export interface VariantOption {
+  id: string;
+  label: string;
+  salePriceCents: number;
+  inStock: boolean;
+  image: string | null;
 }
 
 export interface HomeView {
@@ -301,10 +313,34 @@ export class ProductsService {
   async get(id: string, user?: AuthenticatedUser): Promise<ProductView> {
     const product = await this.products.findById(id);
     if (!product || !visible(user, product)) throw new NotFoundException('Product not found');
-    return (await this.toViews([product]))[0] as ProductView;
+    const view = (await this.toViews([product]))[0] as ProductView;
+    if (product.variantGroup) {
+      const siblings = (await this.products.findByVariantGroup(product.variantGroup)).filter(
+        (p) => visible(user, p) && p.variantLabel,
+      );
+      if (siblings.length > 1) {
+        view.variants = siblings
+          .map((p) => ({
+            id: p.id,
+            label: p.variantLabel as string,
+            salePriceCents: p.salePriceCents,
+            inStock: p.stock > 0,
+            image: p.images[0] ?? null,
+          }))
+          .sort((a, b) => a.label.localeCompare(b.label));
+      }
+    }
+    return view;
+  }
+
+  /** A variant needs both a group and a label, or neither. */
+  private assertVariant(group: string | null | undefined, label: string | null | undefined) {
+    if (Boolean(group) !== Boolean(label))
+      throw new BadRequestException('A variant needs both a variant group and a variant label');
   }
 
   async create(dto: ProductCreateDto, adminId: string): Promise<ProductView> {
+    this.assertVariant(dto.variantGroup, dto.variantLabel);
     await this.assertTaxonomy(dto.categoryId, dto.brandId);
     const base = {
       name: dto.name,
@@ -318,6 +354,8 @@ export class ProductsService {
       brandId: dto.brandId.toLowerCase(),
       specs: dto.specs,
       featured: dto.featured,
+      variantGroup: dto.variantGroup,
+      variantLabel: dto.variantLabel,
       isDemo: false, // clients can never create synthetic-flagged records
       createdBy: adminId,
     };
@@ -339,6 +377,10 @@ export class ProductsService {
   async update(id: string, dto: ProductUpdateDto): Promise<ProductView> {
     const current = await this.products.findById(id);
     if (!current) throw new NotFoundException('Product not found');
+    this.assertVariant(
+      dto.variantGroup !== undefined ? dto.variantGroup : current.variantGroup,
+      dto.variantLabel !== undefined ? dto.variantLabel : current.variantLabel,
+    );
     if (dto.categoryId || dto.brandId) {
       await this.assertTaxonomy(
         dto.categoryId ?? current.categoryId,
@@ -356,6 +398,8 @@ export class ProductsService {
       ...(dto.brandId !== undefined ? { brandId: dto.brandId.toLowerCase() } : {}),
       ...(dto.specs !== undefined ? { specs: dto.specs } : {}),
       ...(dto.featured !== undefined ? { featured: dto.featured } : {}),
+      ...(dto.variantGroup !== undefined ? { variantGroup: dto.variantGroup } : {}),
+      ...(dto.variantLabel !== undefined ? { variantLabel: dto.variantLabel } : {}),
       priceCents,
       discountPercent,
       salePriceCents: computeSalePriceCents(priceCents, discountPercent),
@@ -466,6 +510,8 @@ export class ProductsService {
       brand: ref(brandMap.get(p.brandId)),
       specs: p.specs ?? {},
       featured: p.featured === true,
+      variantGroup: p.variantGroup ?? null,
+      variantLabel: p.variantLabel ?? null,
       isDemo: p.isDemo,
       createdAt: p.createdAt,
     }));

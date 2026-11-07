@@ -138,6 +138,8 @@ interface ProductDoc {
   brandId: Types.ObjectId;
   specs?: { material?: string; color?: string; dimensions?: string; care?: string };
   featured?: boolean;
+  variantGroup?: string | null;
+  variantLabel?: string | null;
   isDemo: boolean;
   createdBy: string;
   createdAt: Date;
@@ -169,6 +171,8 @@ function toProduct(doc: ProductDoc): ProductRecord {
     brandId: doc.brandId.toString(),
     specs: cleanSpecs(doc.specs),
     featured: doc.featured === true,
+    variantGroup: doc.variantGroup ?? null,
+    variantLabel: doc.variantLabel ?? null,
     isDemo: doc.isDemo,
     createdBy: doc.createdBy,
     createdAt: doc.createdAt,
@@ -216,6 +220,15 @@ export class MongoProductsRepository extends ProductsRepository {
   async findBySlug(slug: string): Promise<ProductRecord | null> {
     const doc = await this.model.findOne({ slug: { $eq: slug } }).exec();
     return doc ? toProduct(doc as unknown as ProductDoc) : null;
+  }
+
+  async findByVariantGroup(group: string): Promise<ProductRecord[]> {
+    if (typeof group !== 'string' || group === '') return [];
+    const docs = await this.model
+      .find({ variantGroup: { $eq: group } })
+      .limit(20)
+      .exec();
+    return docs.map((d) => toProduct(d as unknown as ProductDoc));
   }
 
   async findPage(filter: ProductFilter): Promise<{ items: ProductRecord[]; total: number }> {

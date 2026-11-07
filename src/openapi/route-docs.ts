@@ -140,6 +140,92 @@ export const ROUTE_DOCS: Record<string, RouteDoc> = {
     summary: 'Approve or reject a review, with an optional note to the author (audited)',
     returns: 'the review',
   },
+  'POST /api/cart/batch': {
+    summary: 'Add several products in one step (a bundle or a look); all or nothing',
+    returns: 'the cart',
+  },
+  'GET /api/bundles': {
+    summary:
+      'Active bundles shoppers can buy now, priced by the server (?productId=… for one product; admins: ?all=true)',
+    returns: 'bundle[]',
+  },
+  'GET /api/bundles/{slug}': {
+    summary: 'One bundle with its items, total, bundle price and savings',
+    returns: 'the bundle',
+  },
+  'POST /api/bundles': {
+    summary:
+      'Create a bundle of 2–6 products with a 1–50 % discount (applied automatically in the cart)',
+    returns: 'the bundle',
+  },
+  'PATCH /api/bundles/{id}': {
+    summary: 'Change a bundle (name, items, discount, active)',
+    returns: 'the bundle',
+  },
+  'DELETE /api/bundles/{id}': {
+    summary: 'Delete a bundle',
+    returns: '{ deleted: true }',
+  },
+  'GET /api/looks': {
+    summary: 'Shop the Look: active looks with their products (?productId=…; admins: ?all=true)',
+    returns: 'look[]',
+  },
+  'GET /api/looks/{slug}': {
+    summary: 'One look with its products and optional photo spots',
+    returns: 'the look',
+  },
+  'POST /api/looks': {
+    summary: 'Create a look (photo, 1–8 products, optional x/y spots in %)',
+    returns: 'the look',
+  },
+  'PATCH /api/looks/{id}': {
+    summary: 'Change a look',
+    returns: 'the look',
+  },
+  'DELETE /api/looks/{id}': {
+    summary: 'Delete a look',
+    returns: '{ deleted: true }',
+  },
+  'GET /api/moodboards': {
+    summary: 'The caller’s moodboards',
+    returns: 'moodboard[]',
+  },
+  'POST /api/moodboards': {
+    summary: 'Create a moodboard (20 per customer)',
+    returns: 'the moodboard',
+  },
+  'GET /api/moodboards/{id}': {
+    summary: 'One of the caller’s moodboards',
+    returns: 'the moodboard',
+  },
+  'PATCH /api/moodboards/{id}': {
+    summary: 'Rename a moodboard or change its note',
+    returns: 'the moodboard',
+  },
+  'DELETE /api/moodboards/{id}': {
+    summary: 'Delete a moodboard',
+    returns: '{ deleted: true }',
+  },
+  'PUT /api/moodboards/{id}/products/{productId}': {
+    summary: 'Pin a product (idempotent; 50 per board)',
+    returns: 'the moodboard',
+  },
+  'DELETE /api/moodboards/{id}/products/{productId}': {
+    summary: 'Unpin a product',
+    returns: 'the moodboard',
+  },
+  'POST /api/moodboards/{id}/share': {
+    summary: 'Create a new private share link; any older link stops working',
+    returns: 'the moodboard with sharePath',
+  },
+  'DELETE /api/moodboards/{id}/share': {
+    summary: 'Stop sharing: the link stops working',
+    returns: 'the moodboard',
+  },
+  'GET /api/moodboards/shared/{token}': {
+    summary: 'A shared moodboard, read-only, without any owner details',
+    returns: '{ name, note, products, updatedAt }',
+  },
   'POST /api/coupon': {
     summary:
       'Create a coupon (code is immutable, 1–90 % off, must expire in the future, active by default)',

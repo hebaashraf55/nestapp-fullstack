@@ -56,6 +56,13 @@ export interface ProductRecord {
   specs?: ProductSpecs;
   /** Hand-picked for the homepage "Featured" row. */
   featured?: boolean;
+  /**
+   * Products sharing a variant group are shown as one item with a selector (colour, size…). Each variant
+   * stays a full product with its own price and stock, so stock reservation is unchanged.
+   */
+  variantGroup?: string | null;
+  /** The option shown in the selector, for example "Sage" or "Large". */
+  variantLabel?: string | null;
   isDemo: boolean;
   createdBy: string;
   createdAt: Date;
@@ -76,6 +83,8 @@ export type ProductPatch = Partial<
     | 'brandId'
     | 'specs'
     | 'featured'
+    | 'variantGroup'
+    | 'variantLabel'
   >
 >;
 
@@ -114,6 +123,8 @@ export abstract class ProductsRepository {
   abstract findById(id: string): Promise<ProductRecord | null>;
   abstract findByIds(ids: string[]): Promise<ProductRecord[]>;
   abstract findBySlug(slug: string): Promise<ProductRecord | null>;
+  /** Every product in a variant group (at most 20). */
+  abstract findByVariantGroup(group: string): Promise<ProductRecord[]>;
   abstract findPage(filter: ProductFilter): Promise<{ items: ProductRecord[]; total: number }>;
   abstract create(record: NewProduct): Promise<ProductRecord>;
   abstract update(id: string, patch: ProductPatch): Promise<ProductRecord | null>;

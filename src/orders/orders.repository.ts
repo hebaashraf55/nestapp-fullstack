@@ -15,6 +15,8 @@ export interface OrderRecord {
   isDemo: boolean;
   items: OrderItemRecord[];
   subtotalCents: number;
+  /** Bundle discounts at checkout (0 for orders placed before bundles existed). */
+  bundleSavingsCents: number;
   couponCode: string | null;
   couponPercent: number | null;
   discountCents: number;
@@ -31,7 +33,9 @@ export interface OrderRecord {
   createdAt: Date;
 }
 
-export type NewOrder = Omit<OrderRecord, 'id' | 'createdAt'>;
+export type NewOrder = Omit<OrderRecord, 'id' | 'createdAt' | 'bundleSavingsCents'> & {
+  bundleSavingsCents?: number;
+};
 export type OrderPatch = Partial<
   Pick<OrderRecord, 'status' | 'paymentStatus' | 'paidAt' | 'refundedAt' | 'cancelledAt'>
 >;

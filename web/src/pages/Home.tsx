@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getHome, type HomeFeed } from '../api/client';
+import { getHome, getLooks, type HomeFeed } from '../api/client';
+import { LookCard } from '../collections/LookCard';
 import { ApiStatus } from '../components/ApiStatus';
 import { ProductSkeletons } from '../components/ProductCard';
 import { ProductRow } from '../components/ProductRow';
@@ -81,6 +82,24 @@ function RecentlyViewed() {
   return <ProductRow id="recently-viewed" title="Recently viewed" products={items} />;
 }
 
+function ShopTheLook() {
+  const looks = useRemote((s) => getLooks({}, s), 'home-looks');
+  if (looks.phase !== 'ready' || looks.data.length === 0) return null;
+  return (
+    <section className="row" id="shop-the-look" aria-labelledby="shop-the-look-title">
+      <div className="section-head">
+        <h2 id="shop-the-look-title">Shop the Look</h2>
+        <Link to="/looks">All looks</Link>
+      </div>
+      <div className="looks">
+        {looks.data.slice(0, 3).map((l) => (
+          <LookCard key={l.id} look={l} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Feed({ feed }: { feed: HomeFeed }) {
   const sections = feed.categories.filter((c) => c.products.length > 0);
   const active = useActiveSection(sections.map((c) => sectionId(c.slug)));
@@ -99,6 +118,7 @@ function Feed({ feed }: { feed: HomeFeed }) {
           products={feed.bestSellers.slice(0, 4)}
           note="Ranked by units in paid orders."
         />
+        <ShopTheLook />
         <ProductRow id="on-sale" title="On sale" products={feed.onSale.slice(0, 4)} more={{ to: '/shop?onSale=true', label: 'All offers' }} />
         {sections.map((c) => (
           <ProductRow

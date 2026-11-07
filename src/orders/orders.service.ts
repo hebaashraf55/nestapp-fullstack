@@ -26,6 +26,7 @@ export interface OrderView {
   paymentStatus: PaymentStatus;
   items: OrderItemRecord[];
   subtotalCents: number;
+  bundleSavingsCents: number;
   coupon: { code: string; discountPercent: number } | null;
   discountCents: number;
   totalCents: number;
@@ -48,6 +49,7 @@ const view = (o: OrderRecord): OrderView => ({
   paymentStatus: o.paymentStatus,
   items: o.items,
   subtotalCents: o.subtotalCents,
+  bundleSavingsCents: o.bundleSavingsCents,
   coupon: o.couponCode ? { code: o.couponCode, discountPercent: o.couponPercent ?? 0 } : null,
   discountCents: o.discountCents,
   totalCents: o.totalCents,
@@ -234,6 +236,7 @@ export class OrdersService {
           lineTotalCents: l.lineTotalCents,
         })),
         subtotalCents: cart.subtotalCents,
+        bundleSavingsCents: cart.bundleSavingsCents,
         couponCode: cart.coupon?.code ?? null,
         couponPercent: cart.coupon?.discountPercent ?? null,
         discountCents: cart.discountCents,

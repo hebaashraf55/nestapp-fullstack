@@ -361,6 +361,8 @@ describe('catalogue API', () => {
           'slug',
           'specs',
           'stock',
+          'variantGroup',
+          'variantLabel',
         ].sort(),
       );
     });

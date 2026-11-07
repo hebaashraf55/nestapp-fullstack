@@ -106,6 +106,10 @@ export class InMemoryProductsRepository extends ProductsRepository {
     this.check();
     return [...this.records.values()].find((r) => r.slug === slug) ?? null;
   }
+  async findByVariantGroup(group: string) {
+    this.check();
+    return [...this.records.values()].filter((r) => r.variantGroup === group).slice(0, 20);
+  }
 
   async findPage(filter: ProductFilter) {
     this.check();

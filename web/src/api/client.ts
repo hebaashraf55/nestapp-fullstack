@@ -178,8 +178,19 @@ export interface Product {
   /** Material, colour, dimensions, care; any may be missing. */
   specs?: { material?: string; color?: string; dimensions?: string; care?: string };
   featured?: boolean;
+  variantGroup?: string | null;
+  variantLabel?: string | null;
+  /** Product detail only: every option of this product, in label order. */
+  variants?: VariantOption[];
   isDemo: boolean;
   createdAt: string;
+}
+export interface VariantOption {
+  id: string;
+  label: string;
+  salePriceCents: number;
+  inStock: boolean;
+  image: string | null;
 }
 
 export interface ProductPage {
@@ -302,6 +313,9 @@ export interface Cart {
   items: CartLine[];
   itemCount: number;
   subtotalCents: number;
+  /** Complete bundle sets found by the server; older servers omit these. */
+  bundles?: AppliedBundle[];
+  bundleSavingsCents?: number;
   coupon: { code: string; discountPercent: number } | null;
   discountCents: number;
   totalCents: number;
@@ -324,6 +338,9 @@ export const getCart = (signal?: AbortSignal) => cartCall(apiGet<unknown>('/api/
 /** POST /api/cart. Only a product id and a quantity are ever sent; the server prices the line. */
 export const addToCart = (productId: string, quantity: number) =>
   cartCall(apiSend('POST', '/api/cart', { productId, quantity }));
+/** POST /api/cart/batch: a bundle or a look in one step (all or nothing). */
+export const addManyToCart = (items: { productId: string; quantity: number }[]) =>
+  cartCall(apiSend('POST', '/api/cart/batch', { items }));
 /** PATCH /api/cart/:productId (quantity 0 removes the line) */
 export const updateCartItem = (productId: string, quantity: number) =>
   cartCall(apiSend('PATCH', `/api/cart/${encodeURIComponent(productId)}`, { quantity }));
@@ -353,6 +370,7 @@ export interface Order {
   paymentStatus: PaymentStatus;
   items: OrderItem[];
   subtotalCents: number;
+  bundleSavingsCents?: number;
   coupon: { code: string; discountPercent: number } | null;
   discountCents: number;
   totalCents: number;
@@ -517,6 +535,8 @@ export interface ProductInput {
   stock: number;
   categoryId: string;
   brandId: string;
+  variantGroup?: string | null;
+  variantLabel?: string | null;
 }
 
 const isProduct = (v: unknown): v is Product => hasString(v, 'id') && hasString(v, 'name') && isRecord(v) && typeof v.stock === 'number';
@@ -690,3 +710,117 @@ export const getModerationQueue = (status: ReviewStatus | '', page: number, sign
   );
 export const moderateReview = (id: string, status: 'APPROVED' | 'REJECTED', note?: string) =>
   apiSend<OwnReview>('PATCH', `/api/reviews/${encodeURIComponent(id)}/moderation`, note ? { status, note } : { status });
+
+// ---------------------------------------------------------------------------------------------
+// Bundles, Shop the Look, moodboards
+// ---------------------------------------------------------------------------------------------
+
+export interface AppliedBundle {
+  bundleId: string;
+  name: string;
+  times: number;
+  discountPercent: number;
+  savingsCents: number;
+}
+export interface Bundle {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  image: string | null;
+  discountPercent: number;
+  active: boolean;
+  items: { product: Product | null; quantity: number }[];
+  itemsTotalCents: number;
+  priceCents: number;
+  savingsCents: number;
+  available: boolean;
+  createdAt: string;
+}
+export interface BundleInput {
+  name: string;
+  description: string;
+  image: string | null;
+  items: { productId: string; quantity: number }[];
+  discountPercent: number;
+  active: boolean;
+}
+/** Lists are checked, so a wrong response shape shows an error instead of breaking the page. */
+async function listOf<T>(promise: Promise<unknown>): Promise<T[]> {
+  const data = await promise;
+  if (!Array.isArray(data)) throw new ApiError(200, 'Unexpected response from the server');
+  return data as T[];
+}
+export const getBundles = (query: { productId?: string; all?: boolean } = {}, signal?: AbortSignal) =>
+  listOf<Bundle>(
+    apiGet<unknown>(
+      `/api/bundles${toQueryString({ productId: query.productId, all: query.all ? 'true' : undefined } as ProductQuery)}`,
+      signal,
+    ),
+  );
+export const getBundle = (slug: string, signal?: AbortSignal) => apiGet<Bundle>(`/api/bundles/${encodeURIComponent(slug)}`, signal);
+export const createBundle = (input: BundleInput) => apiSend<Bundle>('POST', '/api/bundles', input);
+export const updateBundle = (id: string, input: Partial<BundleInput>) =>
+  apiSend<Bundle>('PATCH', `/api/bundles/${encodeURIComponent(id)}`, input);
+export const deleteBundle = (id: string) => apiSend<{ deleted: true }>('DELETE', `/api/bundles/${encodeURIComponent(id)}`);
+
+export interface Look {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  image: string;
+  active: boolean;
+  spots: { product: Product; x: number | null; y: number | null }[];
+  totalCents: number;
+  createdAt: string;
+}
+export interface LookInput {
+  title: string;
+  description: string;
+  image: string;
+  spots: { productId: string; x: number | null; y: number | null }[];
+  active: boolean;
+}
+export const getLooks = (query: { productId?: string; all?: boolean } = {}, signal?: AbortSignal) =>
+  listOf<Look>(
+    apiGet<unknown>(
+      `/api/looks${toQueryString({ productId: query.productId, all: query.all ? 'true' : undefined } as ProductQuery)}`,
+      signal,
+    ),
+  );
+export const getLook = (slug: string, signal?: AbortSignal) => apiGet<Look>(`/api/looks/${encodeURIComponent(slug)}`, signal);
+export const createLook = (input: LookInput) => apiSend<Look>('POST', '/api/looks', input);
+export const updateLook = (id: string, input: Partial<LookInput>) => apiSend<Look>('PATCH', `/api/looks/${encodeURIComponent(id)}`, input);
+export const deleteLook = (id: string) => apiSend<{ deleted: true }>('DELETE', `/api/looks/${encodeURIComponent(id)}`);
+
+export interface Moodboard {
+  id: string;
+  name: string;
+  note: string;
+  productIds: string[];
+  products: Product[];
+  sharePath: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface SharedMoodboard {
+  name: string;
+  note: string;
+  products: Product[];
+  updatedAt: string;
+}
+const mb = (id: string) => `/api/moodboards/${encodeURIComponent(id)}`;
+export const getMoodboards = (signal?: AbortSignal) => listOf<Moodboard>(apiGet<unknown>('/api/moodboards', signal));
+export const getMoodboard = (id: string, signal?: AbortSignal) => apiGet<Moodboard>(mb(id), signal);
+export const createMoodboard = (name: string, note = '') => apiSend<Moodboard>('POST', '/api/moodboards', { name, note });
+export const updateMoodboard = (id: string, patch: { name?: string; note?: string }) => apiSend<Moodboard>('PATCH', mb(id), patch);
+export const deleteMoodboard = (id: string) => apiSend<{ deleted: true }>('DELETE', mb(id));
+export const pinToMoodboard = (id: string, productId: string) =>
+  apiSend<Moodboard>('PUT', `${mb(id)}/products/${encodeURIComponent(productId)}`);
+export const unpinFromMoodboard = (id: string, productId: string) =>
+  apiSend<Moodboard>('DELETE', `${mb(id)}/products/${encodeURIComponent(productId)}`);
+export const shareMoodboard = (id: string) => apiSend<Moodboard>('POST', `${mb(id)}/share`);
+export const unshareMoodboard = (id: string) => apiSend<Moodboard>('DELETE', `${mb(id)}/share`);
+export const getSharedMoodboard = (token: string, signal?: AbortSignal) =>
+  apiGet<SharedMoodboard>(`/api/moodboards/shared/${encodeURIComponent(token)}`, signal);

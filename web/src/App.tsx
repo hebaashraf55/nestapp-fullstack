@@ -5,6 +5,11 @@ import { Layout } from './components/Layout';
 import { ShopperProvider } from './shopper/ShopperContext';
 import { Compare } from './pages/Compare';
 import { Wishlist } from './pages/Wishlist';
+import { Bundles } from './pages/Bundles';
+import { LookDetail, Looks } from './pages/Looks';
+import { MoodboardDetail, Moodboards, SharedMoodboard } from './pages/Moodboards';
+import { AdminBundles } from './pages/admin/AdminBundles';
+import { AdminLooks } from './pages/admin/AdminLooks';
 import { About } from './pages/About';
 import { AdminCoupons } from './pages/admin/AdminCoupons';
 import { AdminLayout } from './pages/admin/AdminLayout';
@@ -37,6 +42,12 @@ export function App() {
             <Route path="shop" element={<Shop />} />
             <Route path="shop/:id" element={<ProductDetail />} />
             <Route path="wishlist" element={<Wishlist />} />
+            <Route path="looks" element={<Looks />} />
+            <Route path="looks/:slug" element={<LookDetail />} />
+            <Route path="sets" element={<Bundles />} />
+            <Route path="moodboards" element={<Moodboards />} />
+            <Route path="moodboards/shared/:token" element={<SharedMoodboard />} />
+            <Route path="moodboards/:id" element={<MoodboardDetail />} />
             <Route path="compare" element={<Compare />} />
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
@@ -50,6 +61,8 @@ export function App() {
               <Route path="orders" element={<AdminOrders />} />
               <Route path="coupons" element={<AdminCoupons />} />
               <Route path="reviews" element={<AdminReviews />} />
+              <Route path="bundles" element={<AdminBundles />} />
+              <Route path="looks" element={<AdminLooks />} />
               <Route path="customers" element={<Customers />} />
               <Route path="audit" element={<AuditLog />} />
             </Route>

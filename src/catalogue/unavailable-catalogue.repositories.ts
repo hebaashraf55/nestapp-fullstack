@@ -40,6 +40,7 @@ export class UnavailableProductsRepository extends ProductsRepository {
   reserveStock = fail;
   restoreStock = fail;
   findBySlug = fail;
+  findByVariantGroup = fail;
   findPage = fail;
   create = fail;
   update = fail;

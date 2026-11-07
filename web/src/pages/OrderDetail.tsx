@@ -121,6 +121,12 @@ export function OrderDetail() {
           <dt>Subtotal</dt>
           <dd>{formatMoney(order.subtotalCents, order.currency)}</dd>
         </div>
+        {(order.bundleSavingsCents ?? 0) > 0 && (
+          <div>
+            <dt>Bundle savings</dt>
+            <dd>−{formatMoney(order.bundleSavingsCents ?? 0, order.currency)}</dd>
+          </div>
+        )}
         {order.coupon && (
           <div>
             <dt>

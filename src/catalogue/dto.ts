@@ -53,6 +53,16 @@ export const specsSchema = z.strictObject({
   care: specText(200).optional(),
 });
 
+/** A short key shared by the variants of one product, for example "linen-throw". */
+const variantGroup = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, { error: 'use lower-case letters, digits and dashes' })
+  .min(2)
+  .max(60);
+const variantLabel = z.string().trim().min(1).max(40);
+
 export const productCreateSchema = z.strictObject({
   name: name(3, 100),
   description: z.string().trim().max(2000).default(''),
@@ -64,6 +74,8 @@ export const productCreateSchema = z.strictObject({
   brandId: objectId,
   specs: specsSchema.default({}),
   featured: z.boolean().default(false),
+  variantGroup: variantGroup.nullable().default(null),
+  variantLabel: variantLabel.nullable().default(null),
 });
 
 /** A relative stock change (receive goods: positive; write off: negative). Applied atomically. */
@@ -89,6 +101,8 @@ export const productUpdateSchema = z
     brandId: objectId.optional(),
     specs: specsSchema.optional(),
     featured: z.boolean().optional(),
+    variantGroup: variantGroup.nullable().optional(),
+    variantLabel: variantLabel.nullable().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { error: 'provide at least one field to change' });
 

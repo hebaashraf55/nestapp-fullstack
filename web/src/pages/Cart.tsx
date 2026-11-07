@@ -132,6 +132,15 @@ export function Cart() {
                 <dt>Subtotal</dt>
                 <dd>{formatMoney(cart.subtotalCents, cart.currency)}</dd>
               </div>
+              {(cart.bundles ?? []).map((b) => (
+                <div key={b.bundleId} className="summary__saving">
+                  <dt>
+                    {b.name}
+                    {b.times > 1 ? ` ×${b.times}` : ''} (−{b.discountPercent}%)
+                  </dt>
+                  <dd>−{formatMoney(b.savingsCents, cart.currency)}</dd>
+                </div>
+              ))}
               {cart.coupon && (
                 <div>
                   <dt>

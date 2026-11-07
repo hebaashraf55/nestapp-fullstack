@@ -5,6 +5,8 @@ import { ZodPipe } from '../catalogue/dto';
 import { ParseObjectIdPipe } from '../catalogue/object-id.pipe';
 import { CartService } from './cart.service';
 import {
+  AddManyToCartDto,
+  addManyToCartSchema,
   AddToCartDto,
   addToCartSchema,
   ApplyCouponDto,
@@ -28,6 +30,14 @@ export class CartController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.cart.add(user.id, dto.productId, dto.quantity);
+  }
+
+  @Post('batch')
+  addMany(
+    @Body(new ZodPipe(addManyToCartSchema)) dto: AddManyToCartDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.cart.addMany(user.id, dto.items);
   }
 
   @Get()
