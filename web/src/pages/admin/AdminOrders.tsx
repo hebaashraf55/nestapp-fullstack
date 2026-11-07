@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { type AdminOrder, getAdminOrders, type OrderStatus, refundOrder, setOrderStatus } from '../../api/client';
+import { Link } from 'react-router-dom';
+import { type AdminOrder, CARRIER_LABEL, type Carrier, getAdminOrders, type OrderStatus, refundOrder, setOrderStatus } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
 import { Pager } from '../../components/Pager';
 import { useRemote } from '../../hooks/useRemote';
@@ -16,10 +17,7 @@ interface Action {
 
 const ACTIONS: Partial<Record<OrderStatus, Action[]>> = {
   PENDING_PAYMENT: [{ key: 'cancel', label: 'Cancel order', destructive: true, run: (id) => setOrderStatus(id, 'CANCELLED') }],
-  PAID: [
-    { key: 'ship', label: 'Mark shipped', destructive: false, run: (id) => setOrderStatus(id, 'SHIPPED') },
-    { key: 'refund', label: 'Refund (simulated)', destructive: true, run: (id) => refundOrder(id) },
-  ],
+  PAID: [{ key: 'refund', label: 'Refund (simulated)', destructive: true, run: (id) => refundOrder(id) }],
   SHIPPED: [{ key: 'deliver', label: 'Mark delivered', destructive: false, run: (id) => setOrderStatus(id, 'DELIVERED') }],
 };
 
@@ -90,6 +88,15 @@ function OrderRow({ order, canChange, onChanged }: { order: AdminOrder; canChang
   }, [order.status]);
 
   const actions = canChange ? (ACTIONS[order.status] ?? []) : [];
+  const [carrier, setCarrier] = useState<Carrier>('DEMO_POST');
+  const [tracking, setTracking] = useState('');
+  const ship = () =>
+    void perform({
+      key: 'ship',
+      label: 'Ship',
+      destructive: false,
+      run: (id) => setOrderStatus(id, 'SHIPPED', { carrier, ...(tracking.trim() ? { trackingNumber: tracking.trim() } : {}) }),
+    });
   const perform = async (action: Action) => {
     setBusy(true);
     let problem: string | undefined;
@@ -118,6 +125,30 @@ function OrderRow({ order, canChange, onChanged }: { order: AdminOrder; canChang
       <p className="muted">
         {order.items.map((i) => `${i.name} × ${i.quantity}`).join(', ')} · {PAYMENT_LABEL[order.paymentStatus]}
       </p>
+      {order.shipment && (
+        <p className="muted">
+          {CARRIER_LABEL[order.shipment.carrier]} · {order.shipment.trackingNumber} (simulated carrier) ·{' '}
+          <Link to={`/admin/orders/${order.id}/label`}>Print label</Link>
+        </p>
+      )}
+      {canChange && order.status === 'PAID' && (
+        <div className="admin-order__actions ship-form">
+          <label className="field field--compact">
+            <span>Carrier</span>
+            <select value={carrier} onChange={(e) => setCarrier(e.target.value as Carrier)}>
+              <option value="DEMO_POST">Demo Post (simulated)</option>
+              <option value="DEMO_EXPRESS">Demo Express (simulated)</option>
+            </select>
+          </label>
+          <label className="field field--compact">
+            <span>Tracking number (optional)</span>
+            <input value={tracking} maxLength={40} onChange={(e) => setTracking(e.target.value)} placeholder="generated if empty" />
+          </label>
+          <button type="button" className="btn" disabled={busy} onClick={ship}>
+            Mark shipped
+          </button>
+        </div>
+      )}
       {actions.length > 0 && (
         <div className="admin-order__actions">
           {actions.map((a) =>

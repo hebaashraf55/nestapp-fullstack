@@ -22,7 +22,8 @@ How each backend feature is proven. Three kinds of automated evidence exist:
 | Persistence after restart | Yes | Yes (e2e restarts the app) | — | e2e | Real |
 | Cart (add, update, remove, server pricing, stock) | Yes | Yes (repo + e2e) | Own cart only; client prices rejected (400) | cart, cart.mongo, e2e | Real |
 | Coupons (valid, unknown, expired, paused, duplicate) | Yes | Yes (repo + e2e) | Admin-only, customer and viewer 403 | cart, admin-management, cart.mongo, e2e | Real |
-| Coupon usage limits / minimum purchase | — | — | — | — | **Not implemented** (orders per code are counted, not limited) |
+| Promotions: percent or fixed, minimum spend, start date, product/category scope, automatic | Yes | Yes (old coupons read with safe defaults) | Admin-only writes (audited); client prices refused | batch4 (incl. pricing), batch4.mongo | Real |
+| Promotion usage limits (total and per customer), atomic | Yes (2 customers racing for the last use → 1 order, the other refused) | Yes (10 racing claims, limit 3 → 3; per-customer race → exact) | Uses given back when an order is cancelled, expires or is refunded | batch4, batch4.mongo | Real |
 | Orders: totals, reservation, expiry, state machine | Yes | Yes (repo + e2e) | Owner or admin; others 404 | orders, orders.mongo, e2e | Real |
 | Concurrency (oversell) | Yes | Yes: 6 buyers, 3 units → exactly 3 orders | — | orders.mongo, e2e | Real |
 | Simulated payment, duplicate payment, refund | Yes | Yes (two concurrent payments → one 200, one 409) | Owner pays; admin refunds | orders, e2e | **Simulated** by design: no gateway, card data refused |
@@ -50,6 +51,9 @@ How each backend feature is proven. Three kinds of automated evidence exist:
 | Returns (30 days after delivery; requested → approved/rejected → received) | Yes | Yes (6 racing requests → 1) | Customer requests; admin decides (audited); viewer reads synthetic only | batch3, batch3.mongo | Real; refund **simulated** |
 | Reorder (adds what is still available at today's prices) | Yes | via cart repo | Owner only | batch3 | Real |
 | Notifications (order, return and review updates; read state) | Yes | Yes (owner scoping, first read time kept, 180-day expiry) | Own only; guests never notified; a failed save never fails the action | batch3, batch3.mongo | Real (in-app; no push or email) |
+| Inventory history (opening, received, correction, damaged, lost, reserved, released, return restock) | Yes | Yes (append-only; invalid entries refused) | Admin and viewer read (viewer: synthetic only) | batch4, batch4.mongo | Real; written after the atomic stock change, failures logged |
+| Fulfilment: carrier, tracking number, printable label | Yes | Yes (shipment stored, carrier validated) | Admin-only | batch4, batch4.mongo | **Simulated carriers** (Demo Post, Demo Express); the label says it is not valid for postage |
+| Sales analytics (7/30/90 days) | Yes | Yes (activity query) | Admin and viewer (viewer: synthetic only) | batch4 | Real: computed from stored orders only; payments simulated |
 | Validation, 404, 409, error envelope | Yes | Yes | — | app, catalogue, orders, e2e | Real |
 | Rate limiting | Yes | In-memory counters | — | throttle, auth | Real, per process (not shared across instances) |
 | OpenAPI accuracy | Generated from the running app; a test fails if a route lacks a summary or the file drifts | — | — | openapi | Real |

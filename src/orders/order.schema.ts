@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import {
+  CARRIERS,
   ORDER_EVENT_TYPES,
   ORDER_STATUSES,
   PAYMENT_STATUSES,
@@ -48,6 +49,19 @@ export class ReturnRequestDoc {
 }
 export const ReturnRequestSchema = SchemaFactory.createForClass(ReturnRequestDoc);
 
+@Schema({ _id: false })
+export class ShipmentDoc {
+  @Prop({ required: true, enum: CARRIERS })
+  carrier!: string;
+  @Prop({ required: true, maxlength: 40 })
+  trackingNumber!: string;
+  @Prop({ required: true, type: Date })
+  shippedAt!: Date;
+  @Prop({ required: true, default: true })
+  simulated!: boolean;
+}
+export const ShipmentSchema = SchemaFactory.createForClass(ShipmentDoc);
+
 @Schema({ collection: 'orders', timestamps: { createdAt: true, updatedAt: true } })
 export class Order {
   @Prop({ required: true, index: true })
@@ -64,6 +78,9 @@ export class Order {
 
   @Prop({ required: true, min: 0, default: 0 })
   bundleSavingsCents!: number;
+
+  @Prop({ type: String, default: null })
+  couponId!: string | null;
 
   @Prop({ type: String, default: null })
   couponCode!: string | null;
@@ -109,6 +126,9 @@ export class Order {
 
   @Prop({ type: ReturnRequestSchema, default: null })
   returnRequest!: ReturnRequestDoc | null;
+
+  @Prop({ type: ShipmentSchema, default: null })
+  shipment!: ShipmentDoc | null;
 
   @Prop({ type: String, default: null, maxlength: 254 })
   guestEmail!: string | null;

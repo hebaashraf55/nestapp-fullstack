@@ -1,9 +1,23 @@
-import type { OrderEventType, OrderStatus, PaymentStatus, ReturnStatus } from './order-status';
+import type {
+  Carrier,
+  OrderEventType,
+  OrderStatus,
+  PaymentStatus,
+  ReturnStatus,
+} from './order-status';
 
 export interface OrderEvent {
   type: OrderEventType;
   at: Date;
   note: string | null;
+}
+
+export interface Shipment {
+  carrier: Carrier;
+  trackingNumber: string;
+  shippedAt: Date;
+  /** Always true: the carrier and label are simulated. */
+  simulated: true;
 }
 
 export interface ReturnRequest {
@@ -32,6 +46,8 @@ export interface OrderRecord {
   subtotalCents: number;
   /** Bundle discounts at checkout (0 for orders placed before bundles existed). */
   bundleSavingsCents: number;
+  /** The promotion whose use this order holds (given back if the order is cancelled or expires). */
+  couponId: string | null;
   couponCode: string | null;
   couponPercent: number | null;
   discountCents: number;
@@ -49,6 +65,7 @@ export interface OrderRecord {
   /** Newest last. Older orders have none; their timeline is rebuilt from the timestamps above. */
   events: OrderEvent[];
   returnRequest: ReturnRequest | null;
+  shipment: Shipment | null;
   /** Guest checkout only: the address the confirmation was sent to. */
   guestEmail: string | null;
   /** SHA-256 of the guest's tracking code. The code itself is never stored. */
@@ -62,17 +79,26 @@ export type NewOrder = Omit<
   | 'bundleSavingsCents'
   | 'events'
   | 'returnRequest'
+  | 'shipment'
+  | 'couponId'
   | 'guestEmail'
   | 'guestTokenHash'
 > & {
   bundleSavingsCents?: number;
+  couponId?: string | null;
   guestEmail?: string | null;
   guestTokenHash?: string | null;
 };
 export type OrderPatch = Partial<
   Pick<
     OrderRecord,
-    'status' | 'paymentStatus' | 'paidAt' | 'refundedAt' | 'cancelledAt' | 'returnRequest'
+    | 'status'
+    | 'paymentStatus'
+    | 'paidAt'
+    | 'refundedAt'
+    | 'cancelledAt'
+    | 'returnRequest'
+    | 'shipment'
   >
 >;
 
@@ -128,6 +154,8 @@ export abstract class OrdersRepository {
     patch: OrderPatch,
     event: OrderEvent,
   ): Promise<OrderRecord | null>;
+  /** Orders placed, paid or refunded since `since` (for analytics), at most `limit`. */
+  abstract findActivitySince(since: Date, demoOnly: boolean, limit: number): Promise<OrderRecord[]>;
   /** Orders with a return request, newest request first. */
   abstract findReturns(
     status: ReturnStatus | undefined,

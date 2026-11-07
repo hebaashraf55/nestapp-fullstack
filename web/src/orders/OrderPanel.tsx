@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { Order } from '../api/client';
+import { CARRIER_LABEL, type Order } from '../api/client';
 import { formatMoney } from '../lib/money';
 import { EVENT_LABEL, formatDate, formatRemaining, PAYMENT_LABEL, RETURN_LABEL, STATUS_LABEL } from '../lib/orderText';
 
@@ -237,7 +237,8 @@ export function OrderPanel({ initial, actions, title }: { initial: Order; action
         {order.coupon && (
           <div>
             <dt>
-              Coupon {order.coupon.code} (−{order.coupon.discountPercent}%)
+              Coupon {order.coupon.code}
+              {order.coupon.discountPercent ? ` (−${order.coupon.discountPercent}%)` : ''}
             </dt>
             <dd>−{formatMoney(order.discountCents, order.currency)}</dd>
           </div>
@@ -250,6 +251,13 @@ export function OrderPanel({ initial, actions, title }: { initial: Order; action
       <p className="muted">
         Delivering to {order.address} · {order.phone}
       </p>
+      {order.shipment && (
+        <p className="notice">
+          Shipped with <strong>{CARRIER_LABEL[order.shipment.carrier]}</strong>, tracking number{' '}
+          <strong className="code">{order.shipment.trackingNumber}</strong>. The carrier is simulated: there is no real
+          parcel to follow.
+        </p>
+      )}
       <Timeline order={order} />
     </div>
   );

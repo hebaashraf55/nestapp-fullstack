@@ -192,8 +192,9 @@ export class ProductController {
   adjustStock(
     @Param('id', new ParseObjectIdPipe()) id: string,
     @Body(new ZodPipe(stockAdjustSchema)) dto: StockAdjustDto,
+    @CurrentUser() admin: AuthenticatedUser,
   ) {
-    return this.products.adjustStock(id, dto);
+    return this.products.adjustStock(id, dto, admin.id);
   }
 
   @Roles(Role.ADMIN)

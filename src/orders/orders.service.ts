@@ -16,6 +16,8 @@ import { TooManyAttemptsException } from '../auth/too-many-attempts.exception';
 import { CartService, CartView } from '../cart/cart.service';
 import { ProductsRepository } from '../catalogue/catalogue.repositories';
 import { ENV, Env } from '../config/env';
+import { CouponsRepository } from '../coupons/coupons.repository';
+import { InventoryService } from '../inventory/inventory.service';
 import { MailSender } from '../mail/mail-sender';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Role } from '../users/role';
@@ -44,6 +46,7 @@ import {
   OrderRecord,
   OrdersRepository,
   ReturnRequest,
+  Shipment,
 } from './orders.repository';
 
 export interface OrderView {
@@ -68,6 +71,8 @@ export interface OrderView {
   /** Oldest first. */
   timeline: OrderEvent[];
   returnRequest: ReturnRequest | null;
+  /** Carrier and tracking number once shipped. Simulated: no real carrier is involved. */
+  shipment: Shipment | null;
   /** True while a return may still be requested. */
   returnable: boolean;
   /** True while the customer may still cancel (before shipping). */
@@ -120,6 +125,7 @@ const makeView =
       isDemo: o.isDemo,
       timeline: o.events.length > 0 ? o.events : legacyTimeline(o),
       returnRequest: o.returnRequest,
+      shipment: o.shipment,
       returnable:
         o.status === 'DELIVERED' &&
         o.returnRequest === null &&
@@ -177,6 +183,8 @@ export class OrdersService {
     private readonly mail: MailSender,
     private readonly limiter: GuestOrderLimiter,
     @Inject(ENV) private readonly env: Env,
+    private readonly inventory: InventoryService,
+    private readonly coupons: CouponsRepository,
   ) {}
 
   private event(type: OrderEventType, note: string | null = null): OrderEvent {
@@ -268,6 +276,13 @@ export class OrdersService {
     guest: { email: string; tokenHash: string } | null,
   ): Promise<OrderRecord> {
     if (cart.items.length === 0) throw new BadRequestException('Your cart is empty');
+    // Never place an order at a different price than the customer expects: a chosen code that can
+    // no longer be used (another order just took its last use, it expired…) stops the order.
+    if (cart.rejectedCoupon) {
+      throw new ConflictException(
+        `Coupon ${cart.rejectedCoupon.code} ${cart.rejectedCoupon.reason}. Remove it or review your cart.`,
+      );
+    }
     if (cart.hasIssues) {
       throw new ConflictException(
         'Some items in your cart are unavailable or out of stock. Please review your cart.',
@@ -290,8 +305,27 @@ export class OrdersService {
       reserved.push({ productId: line.productId, quantity: line.quantity });
     }
 
+    // One use of the promotion, taken atomically; the last use cannot go to two orders.
+    let claimedCoupon: string | null = null;
+    if (cart.coupon) {
+      const promo = await this.coupons.findById(cart.coupon.id);
+      const result = promo
+        ? await this.coupons.claim(promo.id, owner, promo.maxUsesPerCustomer)
+        : 'used-up';
+      if (result !== 'ok') {
+        await this.release(reserved);
+        throw new ConflictException(
+          result === 'customer-limit'
+            ? `You have already used ${cart.coupon.code} the maximum number of times. Remove it to continue.`
+            : `${cart.coupon.code} has just been used up. Please review your cart.`,
+        );
+      }
+      claimedCoupon = cart.coupon.id;
+    }
+
+    let created: OrderRecord;
     try {
-      return await this.orders.create({
+      created = await this.orders.create({
         userId: owner,
         isDemo,
         items: cart.items.map((l) => ({
@@ -303,8 +337,10 @@ export class OrdersService {
         })),
         subtotalCents: cart.subtotalCents,
         bundleSavingsCents: cart.bundleSavingsCents,
+        couponId: claimedCoupon,
         couponCode: cart.coupon?.code ?? null,
-        couponPercent: cart.coupon?.discountPercent ?? null,
+        couponPercent:
+          cart.coupon && cart.coupon.type === 'PERCENT' ? cart.coupon.discountPercent : null,
         discountCents: cart.discountCents,
         totalCents: cart.totalCents,
         currency: cart.currency,
@@ -321,8 +357,20 @@ export class OrdersService {
       });
     } catch (error) {
       await this.release(reserved); // never keep stock for an order that was not saved
+      if (claimedCoupon) await this.coupons.release(claimedCoupon, owner).catch(() => undefined);
       throw error;
     }
+    await this.inventory.record(
+      created.items.map((i) => ({
+        productId: i.productId,
+        productName: i.name,
+        change: -i.quantity,
+        reason: 'ORDER_RESERVED' as const,
+        orderId: created.id,
+        isDemo: created.isDemo,
+      })),
+    );
+    return created;
   }
 
   private async sendGuestConfirmation(order: OrderRecord, email: string, trackPath: string) {
@@ -520,20 +568,36 @@ export class OrdersService {
         `An order that is ${order.status} cannot be set to ${dto.status}`,
       );
     }
+    const at = new Date(this.now());
+    const shipment: Shipment | null =
+      dto.status === 'SHIPPED'
+        ? {
+            carrier: dto.carrier ?? 'DEMO_POST',
+            trackingNumber:
+              dto.trackingNumber ?? `SIM-${randomBytes(5).toString('hex').toUpperCase()}`,
+            shippedAt: at,
+            simulated: true,
+          }
+        : null;
     const patch =
       dto.status === 'CANCELLED'
-        ? { status: dto.status, cancelledAt: new Date(this.now()) }
-        : { status: dto.status };
+        ? { status: dto.status, cancelledAt: at }
+        : shipment
+          ? { status: dto.status, shipment }
+          : { status: dto.status };
+    const note = shipment
+      ? `${shipment.carrier === 'DEMO_EXPRESS' ? 'Demo Express' : 'Demo Post'} ${shipment.trackingNumber} (simulated carrier)`
+      : null;
     const updated = await this.orders.transition(
       order.id,
       [order.status],
       patch,
-      this.event(dto.status),
+      this.event(dto.status, note),
     );
     if (!updated)
       throw new ConflictException('The order was changed by someone else. Please reload.');
     if (dto.status === 'CANCELLED') await this.restoreStock(updated);
-    await this.notify(updated, dto.status);
+    await this.notify(updated, dto.status, note ?? '');
     return this.view(updated);
   }
 
@@ -609,7 +673,7 @@ export class OrdersService {
     );
     if (!updated)
       throw new ConflictException('The return was changed by someone else. Please reload.');
-    if (dto.decision === 'RECEIVED') await this.restoreStock(updated);
+    if (dto.decision === 'RECEIVED') await this.restoreStock(updated, 'RETURN_RESTOCK');
     await this.notify(updated, type, dto.note ?? '');
     return this.view(updated);
   }
@@ -655,8 +719,30 @@ export class OrdersService {
     }
   }
 
-  private async restoreStock(order: OrderRecord): Promise<void> {
+  private async restoreStock(
+    order: OrderRecord,
+    reason: 'ORDER_RELEASED' | 'RETURN_RESTOCK' = 'ORDER_RELEASED',
+  ): Promise<void> {
     await this.release(order.items);
+    if (reason === 'ORDER_RELEASED' && order.couponId) {
+      try {
+        await this.coupons.release(order.couponId, order.userId);
+      } catch (error) {
+        this.logger.error(
+          `Could not give back a use of coupon ${order.couponId}: ${String(error)}`,
+        );
+      }
+    }
+    await this.inventory.record(
+      order.items.map((i) => ({
+        productId: i.productId,
+        productName: i.name,
+        change: i.quantity,
+        reason,
+        orderId: order.id,
+        isDemo: order.isDemo,
+      })),
+    );
   }
 
   private async release(lines: { productId: string; quantity: number }[]): Promise<void> {

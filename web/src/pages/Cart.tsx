@@ -14,7 +14,7 @@ const STATUS_TEXT: Record<CartLine['status'], string | null> = {
 
 export function Cart() {
   const { user } = useAuth();
-  const { cart, status, error, setQuantity, remove, applyCode, reload, isGuest, mergeNotice } = useCart();
+  const { cart, status, error, setQuantity, remove, applyCode, removeCode, reload, isGuest, mergeNotice } = useCart();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -146,7 +146,8 @@ export function Cart() {
               {cart.coupon && (
                 <div>
                   <dt>
-                    Coupon {cart.coupon.code} (−{cart.coupon.discountPercent}%)
+                    {cart.coupon.automatic ? 'Offer' : 'Coupon'} {cart.coupon.code} (
+                    {cart.coupon.type === 'FIXED' ? `−${formatMoney(cart.coupon.amountOffCents ?? 0, cart.currency)}` : `−${cart.coupon.discountPercent}%`})
                   </dt>
                   <dd>−{formatMoney(cart.discountCents, cart.currency)}</dd>
                 </div>
@@ -166,6 +167,11 @@ export function Cart() {
                   Apply
                 </button>
               </form>
+            )}
+            {!isGuest && !readOnly && (cart.rejectedCoupon || (cart.coupon && !cart.coupon.automatic)) && (
+              <button type="button" className="link" disabled={busy} onClick={() => void act(removeCode)}>
+                Remove coupon {cart.rejectedCoupon?.code ?? cart.coupon?.code}
+              </button>
             )}
             {cart.warnings.map((w) => (
               <p key={w} className="error-text" role="status">

@@ -1,3 +1,9 @@
+import {
+  InventoryRepository,
+  MovementFilter,
+  MovementRecord,
+  NewMovement,
+} from '../../src/inventory/inventory.repository';
 import { randomBytes } from 'node:crypto';
 import {
   AddressFields,
@@ -92,5 +98,25 @@ export class InMemoryNotificationsRepository extends NotificationsRepository {
         n++;
       }
     return n;
+  }
+}
+
+export class InMemoryInventoryRepository extends InventoryRepository {
+  readonly records: MovementRecord[] = [];
+  failWith: Error | null = null;
+  async append(entries: NewMovement[]) {
+    if (this.failWith) throw this.failWith;
+    for (const e of entries) this.records.push({ ...e, id: id(), createdAt: now() });
+  }
+  async findPage(f: MovementFilter) {
+    const all = this.records
+      .filter(
+        (m) =>
+          (!f.productId || m.productId === f.productId) &&
+          (!f.reason || m.reason === f.reason) &&
+          (!f.demoOnly || m.isDemo),
+      )
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return { items: all.slice((f.page - 1) * f.limit, f.page * f.limit), total: all.length };
   }
 }

@@ -8,6 +8,7 @@ import {
   getProduct,
   type Product,
   type ProductInput,
+  type StockReason,
   updateProduct,
 } from '../../api/client';
 import { useAuth } from '../../auth/AuthContext';
@@ -278,6 +279,8 @@ function ProductForm({ product }: { product: Product | null }) {
 /** Stock is changed relatively (never overwritten) so an order placed meanwhile is not lost. */
 function StockPanel({ product, onChanged }: { product: Product; onChanged: (p: Product) => void }) {
   const [change, setChange] = useState('');
+  const [reason, setReason] = useState<StockReason>('RECEIVED');
+  const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -294,9 +297,10 @@ function StockPanel({ product, onChanged }: { product: Product; onChanged: (p: P
     }
     setBusy(true);
     try {
-      const updated = await adjustProductStock(product.id, n);
+      const updated = await adjustProductStock(product.id, n, reason, note.trim() || undefined);
       onChanged(updated);
       setChange('');
+      setNote('');
       setMessage({ ok: true, text: `Stock is now ${updated.stock}.` });
     } catch (err) {
       setMessage({ ok: false, text: err instanceof Error ? err.message : 'Something went wrong' });
@@ -317,6 +321,19 @@ function StockPanel({ product, onChanged }: { product: Product; onChanged: (p: P
           <span>Add or remove</span>
           <input type="number" step={1} inputMode="numeric" value={change} onChange={(e) => setChange(e.target.value)} placeholder="+5 or -2" />
         </label>
+        <label className="field field--compact">
+          <span>Reason</span>
+          <select value={reason} onChange={(e) => setReason(e.target.value as StockReason)}>
+            <option value="RECEIVED">Goods received</option>
+            <option value="CORRECTION">Count correction</option>
+            <option value="DAMAGED">Damaged</option>
+            <option value="LOST">Lost</option>
+          </select>
+        </label>
+        <label className="field field--compact">
+          <span>Note (optional)</span>
+          <input value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} />
+        </label>
         <button type="submit" className="btn btn--ghost" disabled={busy}>
           {busy ? 'Saving…' : 'Update stock'}
         </button>
@@ -326,6 +343,9 @@ function StockPanel({ product, onChanged }: { product: Product; onChanged: (p: P
           {message.text}
         </p>
       )}
+      <p>
+        <Link to={`/admin/inventory?product=${product.id}`}>Stock history</Link>
+      </p>
     </section>
   );
 }

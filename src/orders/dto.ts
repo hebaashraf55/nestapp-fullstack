@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ADMIN_STATUS_TARGETS } from './order-status';
+import { ADMIN_STATUS_TARGETS, CARRIERS } from './order-status';
 
 /** Luhn checksum: true for digit strings that look like a payment card number. */
 export function passesLuhn(digits: string): boolean {
@@ -96,7 +96,24 @@ export type ReturnsQueryDto = z.infer<typeof returnsQuerySchema>;
 /** simulate-payment and refund take no body at all: anything sent is refused. */
 export const emptyBodySchema = z.strictObject({});
 
-export const orderStatusSchema = z.strictObject({ status: z.enum(ADMIN_STATUS_TARGETS) });
+/** Shipping can name a (simulated) carrier and a tracking number; other statuses take neither. */
+export const orderStatusSchema = z
+  .strictObject({
+    status: z.enum(ADMIN_STATUS_TARGETS),
+    carrier: z.enum(CARRIERS).optional(),
+    trackingNumber: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z0-9-]{6,40}$/, { error: 'use 6–40 letters, digits or "-"' })
+      .optional(),
+  })
+  .refine(
+    (v) => v.status === 'SHIPPED' || (v.carrier === undefined && v.trackingNumber === undefined),
+    {
+      error: 'carrier and tracking number only apply when shipping',
+    },
+  );
 
 export type CreateOrderDto = z.infer<typeof createOrderSchema>;
 export type OrderStatusDto = z.infer<typeof orderStatusSchema>;

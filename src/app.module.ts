@@ -1,4 +1,5 @@
 import { AddressesModule } from './addresses/addresses.module';
+import { InventoryModule } from './inventory/inventory.module';
 import { BundlesModule } from './bundles/bundles.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { LooksModule } from './looks/looks.module';
@@ -41,6 +42,7 @@ export class AppModule {
         MoodboardsModule.register(env),
         AddressesModule.register(env),
         NotificationsModule.register(env),
+        InventoryModule.register(env),
         AdminModule.register(),
         OpenApiModule.register(env),
       ],

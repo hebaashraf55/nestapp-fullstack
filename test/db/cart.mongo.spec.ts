@@ -11,7 +11,7 @@ import { MongoCartsRepository } from '../../src/cart/mongo-cart.repository';
 import { DuplicateKeyError } from '../../src/catalogue/catalogue.repositories';
 import { Product, ProductSchema } from '../../src/catalogue/catalogue.schemas';
 import { MongoProductsRepository } from '../../src/catalogue/mongo-catalogue.repositories';
-import { Coupon, CouponSchema } from '../../src/coupons/coupon.schema';
+import { Coupon, CouponSchema, CouponUse, CouponUseSchema } from '../../src/coupons/coupon.schema';
 import { MongoCouponsRepository } from '../../src/coupons/mongo-coupons.repository';
 
 const uri = process.env.MONGODB_TEST_URI;
@@ -30,6 +30,7 @@ suite('coupon and cart storage (real MongoDB)', () => {
         MongooseModule.forRoot(uri as string, { serverSelectionTimeoutMS: 5000 }),
         MongooseModule.forFeature([
           { name: Coupon.name, schema: CouponSchema },
+          { name: CouponUse.name, schema: CouponUseSchema },
           { name: Cart.name, schema: CartSchema },
           { name: Product.name, schema: ProductSchema },
         ]),

@@ -11,5 +11,13 @@ export const adminOrdersQuerySchema = z.strictObject({
   limit,
 });
 
+export const analyticsQuerySchema = z.strictObject({
+  days: z.coerce
+    .number()
+    .pipe(z.union([z.literal(7), z.literal(30), z.literal(90)]))
+    .default(30),
+});
+export type AnalyticsQuery = z.infer<typeof analyticsQuerySchema>;
+
 export type PageQuery = z.infer<typeof pageQuerySchema>;
 export type AdminOrdersQuery = z.infer<typeof adminOrdersQuerySchema>;

@@ -14,4 +14,8 @@ export class UnavailableCouponsRepository extends CouponsRepository {
   create = fail;
   update = fail;
   delete = fail;
+  findAutomatic = fail;
+  usesBy = fail;
+  claim = fail;
+  release = fail;
 }

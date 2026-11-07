@@ -7,10 +7,12 @@ import {
   VersionConflictError,
 } from '../../src/cart/cart.repository';
 import {
+  ClaimResult,
   CouponPatch,
   CouponRecord,
   CouponsRepository,
   NewCoupon,
+  withPromotionDefaults,
 } from '../../src/coupons/coupons.repository';
 
 const newId = () => randomBytes(12).toString('hex');
@@ -38,7 +40,11 @@ export class InMemoryCouponsRepository extends CouponsRepository {
     this.check();
     if ([...this.records.values()].some((c) => c.code === record.code))
       throw new DuplicateKeyError();
-    const created: CouponRecord = { ...record, id: newId(), createdAt: new Date() };
+    const created: CouponRecord = {
+      ...withPromotionDefaults(record),
+      id: newId(),
+      createdAt: new Date(),
+    };
     this.records.set(created.id, created);
     return created;
   }
@@ -53,6 +59,32 @@ export class InMemoryCouponsRepository extends CouponsRepository {
   async delete(id: string) {
     this.check();
     return this.records.delete(id);
+  }
+  readonly uses = new Map<string, number>();
+  async findAutomatic() {
+    this.check();
+    return [...this.records.values()].filter((c) => c.automatic && c.active);
+  }
+  async usesBy(couponId: string, ownerId: string) {
+    return this.uses.get(`${couponId}:${ownerId}`) ?? 0;
+  }
+  async claim(couponId: string, ownerId: string, perCustomer: number | null): Promise<ClaimResult> {
+    this.check();
+    const c = this.records.get(couponId);
+    if (!c || (c.maxUses !== null && c.usedCount >= c.maxUses)) return 'used-up';
+    const key = `${couponId}:${ownerId}`;
+    const mine = this.uses.get(key) ?? 0;
+    if (perCustomer !== null && mine >= perCustomer) return 'customer-limit';
+    c.usedCount += 1;
+    this.uses.set(key, mine + 1);
+    return 'ok';
+  }
+  async release(couponId: string, ownerId: string) {
+    const c = this.records.get(couponId);
+    if (c && c.usedCount > 0) c.usedCount -= 1;
+    const key = `${couponId}:${ownerId}`;
+    const mine = this.uses.get(key) ?? 0;
+    if (mine > 0) this.uses.set(key, mine - 1);
   }
 }
 

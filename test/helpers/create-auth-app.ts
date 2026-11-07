@@ -29,8 +29,11 @@ import { NotificationsRepository } from '../../src/notifications/notifications.r
 import { GuestOrderLimiter } from '../../src/orders/orders.service';
 import {
   InMemoryAddressesRepository,
+  InMemoryInventoryRepository,
   InMemoryNotificationsRepository,
 } from './in-memory-batch3.repositories';
+import { InventoryModule } from '../../src/inventory/inventory.module';
+import { InventoryRepository } from '../../src/inventory/inventory.repository';
 import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AuthModule } from '../../src/auth/auth.module';
@@ -113,6 +116,7 @@ export interface AuthTestApp {
   moodboards: InMemoryMoodboardsRepository;
   addresses: InMemoryAddressesRepository;
   notifications: InMemoryNotificationsRepository;
+  inventory: InMemoryInventoryRepository;
   guestLimiter: GuestOrderLimiter;
   /** The request throttle's counters, so tests can inspect or move its clock. */
   throttler: RateLimiter;
@@ -152,6 +156,7 @@ export async function createAuthApp(
   const moodboards = new InMemoryMoodboardsRepository();
   const addresses = new InMemoryAddressesRepository();
   const notifications = new InMemoryNotificationsRepository();
+  const inventory = new InMemoryInventoryRepository();
   const moduleRef = await Test.createTestingModule({
     imports: [
       UsersModule.register(env),
@@ -169,6 +174,7 @@ export async function createAuthApp(
       MoodboardsModule.register(env),
       AddressesModule.register(env),
       NotificationsModule.register(env),
+      InventoryModule.register(env),
       AdminModule.register(),
       OpenApiModule.register(env),
     ],
@@ -213,6 +219,8 @@ export async function createAuthApp(
     .useValue(addresses)
     .overrideProvider(NotificationsRepository)
     .useValue(notifications)
+    .overrideProvider(InventoryRepository)
+    .useValue(inventory)
     .compile();
   const app = moduleRef.createNestApplication();
   configureApp(app, env, throttler);
@@ -242,6 +250,7 @@ export async function createAuthApp(
     moodboards,
     addresses,
     notifications,
+    inventory,
     guestLimiter: moduleRef.get(GuestOrderLimiter),
     throttler,
     ordersService: moduleRef.get(OrdersService),

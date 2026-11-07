@@ -122,8 +122,13 @@ export function Checkout() {
       <p className="checkout__total">
         {cart.itemCount} {cart.itemCount === 1 ? 'item' : 'items'} · <strong>{formatMoney(cart.totalCents, cart.currency)}</strong>
         {(cart.bundleSavingsCents ?? 0) > 0 && <span> (sets save {formatMoney(cart.bundleSavingsCents ?? 0, cart.currency)})</span>}
-        {cart.coupon && <span> (coupon {cart.coupon.code} applied)</span>}
+        {cart.coupon && <span> ({cart.coupon.automatic ? 'offer' : 'coupon'} {cart.coupon.code} applied)</span>}
       </p>
+      {cart.rejectedCoupon && (
+        <p className="notice notice--bad" role="alert">
+          Coupon {cart.rejectedCoupon.code} {cart.rejectedCoupon.reason}. <Link to="/cart">Remove it in your cart</Link> to continue.
+        </p>
+      )}
       {cart.hasIssues && (
         <p className="notice notice--bad" role="alert">
           Some items are unavailable or out of stock. <Link to="/cart">Review your cart</Link> first.
@@ -222,7 +227,7 @@ export function Checkout() {
             {error}
           </p>
         )}
-        <button type="submit" className="btn" disabled={busy || cart.hasIssues}>
+        <button type="submit" className="btn" disabled={busy || cart.hasIssues || Boolean(cart.rejectedCoupon)}>
           {busy ? 'Placing order…' : 'Place order (simulated)'}
         </button>
       </form>

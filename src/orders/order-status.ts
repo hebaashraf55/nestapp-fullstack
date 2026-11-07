@@ -76,4 +76,8 @@ export type ReturnStatus = (typeof RETURN_STATUSES)[number];
 /** Returns can be requested this long after delivery. */
 export const RETURN_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
+/** Simulated carriers: no real shipping company is contacted and no real label is bought. */
+export const CARRIERS = ['DEMO_POST', 'DEMO_EXPRESS'] as const;
+export type Carrier = (typeof CARRIERS)[number];
+
 export const SIMULATION_NOTICE = 'Simulated payment: no payment was taken and no card was charged.';

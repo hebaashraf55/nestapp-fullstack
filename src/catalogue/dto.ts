@@ -1,3 +1,4 @@
+import { ADMIN_STOCK_REASONS } from '../inventory/movement.schema';
 import { BadRequestException, PipeTransform } from '@nestjs/common';
 import { z } from 'zod';
 
@@ -80,6 +81,9 @@ export const productCreateSchema = z.strictObject({
 
 /** A relative stock change (receive goods: positive; write off: negative). Applied atomically. */
 export const stockAdjustSchema = z.strictObject({
+  /** Why the stock changed; kept in the inventory history. */
+  reason: z.enum(ADMIN_STOCK_REASONS).default('CORRECTION'),
+  note: z.string().trim().max(300).optional(),
   change: z
     .number()
     .int()

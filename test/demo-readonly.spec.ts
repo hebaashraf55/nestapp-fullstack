@@ -76,6 +76,7 @@ const FORBIDDEN_FOR_VIEWER: Record<string, object> = {
   'POST /api/moodboards/:id/share': {},
   'DELETE /api/moodboards/:id/share': {},
   'POST /api/cart/merge': { items: [] },
+  'DELETE /api/cart/coupon': {},
   'POST /api/order/:orderId/cancel': {},
   'POST /api/order/:orderId/return': { reason: 'It arrived chipped at the rim.' },
   'POST /api/order/:orderId/reorder': {},

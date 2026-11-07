@@ -22,4 +22,5 @@ export class UnavailableOrdersRepository extends OrdersRepository {
   transition = fail;
   updateReturn = fail;
   findReturns = fail;
+  findActivitySince = fail;
 }

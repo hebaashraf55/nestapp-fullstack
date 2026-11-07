@@ -4,6 +4,7 @@ import { isValidObjectId, Model } from 'mongoose';
 import { Order } from './order.schema';
 import {
   STOCK_HOLDING_STATUSES,
+  type Carrier,
   type OrderStatus,
   type PaymentStatus,
   type ReturnStatus,
@@ -31,6 +32,7 @@ interface OrderDoc {
   }[];
   subtotalCents: number;
   bundleSavingsCents?: number;
+  couponId?: string | null;
   couponCode?: string | null;
   couponPercent?: number | null;
   discountCents: number;
@@ -55,6 +57,7 @@ interface OrderDoc {
   } | null;
   guestEmail?: string | null;
   guestTokenHash?: string | null;
+  shipment?: { carrier: string; trackingNumber: string; shippedAt: Date } | null;
 }
 
 const toRecord = (d: OrderDoc): OrderRecord => ({
@@ -70,6 +73,7 @@ const toRecord = (d: OrderDoc): OrderRecord => ({
   })),
   subtotalCents: d.subtotalCents,
   bundleSavingsCents: d.bundleSavingsCents ?? 0,
+  couponId: d.couponId ?? null,
   couponCode: d.couponCode ?? null,
   couponPercent: d.couponPercent ?? null,
   discountCents: d.discountCents,
@@ -100,6 +104,14 @@ const toRecord = (d: OrderDoc): OrderRecord => ({
     : null,
   guestEmail: d.guestEmail ?? null,
   guestTokenHash: d.guestTokenHash ?? null,
+  shipment: d.shipment
+    ? {
+        carrier: d.shipment.carrier as Carrier,
+        trackingNumber: d.shipment.trackingNumber,
+        shippedAt: d.shipment.shippedAt,
+        simulated: true,
+      }
+    : null,
 });
 
 @Injectable()
@@ -113,6 +125,7 @@ export class MongoOrdersRepository extends OrdersRepository {
       ...order,
       events: [{ type: 'PLACED', at: new Date(), note: null }],
       returnRequest: null,
+      shipment: null,
     });
     return toRecord(doc as unknown as OrderDoc);
   }
@@ -229,6 +242,22 @@ export class MongoOrdersRepository extends OrdersRepository {
       ])
       .exec();
     return Object.fromEntries(rows.map((r) => [r._id, r.count]));
+  }
+
+  async findActivitySince(since: Date, demoOnly: boolean, limit: number) {
+    const docs = await this.model
+      .find({
+        $or: [
+          { createdAt: { $gte: since } },
+          { paidAt: { $gte: since } },
+          { refundedAt: { $gte: since } },
+        ],
+        ...(demoOnly ? { isDemo: true } : {}),
+      })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .exec();
+    return docs.map((d) => toRecord(d as unknown as OrderDoc));
   }
 
   async findOverdue(now: Date, limit: number) {

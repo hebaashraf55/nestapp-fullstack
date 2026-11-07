@@ -10,7 +10,8 @@ import { RateLimiter } from '../auth/rate-limiter';
 import { TooManyAttemptsException } from '../auth/too-many-attempts.exception';
 import { applyBundles, AppliedBundle } from '../bundles/bundle-pricing';
 import { BundlesRepository } from '../bundles/bundles.repository';
-import { CouponsRepository, isCouponUsable } from '../coupons/coupons.repository';
+import { CouponRecord, CouponsRepository, isCouponUsable } from '../coupons/coupons.repository';
+import { evaluatePromotion } from '../coupons/promotion-pricing';
 import { CartData, CartRecord, CartsRepository, VersionConflictError } from './cart.repository';
 import { MAX_LINES, MAX_QUANTITY } from './dto';
 
@@ -37,6 +38,16 @@ export interface CartLineView {
   status: LineStatus;
 }
 
+export interface AppliedPromotion {
+  id: string;
+  code: string;
+  type: 'PERCENT' | 'FIXED';
+  /** 0 for a fixed-amount promotion. */
+  discountPercent: number;
+  amountOffCents: number | null;
+  automatic: boolean;
+}
+
 export interface CartView {
   items: CartLineView[];
   itemCount: number;
@@ -44,13 +55,16 @@ export interface CartView {
   /** Bundle discounts found by the server: complete sets in the cart. */
   bundles: AppliedBundle[];
   bundleSavingsCents: number;
-  coupon: { code: string; discountPercent: number } | null;
+  /** The one promotion applied: the customer's code or an automatic promotion, whichever saves more. */
+  coupon: AppliedPromotion | null;
   /** Coupon discount, taken after bundle savings. */
   discountCents: number;
   totalCents: number;
   currency: string;
   /** True when a line is sold out, short on stock or no longer in the catalogue. */
   hasIssues: boolean;
+  /** The code the customer applied, when it cannot be used right now (with the reason). */
+  rejectedCoupon: { code: string; reason: string } | null;
   warnings: string[];
 }
 
@@ -225,17 +239,31 @@ export class CartService {
     });
   }
 
+  /** Takes the customer's code off the cart (automatic promotions still apply when eligible). */
+  async removeCoupon(userId: string): Promise<CartView> {
+    return this.mutate(userId, (cart) => ({ items: cart.items, couponId: null }));
+  }
+
   async applyCoupon(userId: string, code: string): Promise<CartView> {
     const key = `coupon:${userId}`;
     const status = this.limiter.status(key, MAX_COUPON_FAILURES);
     if (status.blocked) throw new TooManyAttemptsException(status.retryAfterSeconds);
 
     const coupon = await this.coupons.findByCode(code);
-    if (!coupon || !isCouponUsable(coupon)) {
-      // One generic answer for unknown, paused and expired codes; failures are counted per user.
+    if (!coupon || !isCouponUsable(coupon) || coupon.automatic) {
+      // One generic answer for unknown, paused, scheduled and expired codes; failures are counted per user.
       this.limiter.record(key, COUPON_WINDOW_MS);
       throw new BadRequestException('Invalid or expired coupon');
     }
+    if (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses)
+      throw new BadRequestException('This coupon has been fully used');
+    if (
+      coupon.maxUsesPerCustomer !== null &&
+      (await this.coupons.usesBy(coupon.id, userId)) >= coupon.maxUsesPerCustomer
+    )
+      throw new BadRequestException(
+        'You have already used this coupon the maximum number of times',
+      );
     return this.mutate(userId, (cart) => {
       if (cart.items.length === 0) throw new BadRequestException('Your cart is empty');
       return { items: cart.items, couponId: coupon.id };
@@ -321,14 +349,56 @@ export class CartService {
     const warnings: string[] = [];
     let coupon: CartView['coupon'] = null;
     let discountCents = 0;
+    let rejectedCoupon: CartView['rejectedCoupon'] = null;
+    const owner = cart?.userId ?? '';
+    const promoLines = okLines.map((i) => ({
+      productId: i.productId,
+      categoryId: byId.get(i.productId)?.categoryId ?? null,
+      lineTotalCents: i.lineTotalCents,
+    }));
+    const candidates: { record: CouponRecord; chosen: boolean }[] = [];
     if (cart?.couponId) {
       const record = await this.coupons.findById(cart.couponId);
-      if (record && isCouponUsable(record)) {
-        coupon = { code: record.code, discountPercent: record.discountPercent };
-        discountCents = Math.round((afterBundles * record.discountPercent) / 100);
-      } else {
-        warnings.push('Your coupon is no longer valid and was not applied.');
+      if (record) candidates.push({ record, chosen: true });
+      else warnings.push('Your coupon is no longer valid and was not applied.');
+    }
+    if (okLines.length)
+      for (const record of await this.coupons.findAutomatic())
+        candidates.push({ record, chosen: false });
+    let best: { record: CouponRecord; discountCents: number } | null = null;
+    for (const { record, chosen } of candidates) {
+      const uses =
+        owner && record.maxUsesPerCustomer !== null
+          ? await this.coupons.usesBy(record.id, owner)
+          : 0;
+      const result = evaluatePromotion(record, promoLines, afterBundles, uses);
+      if (!result.eligible) {
+        if (chosen) rejectedCoupon = { code: record.code, reason: result.reason };
+        if (chosen)
+          warnings.push(
+            isCouponUsable(record)
+              ? `Coupon ${record.code} ${result.reason}, so it was not applied.`
+              : 'Your coupon is no longer valid and was not applied.',
+          );
+        continue;
       }
+      if (!best || result.discountCents > best.discountCents)
+        best = { record, discountCents: result.discountCents };
+    }
+    if (best) {
+      coupon = {
+        id: best.record.id,
+        code: best.record.code,
+        type: best.record.type,
+        discountPercent: best.record.type === 'PERCENT' ? best.record.discountPercent : 0,
+        amountOffCents: best.record.type === 'FIXED' ? best.record.amountOffCents : null,
+        automatic: best.record.automatic,
+      };
+      discountCents = best.discountCents;
+      if (cart?.couponId && best.record.id !== cart.couponId)
+        warnings.push(
+          `The automatic offer ${best.record.code} saves you more, so it was used instead of your code.`,
+        );
     }
     if (items.some((i) => i.status !== 'ok')) {
       warnings.push('Some items are unavailable or exceed the stock on hand.');
@@ -344,6 +414,7 @@ export class CartService {
       totalCents: afterBundles - discountCents,
       currency: CURRENCY,
       hasIssues: items.some((i) => i.status !== 'ok'),
+      rejectedCoupon,
       warnings,
     };
   }

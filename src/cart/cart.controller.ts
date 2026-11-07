@@ -76,6 +76,12 @@ export class CartController {
     return this.cart.applyCoupon(user.id, dto.code);
   }
 
+  @Delete('coupon')
+  @HttpCode(200)
+  removeCoupon(@CurrentUser() user: AuthenticatedUser) {
+    return this.cart.removeCoupon(user.id);
+  }
+
   @Patch(':productId')
   update(
     @Param('productId', new ParseObjectIdPipe()) productId: string,

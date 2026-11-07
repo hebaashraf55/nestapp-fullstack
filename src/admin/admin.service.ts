@@ -7,6 +7,7 @@ import { OrdersRepository } from '../orders/orders.repository';
 import { toOrderView } from '../orders/orders.service';
 import { Role } from '../users/role';
 import { UsersRepository } from '../users/users.repository';
+import { Analytics, computeAnalytics } from './analytics';
 import type { AdminOrdersQuery, PageQuery } from './dto';
 import { maskEmail, maskName } from './mask';
 
@@ -51,6 +52,19 @@ export class AdminService {
       simulatedRefundedCents: orders.refundedCents,
       notice: SIMULATION_NOTICE,
     };
+  }
+
+  /** Sales analytics from real orders only (simulated payments); see computeAnalytics. */
+  async analytics(
+    viewer: AuthenticatedUser,
+    days: number,
+  ): Promise<Analytics & { scope: string; notice: string }> {
+    const LIMIT = 20_000;
+    const now = Date.now();
+    const since = new Date(now - (days + 1) * 24 * 60 * 60 * 1000);
+    const orders = await this.orders.findActivitySince(since, this.demoOnly(viewer), LIMIT + 1);
+    const report = computeAnalytics(orders.slice(0, LIMIT), days, now, orders.length > LIMIT);
+    return { ...report, scope: this.demoOnly(viewer) ? 'demo' : 'all', notice: SIMULATION_NOTICE };
   }
 
   async customers(viewer: AuthenticatedUser, query: PageQuery) {

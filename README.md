@@ -33,7 +33,10 @@ NOMA is a portfolio e-commerce project: a **NestJS + MongoDB API** and a **React
 **Admin** (`/admin`)
 - Dashboard: customers, orders by status, simulated paid/refunded totals, stock alerts
 - **Products:** list with search and filters, create, edit (only changed fields are sent), relative stock changes that never go below zero, delete with confirmation (refused while an open order still holds the product)
-- **Coupons:** percentage coupons with expiry, edit, pause/activate, delete, orders-per-code
+- **Coupons and promotions:** percentage or fixed amount, minimum spend, start and end dates, total and per-customer limits (taken atomically), product or category scope, and automatic offers; the cart uses the single best one
+- **Analytics:** paid and refunded per day, average order, payment rate, top products, returning customers, coupon use and returns, all from real orders
+- **Inventory history:** every stock change with its reason (received, correction, damaged, lost, orders, returns)
+- **Fulfilment:** ship with a simulated carrier and tracking number, and print a label clearly marked as simulated
 - Orders: status changes along a state machine, simulated refunds that restore stock
 - **Returns:** approve or decline requests, then mark them received (simulated refund, stock restored)
 - **Sets and looks:** create, pause and delete; variant group and label on products

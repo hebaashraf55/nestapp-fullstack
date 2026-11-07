@@ -26,7 +26,7 @@
     "docs:openapi": "npm run build && node dist/openapi/generate.js",
     "db:up": "docker compose up -d --wait mongo",
     "db:down": "docker compose down",
-    "test:db": "node --env-file-if-exists=.env node_modules/jest/bin/jest.js test/db"
+    "test:db": "node --env-file-if-exists=.env node_modules/jest/bin/jest.js --runInBand --testTimeout=30000 --forceExit test/db"
   },
   "dependencies": {
     "@nestjs/common": "11.2.8",

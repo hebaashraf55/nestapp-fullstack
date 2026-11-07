@@ -306,6 +306,20 @@ export const ROUTE_DOCS: Record<string, RouteDoc> = {
     summary: 'Mark one notification read',
     returns: '{ unread }',
   },
+  'DELETE /api/cart/coupon': {
+    summary: 'Remove your coupon code from the cart (automatic promotions still apply)',
+    returns: 'the cart',
+  },
+  'GET /api/admin/analytics': {
+    summary:
+      'Sales analytics from real orders (?days=7|30|90): daily placed/paid/refunded, top products, payment rate, customers, coupons, returns (payments simulated)',
+    returns: 'the report',
+  },
+  'GET /api/admin/inventory/movements': {
+    summary:
+      'Stock history, newest first, with reason, order and admin (?productId, ?reason, paging)',
+    returns: '{ items, page, limit, total, totalPages }',
+  },
   'POST /api/coupon': {
     summary:
       'Create a coupon (code is immutable, 1–90 % off, must expire in the future, active by default)',

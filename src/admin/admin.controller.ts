@@ -5,7 +5,14 @@ import { CurrentUser, Roles } from '../auth/decorators';
 import { ZodPipe } from '../catalogue/dto';
 import { Role } from '../users/role';
 import { AdminService } from './admin.service';
-import { AdminOrdersQuery, adminOrdersQuerySchema, PageQuery, pageQuerySchema } from './dto';
+import {
+  AdminOrdersQuery,
+  adminOrdersQuerySchema,
+  AnalyticsQuery,
+  analyticsQuerySchema,
+  PageQuery,
+  pageQuerySchema,
+} from './dto';
 
 /*
  * Staff reporting. Read-only by design: the demo viewer may call these GET routes (limited to synthetic
@@ -19,6 +26,14 @@ export class AdminController {
     private readonly admin: AdminService,
     private readonly audit: AuditService,
   ) {}
+
+  @Get('analytics')
+  analytics(
+    @Query(new ZodPipe(analyticsQuerySchema)) query: AnalyticsQuery,
+    @CurrentUser() viewer: AuthenticatedUser,
+  ) {
+    return this.admin.analytics(viewer, query.days);
+  }
 
   @Get('stats')
   stats(@CurrentUser() viewer: AuthenticatedUser) {

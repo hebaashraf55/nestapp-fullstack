@@ -27,10 +27,12 @@ export class InMemoryOrdersRepository extends OrdersRepository {
     const created: OrderRecord = {
       ...order,
       bundleSavingsCents: order.bundleSavingsCents ?? 0,
+      couponId: order.couponId ?? null,
       guestEmail: order.guestEmail ?? null,
       guestTokenHash: order.guestTokenHash ?? null,
       events: [{ type: 'PLACED', at: new Date(), note: null }],
       returnRequest: null,
+      shipment: null,
       id: randomBytes(12).toString('hex'),
       createdAt: new Date(Date.now() + this.tick++),
     };
@@ -156,6 +158,18 @@ export class InMemoryOrdersRepository extends OrdersRepository {
     const next = { ...current, ...patch, events: [...current.events, event] };
     this.records.set(id, next);
     return { ...next };
+  }
+
+  async findActivitySince(since: Date, demoOnly: boolean, limit: number) {
+    this.check();
+    const t = since.getTime();
+    return [...this.records.values()]
+      .filter(
+        (o) =>
+          (!demoOnly || o.isDemo) &&
+          [o.createdAt, o.paidAt, o.refundedAt].some((d) => d !== null && d.getTime() >= t),
+      )
+      .slice(0, limit);
   }
 
   async findReturns(status: ReturnStatus | undefined, demoOnly: boolean, limit: number) {

@@ -4,6 +4,7 @@ import {
   addManyToCart,
   addToCart,
   applyCoupon,
+  removeCoupon,
   type Cart,
   type CartLineInput,
   getCart,
@@ -32,6 +33,7 @@ interface CartValue {
   setQuantity: (productId: string, quantity: number) => Promise<void>;
   remove: (productId: string) => Promise<void>;
   applyCode: (code: string) => Promise<void>;
+  removeCode: () => Promise<void>;
   /** After a guest order: the browser cart is emptied. */
   clearGuest: () => void;
   reload: () => void;
@@ -204,6 +206,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       remove: (id) => (isGuest ? guestChange(guestLines.filter((l) => l.productId !== id), []) : run(() => removeCartItem(id))),
       applyCode: (code) =>
         isGuest ? Promise.reject(new Error('Sign in to use a coupon code.')) : run(() => applyCoupon(code)),
+      removeCode: () => (isGuest ? Promise.resolve() : run(() => removeCoupon())),
       clearGuest: () => {
         writeGuest([]);
         setGuestLines([]);

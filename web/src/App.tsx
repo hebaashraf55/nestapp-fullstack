@@ -8,6 +8,9 @@ import { Addresses } from './pages/Addresses';
 import { Notifications } from './pages/Notifications';
 import { TrackOrder } from './pages/TrackOrder';
 import { AdminReturns } from './pages/admin/AdminReturns';
+import { Analytics } from './pages/admin/Analytics';
+import { Inventory } from './pages/admin/Inventory';
+import { ShippingLabel } from './pages/admin/ShippingLabel';
 import { Compare } from './pages/Compare';
 import { Wishlist } from './pages/Wishlist';
 import { Bundles } from './pages/Bundles';
@@ -69,6 +72,9 @@ export function App() {
               <Route path="products/new" element={<AdminProductForm />} />
               <Route path="products/:id" element={<AdminProductForm />} />
               <Route path="orders" element={<AdminOrders />} />
+              <Route path="orders/:id/label" element={<ShippingLabel />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="inventory" element={<Inventory />} />
               <Route path="coupons" element={<AdminCoupons />} />
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="returns" element={<AdminReturns />} />

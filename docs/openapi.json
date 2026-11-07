@@ -557,6 +557,89 @@
         }
       }
     },
+    "/api/admin/analytics": {
+      "get": {
+        "operationId": "getApiAdminAnalytics",
+        "summary": "Sales analytics from real orders (?days=7|30|90): daily placed/paid/refunded, top products, payment rate, customers, coupons, returns (payments simulated)",
+        "tags": [
+          "admin"
+        ],
+        "x-access": "ADMIN or DEMO_VIEWER",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success. `data`: the report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (unknown fields are rejected)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role (needs ADMIN or DEMO_VIEWER)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit reached; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable (generic body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/audit": {
       "get": {
         "operationId": "getApiAdminAudit",
@@ -682,6 +765,129 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 10000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success. `data`: { items, page, limit, total, totalPages }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (unknown fields are rejected)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role (needs ADMIN or DEMO_VIEWER)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit reached; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable (generic body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/inventory/movements": {
+      "get": {
+        "operationId": "getApiAdminInventoryMovements",
+        "summary": "Stock history, newest first, with reason, order and admin (?productId, ?reason, paging)",
+        "tags": [
+          "admin"
+        ],
+        "x-access": "ADMIN or DEMO_VIEWER",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000
+            }
+          },
+          {
+            "name": "productId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{24}$"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INITIAL",
+                "RECEIVED",
+                "CORRECTION",
+                "DAMAGED",
+                "LOST",
+                "ORDER_RESERVED",
+                "ORDER_RELEASED",
+                "RETURN_RESTOCK"
+              ]
             }
           }
         ],
@@ -3112,6 +3318,78 @@
         }
       }
     },
+    "/api/cart/coupon": {
+      "delete": {
+        "operationId": "deleteApiCartCoupon",
+        "summary": "Remove your coupon code from the cart (automatic promotions still apply)",
+        "tags": [
+          "cart"
+        ],
+        "x-access": "any signed-in user",
+        "responses": {
+          "200": {
+            "description": "Success. `data`: the cart",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (unknown fields are rejected)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Demo viewers can never write",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit reached; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage unavailable (generic body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/cart/merge": {
       "post": {
         "operationId": "postApiCartMerge",
@@ -4082,15 +4360,101 @@
                     "type": "string",
                     "pattern": "^[A-Z0-9][A-Z0-9_-]{2,31}$"
                   },
+                  "type": {
+                    "default": "PERCENT",
+                    "type": "string",
+                    "enum": [
+                      "PERCENT",
+                      "FIXED"
+                    ]
+                  },
                   "discountPercent": {
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 90
                   },
+                  "amountOffCents": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10000000
+                  },
+                  "minSubtotalCents": {
+                    "default": 0,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000000
+                  },
+                  "startsAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "expiresAt": {
                     "type": "string",
                     "format": "date-time",
                     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "maxUses": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "maxUsesPerCustomer": {
+                    "default": null,
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "default": "ALL",
+                    "type": "string",
+                    "enum": [
+                      "ALL",
+                      "PRODUCTS",
+                      "CATEGORIES"
+                    ]
+                  },
+                  "productIds": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[0-9a-fA-F]{24}$"
+                    }
+                  },
+                  "categoryIds": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[0-9a-fA-F]{24}$"
+                    }
+                  },
+                  "automatic": {
+                    "default": false,
+                    "type": "boolean"
                   },
                   "active": {
                     "default": true,
@@ -4099,7 +4463,6 @@
                 },
                 "required": [
                   "code",
-                  "discountPercent",
                   "expiresAt"
                 ],
                 "additionalProperties": false
@@ -4384,10 +4747,83 @@
                     "minimum": 1,
                     "maximum": 90
                   },
+                  "amountOffCents": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10000000
+                  },
+                  "minSubtotalCents": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000000
+                  },
+                  "startsAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "expiresAt": {
                     "type": "string",
                     "format": "date-time",
                     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "maxUses": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "maxUsesPerCustomer": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 1000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "ALL",
+                      "PRODUCTS",
+                      "CATEGORIES"
+                    ]
+                  },
+                  "productIds": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[0-9a-fA-F]{24}$"
+                    }
+                  },
+                  "categoryIds": {
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[0-9a-fA-F]{24}$"
+                    }
+                  },
+                  "automatic": {
+                    "type": "boolean"
                   },
                   "active": {
                     "type": "boolean"
@@ -7638,6 +8074,17 @@
                       "DELIVERED",
                       "CANCELLED"
                     ]
+                  },
+                  "carrier": {
+                    "type": "string",
+                    "enum": [
+                      "DEMO_POST",
+                      "DEMO_EXPRESS"
+                    ]
+                  },
+                  "trackingNumber": {
+                    "type": "string",
+                    "pattern": "^[A-Z0-9-]{6,40}$"
                   }
                 },
                 "required": [
@@ -8558,6 +9005,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "reason": {
+                    "default": "CORRECTION",
+                    "type": "string",
+                    "enum": [
+                      "RECEIVED",
+                      "CORRECTION",
+                      "DAMAGED",
+                      "LOST"
+                    ]
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 300
+                  },
                   "change": {
                     "type": "integer",
                     "minimum": -1000000,

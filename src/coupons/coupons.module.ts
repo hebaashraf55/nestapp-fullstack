@@ -1,7 +1,7 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Env } from '../config/env';
-import { Coupon, CouponSchema } from './coupon.schema';
+import { Coupon, CouponSchema, CouponUse, CouponUseSchema } from './coupon.schema';
 import { CouponsController } from './coupons.controller';
 import { CouponsRepository } from './coupons.repository';
 import { CouponsService } from './coupons.service';
@@ -16,7 +16,12 @@ export class CouponsModule {
     return {
       module: CouponsModule,
       imports: connected
-        ? [MongooseModule.forFeature([{ name: Coupon.name, schema: CouponSchema }])]
+        ? [
+            MongooseModule.forFeature([
+              { name: Coupon.name, schema: CouponSchema },
+              { name: CouponUse.name, schema: CouponUseSchema },
+            ]),
+          ]
         : [],
       controllers: [CouponsController],
       providers: [

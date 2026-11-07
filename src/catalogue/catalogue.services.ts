@@ -25,6 +25,7 @@ import type {
   TaxonomyUpdateDto,
 } from './dto';
 import { MAX_STOCK } from './dto';
+import { InventoryService } from '../inventory/inventory.service';
 import { OrdersRepository } from '../orders/orders.repository';
 import { uniqueSlug } from './slug';
 
@@ -218,6 +219,7 @@ export class ProductsService {
     private readonly brands: BrandsRepository,
     private readonly categories: CategoriesRepository,
     private readonly orders: OrdersRepository,
+    private readonly inventory: InventoryService,
   ) {}
 
   async list(query: ProductQueryDto, user?: AuthenticatedUser): Promise<ProductPage> {
@@ -367,6 +369,15 @@ export class ProductsService {
           async (s) => (await this.products.findBySlug(s)) !== null,
         );
         const created = await this.products.create({ ...base, slug });
+        await this.inventory.record([
+          {
+            productId: created.id,
+            productName: created.name,
+            change: created.stock,
+            reason: 'INITIAL',
+            actorId: adminId,
+          },
+        ]);
         return (await this.toViews([created]))[0] as ProductView;
       } catch (error) {
         if (!(error instanceof DuplicateKeyError) || attempt >= 2) throw error;
@@ -416,6 +427,17 @@ export class ProductsService {
     try {
       const updated = await this.products.update(id, { ...patch, ...slugPatch });
       if (!updated) throw new NotFoundException('Product not found');
+      if (dto.stock !== undefined && updated.stock !== current.stock)
+        await this.inventory.record([
+          {
+            productId: id,
+            productName: updated.name,
+            change: updated.stock - current.stock,
+            reason: 'CORRECTION',
+            note: 'Stock set from the product form',
+            isDemo: updated.isDemo,
+          },
+        ]);
       return (await this.toViews([updated]))[0] as ProductView;
     } catch (error) {
       if (error instanceof DuplicateKeyError)
@@ -428,7 +450,7 @@ export class ProductsService {
    * Receive or write off stock without overwriting it: uses the same atomic operations as order
    * reservations, so a concurrent order can never be lost and stock can never go below zero.
    */
-  async adjustStock(id: string, dto: StockAdjustDto): Promise<ProductView> {
+  async adjustStock(id: string, dto: StockAdjustDto, adminId?: string): Promise<ProductView> {
     const current = await this.products.findById(id);
     if (!current) throw new NotFoundException('Product not found');
     if (dto.change < 0) {
@@ -441,6 +463,17 @@ export class ProductsService {
       }
       await this.products.restoreStock(id, dto.change);
     }
+    await this.inventory.record([
+      {
+        productId: id,
+        productName: current.name,
+        change: dto.change,
+        reason: dto.reason,
+        note: dto.note ?? null,
+        actorId: adminId ?? null,
+        isDemo: current.isDemo,
+      },
+    ]);
     const updated = await this.products.findById(id);
     if (!updated) throw new NotFoundException('Product not found');
     return (await this.toViews([updated]))[0] as ProductView;

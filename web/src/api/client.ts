@@ -309,6 +309,15 @@ export interface CartLine {
   status: LineStatus;
 }
 
+export interface AppliedPromotion {
+  id?: string;
+  code: string;
+  type?: 'PERCENT' | 'FIXED';
+  discountPercent: number;
+  amountOffCents?: number | null;
+  automatic?: boolean;
+}
+
 export interface Cart {
   items: CartLine[];
   itemCount: number;
@@ -316,7 +325,10 @@ export interface Cart {
   /** Complete bundle sets found by the server; older servers omit these. */
   bundles?: AppliedBundle[];
   bundleSavingsCents?: number;
-  coupon: { code: string; discountPercent: number } | null;
+  /** The one promotion applied: the customer's code or an automatic offer, whichever saves more. */
+  coupon: AppliedPromotion | null;
+  /** The customer's code, when it cannot be used right now. Orders are refused until it is removed. */
+  rejectedCoupon?: { code: string; reason: string } | null;
   discountCents: number;
   totalCents: number;
   currency: string;
@@ -350,6 +362,8 @@ export const removeCartItem = (productId: string) =>
 /** POST /api/cart/apply-coupon */
 export const applyCoupon = (code: string) =>
   cartCall(apiSend('POST', '/api/cart/apply-coupon', { code }));
+/** DELETE /api/cart/coupon */
+export const removeCoupon = () => cartCall(apiSend('DELETE', '/api/cart/coupon'));
 
 /* ---------- Orders (POST/GET /api/order, GET /api/order/:id, POST /api/order/:id/simulate-payment) ---------- */
 
@@ -386,6 +400,8 @@ export interface Order {
   /** Older API versions omit these; the UI treats them as absent. */
   timeline?: OrderEvent[];
   returnRequest?: ReturnRequest | null;
+  /** Simulated carrier and tracking number once shipped. */
+  shipment?: Shipment | null;
   returnable?: boolean;
   cancellable?: boolean;
   isGuest?: boolean;
@@ -408,6 +424,14 @@ export interface OrderEvent {
   type: OrderEventType;
   at: string;
   note: string | null;
+}
+export type Carrier = 'DEMO_POST' | 'DEMO_EXPRESS';
+export const CARRIER_LABEL: Record<Carrier, string> = { DEMO_POST: 'Demo Post', DEMO_EXPRESS: 'Demo Express' };
+export interface Shipment {
+  carrier: Carrier;
+  trackingNumber: string;
+  shippedAt: string;
+  simulated: true;
 }
 export interface ReturnRequest {
   status: 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'RECEIVED';
@@ -587,8 +611,11 @@ export async function getAuditLog(page: number, signal?: AbortSignal) {
 }
 
 /** PATCH /api/order/:id/status */
-export const setOrderStatus = (id: string, status: 'SHIPPED' | 'DELIVERED' | 'CANCELLED') =>
-  orderCall(apiSend('PATCH', `/api/order/${encodeURIComponent(id)}/status`, { status }));
+export const setOrderStatus = (
+  id: string,
+  status: 'SHIPPED' | 'DELIVERED' | 'CANCELLED',
+  shipping?: { carrier: Carrier; trackingNumber?: string },
+) => orderCall(apiSend('PATCH', `/api/order/${encodeURIComponent(id)}/status`, { status, ...(shipping ?? {}) }));
 
 /** POST /api/order/:id/refund. Simulated: no money moves. */
 export const refundOrder = (id: string) =>
@@ -627,19 +654,30 @@ export const updateProduct = (id: string, patch: Partial<ProductInput>) =>
   productCall(apiSend('PATCH', `/api/product/${encodeURIComponent(id)}`, patch));
 
 /** PATCH /api/product/:id/stock. A relative change, applied atomically; stock never goes below zero. */
-export const adjustProductStock = (id: string, change: number) =>
-  productCall(apiSend('PATCH', `/api/product/${encodeURIComponent(id)}/stock`, { change }));
+export type StockReason = 'RECEIVED' | 'CORRECTION' | 'DAMAGED' | 'LOST';
+export const adjustProductStock = (id: string, change: number, reason: StockReason = 'CORRECTION', note?: string) =>
+  productCall(apiSend('PATCH', `/api/product/${encodeURIComponent(id)}/stock`, { change, reason, ...(note ? { note } : {}) }));
 
 /** DELETE /api/product/:id. Refused (409) while an unpaid or paid order still holds the product. */
 export const deleteProduct = (id: string) => apiSend<{ deleted: true }>('DELETE', `/api/product/${encodeURIComponent(id)}`);
 
-export type CouponStatus = 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+export type CouponStatus = 'ACTIVE' | 'INACTIVE' | 'EXPIRED' | 'SCHEDULED' | 'USED_UP';
 
 export interface Coupon {
   id: string;
   code: string;
-  discountType: 'PERCENT';
+  discountType: 'PERCENT' | 'FIXED';
   discountPercent: number;
+  amountOffCents?: number | null;
+  minSubtotalCents?: number;
+  startsAt?: string | null;
+  maxUses?: number | null;
+  usedCount?: number;
+  maxUsesPerCustomer?: number | null;
+  scope?: 'ALL' | 'PRODUCTS' | 'CATEGORIES';
+  productIds?: string[];
+  categoryIds?: string[];
+  automatic?: boolean;
   expiresAt: string;
   expired: boolean;
   active: boolean;
@@ -651,8 +689,18 @@ export interface Coupon {
 
 export interface CouponInput {
   code: string;
-  discountPercent: number;
+  type?: 'PERCENT' | 'FIXED';
+  discountPercent?: number;
+  amountOffCents?: number;
+  minSubtotalCents?: number;
+  startsAt?: string | null;
   expiresAt: string; // ISO date-time
+  maxUses?: number | null;
+  maxUsesPerCustomer?: number | null;
+  scope?: 'ALL' | 'PRODUCTS' | 'CATEGORIES';
+  productIds?: string[];
+  categoryIds?: string[];
+  automatic?: boolean;
   active: boolean;
 }
 
@@ -941,3 +989,64 @@ export const getNotifications = (signal?: AbortSignal) =>
 export const markNotificationRead = (id: string) =>
   apiSend<{ unread: number }>('POST', `/api/notifications/${encodeURIComponent(id)}/read`, {});
 export const markAllNotificationsRead = () => apiSend<{ unread: number }>('POST', '/api/notifications/read-all', {});
+
+// ---------------------------------------------------------------------------------------------
+// Inventory history and analytics (staff)
+// ---------------------------------------------------------------------------------------------
+
+export type MovementReason = 'INITIAL' | StockReason | 'ORDER_RESERVED' | 'ORDER_RELEASED' | 'RETURN_RESTOCK';
+export interface InventoryMovement {
+  id: string;
+  productId: string;
+  productName: string;
+  change: number;
+  reason: MovementReason;
+  note: string | null;
+  orderId: string | null;
+  actorId: string | null;
+  createdAt: string;
+}
+export const getMovements = (query: { productId?: string; reason?: MovementReason | ''; page: number }, signal?: AbortSignal) => {
+  const q = new URLSearchParams({ page: String(query.page) });
+  if (query.productId) q.set('productId', query.productId);
+  if (query.reason) q.set('reason', query.reason);
+  return apiGet<{ items: InventoryMovement[]; page: number; limit: number; total: number; totalPages: number }>(
+    `/api/admin/inventory/movements?${q.toString()}`,
+    signal,
+  );
+};
+
+export interface AnalyticsDay {
+  date: string;
+  ordersPlaced: number;
+  ordersPaid: number;
+  paidCents: number;
+  refundedCents: number;
+}
+export interface Analytics {
+  days: number;
+  from: string;
+  to: string;
+  currency: string;
+  truncated: boolean;
+  scope: 'all' | 'demo';
+  notice: string;
+  totals: {
+    ordersPlaced: number;
+    ordersPaid: number;
+    paidCents: number;
+    refundedCents: number;
+    netCents: number;
+    averageOrderCents: number | null;
+    paymentRate: number | null;
+    bundleSavingsCents: number;
+    discountCents: number;
+  };
+  daily: AnalyticsDay[];
+  topProducts: { productId: string; name: string; units: number; revenueCents: number }[];
+  statusOfPlaced: Record<string, number>;
+  customers: { buyers: number; returning: number; guestOrders: number };
+  coupons: { code: string; orders: number; discountCents: number }[];
+  returns: { requested: number; received: number; rate: number | null };
+}
+export const getAnalytics = (days: 7 | 30 | 90, signal?: AbortSignal) => apiGet<Analytics>(`/api/admin/analytics?days=${days}`, signal);
