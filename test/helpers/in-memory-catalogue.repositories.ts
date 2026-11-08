@@ -136,8 +136,30 @@ export class InMemoryProductsRepository extends ProductsRepository {
       'price-asc': (a: ProductRecord, b: ProductRecord) => a.salePriceCents - b.salePriceCents,
       'price-desc': (a: ProductRecord, b: ProductRecord) => b.salePriceCents - a.salePriceCents,
       name: (a: ProductRecord, b: ProductRecord) => a.name.localeCompare(b.name),
+      relevance: (a: ProductRecord, b: ProductRecord) =>
+        b.createdAt.getTime() - a.createdAt.getTime(),
     }[filter.sort];
     items = items.sort(order);
+    // Same weights as the text index: name 10, material and colour 4, description 1, per whole word.
+    if (filter.sort === 'relevance' && q) {
+      const words = q.split(/\s+/).filter(Boolean);
+      const has = (text: string | undefined, w: string) =>
+        new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(text ?? '');
+      const score = (p: ProductRecord) =>
+        words.reduce(
+          (s, w) =>
+            s +
+            (has(p.name, w) ? 10 : 0) +
+            (has(p.specs?.material, w) ? 4 : 0) +
+            (has(p.specs?.color, w) ? 4 : 0) +
+            (has(p.description, w) ? 1 : 0),
+          0,
+        );
+      const ranked = items
+        .filter((p) => score(p) > 0)
+        .sort((a, b) => score(b) - score(a) || a.id.localeCompare(b.id));
+      if (ranked.length > 0) items = ranked;
+    }
     const total = items.length;
     const start = (filter.page - 1) * filter.limit;
     return { items: items.slice(start, start + filter.limit), total };

@@ -6,8 +6,10 @@ import {
   getProducts,
   type ProductQuery,
   type ProductSort,
+  getFacets,
 } from '../api/client';
 import { ProductCard, ProductSkeletons } from '../components/ProductCard';
+import { SearchSuggestions } from '../components/SearchSuggestions';
 import { useRemote } from '../hooks/useRemote';
 
 const SORTS: { value: ProductSort; label: string }[] = [
@@ -16,6 +18,7 @@ const SORTS: { value: ProductSort; label: string }[] = [
   { value: 'price-desc', label: 'Price: high to low' },
   { value: 'name', label: 'Name' },
 ];
+const BEST_MATCH = { value: 'relevance' as ProductSort, label: 'Best match' };
 const PAGE_SIZE = 8;
 
 const toCents = (dollars: string | null): number | undefined => {
@@ -28,7 +31,10 @@ const toCents = (dollars: string | null): number | undefined => {
 export function Shop() {
   const [params, setParams] = useSearchParams();
   const get = (k: string) => params.get(k) ?? '';
-  const sort = (SORTS.some((s) => s.value === get('sort')) ? get('sort') : 'newest') as ProductSort;
+  const searching = get('q') !== '';
+  const sorts = searching ? [BEST_MATCH, ...SORTS] : SORTS;
+  // A search is ranked by relevance unless the shopper picks another order.
+  const sort = (sorts.some((s) => s.value === get('sort')) ? get('sort') : searching ? 'relevance' : 'newest') as ProductSort;
   const page = Math.max(1, Math.floor(Number(get('page'))) || 1);
 
   const query: ProductQuery = {
@@ -48,6 +54,9 @@ export function Shop() {
   const categories = useRemote((s) => getCategories(s), 'categories');
   const brands = useRemote((s) => getBrands(s), 'brands');
   const products = useRemote((s) => getProducts(query, s), params.toString());
+  const facets = useRemote((s) => getFacets(query, s), `facets:${params.toString()}`);
+  const countOf = (list: 'categories' | 'brands', id: string) =>
+    facets.phase === 'ready' ? (facets.data[list].find((o) => o.id === id)?.count ?? 0) : null;
 
   const [search, setSearch] = useState(get('q'));
   const [min, setMin] = useState(get('min'));
@@ -84,7 +93,16 @@ export function Shop() {
       <form className="filters" onSubmit={apply} role="search" aria-label="Filter products">
         <label className="field field--grow">
           <span>Search</span>
-          <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} maxLength={80} placeholder="Vase, throw, lamp…" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            maxLength={80}
+            placeholder="Vase, throw, lamp…"
+            aria-autocomplete="list"
+            aria-controls="search-suggestions"
+          />
+          <SearchSuggestions text={search} />
         </label>
         <label className="field">
           <span>Category</span>
@@ -94,6 +112,7 @@ export function Shop() {
               categories.data.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
+                  {countOf('categories', c.id) !== null ? ` (${countOf('categories', c.id)})` : ''}
                 </option>
               ))}
           </select>
@@ -106,6 +125,7 @@ export function Shop() {
               brands.data.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
+                  {countOf('brands', b.id) !== null ? ` (${countOf('brands', b.id)})` : ''}
                 </option>
               ))}
           </select>
@@ -120,8 +140,11 @@ export function Shop() {
         </label>
         <label className="field">
           <span>Sort</span>
-          <select value={sort} onChange={(e) => update({ sort: e.target.value === 'newest' ? null : e.target.value })}>
-            {SORTS.map((s) => (
+          <select
+            value={sort}
+            onChange={(e) => update({ sort: e.target.value === (searching ? 'relevance' : 'newest') ? null : e.target.value })}
+          >
+            {sorts.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}
               </option>
@@ -130,11 +153,11 @@ export function Shop() {
         </label>
         <label className="check">
           <input type="checkbox" checked={get('stock') === '1'} onChange={(e) => update({ stock: e.target.checked ? '1' : null })} />
-          In stock only
+          In stock only{facets.phase === 'ready' ? ` (${facets.data.inStock})` : ''}
         </label>
         <label className="check">
           <input type="checkbox" checked={get('onSale') === 'true'} onChange={(e) => update({ onSale: e.target.checked ? 'true' : null })} />
-          On sale only
+          On sale only{facets.phase === 'ready' ? ` (${facets.data.onSale})` : ''}
         </label>
         <div className="filters__actions">
           <button type="submit" className="btn">

@@ -13,6 +13,7 @@ import { formatMoney } from '../lib/money';
 import { creditFor } from '../lib/photoCredits';
 import { COMPARE_MAX, useShopper } from '../shopper/ShopperContext';
 import { useProductsById } from '../shopper/useProducts';
+import { getSocket } from '../realtime/socket';
 
 function Specs({ specs }: { specs: NonNullable<Product['specs']> }) {
   const rows = (
@@ -119,6 +120,24 @@ export function ProductDetail() {
   const [selected, setSelected] = useState(0);
   const { recordView } = useShopper();
   const loadedId = product.phase === 'ready' ? product.data.id : null;
+  // Live stock while the page is open (another shopper buys the last one, an admin restocks).
+  const [liveStock, setLiveStock] = useState<{ id: string; stock: number } | null>(null);
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !loadedId) return;
+    const onStock = (s: { id: string; stock: number }) => {
+      if (s.id === loadedId) setLiveStock({ id: s.id, stock: s.stock });
+    };
+    const watch = () => socket.emit('product.watch', loadedId);
+    watch();
+    socket.on('connect', watch);
+    socket.on('product.stock', onStock);
+    return () => {
+      socket.emit('product.unwatch', loadedId);
+      socket.off('connect', watch);
+      socket.off('product.stock', onStock);
+    };
+  }, [loadedId]);
   useEffect(() => {
     if (loadedId) recordView(loadedId);
   }, [loadedId, recordView]);
@@ -147,7 +166,10 @@ export function ProductDetail() {
     );
   }
 
-  const p = product.data;
+  const p =
+    liveStock && liveStock.id === product.data.id
+      ? { ...product.data, stock: liveStock.stock, inStock: liveStock.stock > 0 }
+      : product.data;
   const discounted = p.discountPercent > 0;
   const shown = p.images[selected] ?? p.images[0];
   const credit = creditFor(shown);

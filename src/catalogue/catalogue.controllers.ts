@@ -20,6 +20,8 @@ import {
   TaxonomyUpdateDto,
   taxonomyUpdateSchema,
   ZodPipe,
+  suggestQuerySchema,
+  SuggestQueryDto,
 } from './dto';
 import { ParseObjectIdPipe } from './object-id.pipe';
 
@@ -138,6 +140,26 @@ export class CategoryController {
 @Controller('product')
 export class ProductController {
   constructor(private readonly products: ProductsService) {}
+
+  @Public()
+  @OptionalAuth()
+  @Get('suggest')
+  suggest(
+    @Query(new ZodPipe(suggestQuerySchema)) query: SuggestQueryDto,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return this.products.suggest(query.q, user);
+  }
+
+  @Public()
+  @OptionalAuth()
+  @Get('facets')
+  facets(
+    @Query(new ZodPipe(productQuerySchema)) query: ProductQueryDto,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return this.products.facets(query, user);
+  }
 
   @Public()
   @OptionalAuth()

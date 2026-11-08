@@ -64,6 +64,9 @@ const variantGroup = z
   .max(60);
 const variantLabel = z.string().trim().min(1).max(40);
 
+export const suggestQuerySchema = z.strictObject({ q: z.string().trim().min(2).max(40) });
+export type SuggestQueryDto = z.infer<typeof suggestQuerySchema>;
+
 export const productCreateSchema = z.strictObject({
   name: name(3, 100),
   description: z.string().trim().max(2000).default(''),
@@ -121,7 +124,7 @@ export const productQuerySchema = z
     inStock: z.enum(['true', 'false']).optional(),
     featured: z.enum(['true']).optional(),
     onSale: z.enum(['true']).optional(),
-    sort: z.enum(['newest', 'price-asc', 'price-desc', 'name']).default('newest'),
+    sort: z.enum(['newest', 'price-asc', 'price-desc', 'name', 'relevance']).default('newest'),
     page: z.coerce.number().int().min(1).max(10_000).default(1),
     limit: z.coerce.number().int().min(1).max(50).default(12),
   })

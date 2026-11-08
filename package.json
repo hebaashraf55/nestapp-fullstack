@@ -26,6 +26,7 @@
     "docs:openapi": "npm run build && node dist/openapi/generate.js",
     "db:up": "docker compose up -d --wait mongo",
     "db:down": "docker compose down",
+    "db:backup": "bash tools/backup.sh",
     "test:db": "node --env-file-if-exists=.env node_modules/jest/bin/jest.js --runInBand --testTimeout=30000 --forceExit test/db"
   },
   "dependencies": {
@@ -33,9 +34,12 @@
     "@nestjs/core": "11.2.8",
     "@nestjs/mongoose": "11.0.4",
     "@nestjs/platform-express": "11.2.8",
+    "@nestjs/platform-socket.io": "11.2.8",
+    "@nestjs/websockets": "11.2.8",
     "express": "5.2.1",
     "google-auth-library": "11.3.1",
     "helmet": "8.3.0",
+    "ioredis": "5.11.1",
     "jsonwebtoken": "9.0.3",
     "mongoose": "8.24.7",
     "nodemailer": "10.2.1",
@@ -58,6 +62,7 @@
     "globals": "17.13.0",
     "jest": "30.5.2",
     "prettier": "3.9.10",
+    "socket.io-client": "4.8.4",
     "supertest": "7.3.1",
     "ts-jest": "29.4.15",
     "typescript": "5.9.3",

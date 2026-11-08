@@ -49,6 +49,15 @@ NOMA is a portfolio e-commerce project: a **NestJS + MongoDB API** and a **React
 - `ADMIN`, `CUSTOMER` and a read-only `DEMO_VIEWER` that sees only synthetic records; all enforced on the server (403), not just hidden in the UI
 - Helmet headers, exact-match CORS allow-list, request throttling, login and coupon-guess limits, validated input everywhere (Zod), NoSQL-operator injection guarded in repositories
 
+**Operations** (details in [`docs/OPERATIONS.md`](docs/OPERATIONS.md))
+- Versioned API (`/api/v1`, with `/api` as its alias), request ids on every response and log line, JSON logs with secrets redacted
+- Liveness and readiness checks (`/api/health/live`, `/api/health/ready`)
+- Optional Redis cache with an automatic in-memory fallback
+- Durable background jobs with retries, back-off and an admin view
+- Live updates over Socket.io (notifications, order status, stock), authorized with the API's tokens
+- Relevance search on a weighted text index, search suggestions and filter counts
+- Backups and restore drill in [`docs/BACKUP.md`](docs/BACKUP.md); GitHub Actions CI on every push
+
 ## Tech stack
 
 | Layer | Technology |
@@ -130,6 +139,8 @@ Free Render web services sleep after 15 minutes without traffic, so the first re
 
 ## Documentation
 
+- [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — versions, health checks, logs, cache, jobs, real-time, search
+- [`docs/BACKUP.md`](docs/BACKUP.md) — backups, restore and the restore drill
 - [`docs/BACKEND-VERIFICATION.md`](docs/BACKEND-VERIFICATION.md) — how every backend feature is proven (HTTP tests, real-MongoDB tests, end to end with a restart)
 - [`docs/API-CHANGELOG.md`](docs/API-CHANGELOG.md) — how the API differs from the original course project
 - [`docs/openapi.json`](docs/openapi.json) — machine-readable API description

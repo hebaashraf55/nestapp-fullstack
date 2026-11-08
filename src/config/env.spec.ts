@@ -13,6 +13,7 @@ describe('loadEnv', () => {
       THROTTLE_LIMIT: 300,
       THROTTLE_WINDOW_SECONDS: 60,
       MAIL_TRANSPORT: 'console',
+      JOBS_WORKER: 'on',
     });
   });
 

@@ -14,7 +14,8 @@ services:
     # Both seeds are idempotent: they create the admin, the two demo accounts and the synthetic
     # catalogue once, and leave existing records (and admin edits) alone on every later start.
     startCommand: node dist/seed/seed.js && node dist/seed/seed-catalogue-main.js && node dist/main
-    healthCheckPath: /api/health
+    # Readiness: 503 until MongoDB answers, so Render only routes traffic to a working instance.
+    healthCheckPath: /api/health/ready
     envVars:
       - key: NODE_ENV
         value: production

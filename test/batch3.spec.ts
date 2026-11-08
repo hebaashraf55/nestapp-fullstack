@@ -427,6 +427,8 @@ describe('addresses, guest checkout, timeline, cancel, returns, reorder, notific
       expect(trackPath).toBe(`/track/${o.id}#${trackingToken}`); // the code sits after #, never sent to a server
       expect(stock(vase)).toBe(3);
       expect(t.orders.records.get(o.id)!.guestTokenHash).not.toContain(trackingToken);
+      // The confirmation is sent by the background job queue.
+      expect(await t.jobsService.runDue()).toBe(1);
       const mail = t.mail.sent.at(-1)!;
       expect(mail.to).toBe('guest@example.com');
       expect(mail.text).toContain(trackPath);

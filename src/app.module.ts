@@ -1,4 +1,7 @@
 import { AddressesModule } from './addresses/addresses.module';
+import { CacheModule } from './cache/cache.module';
+import { JobsModule } from './jobs/jobs.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { BundlesModule } from './bundles/bundles.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -43,6 +46,9 @@ export class AppModule {
         AddressesModule.register(env),
         NotificationsModule.register(env),
         InventoryModule.register(env),
+        CacheModule.register(env),
+        JobsModule.register(env),
+        RealtimeModule,
         AdminModule.register(),
         OpenApiModule.register(env),
       ],

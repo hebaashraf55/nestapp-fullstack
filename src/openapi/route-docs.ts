@@ -306,6 +306,33 @@ export const ROUTE_DOCS: Record<string, RouteDoc> = {
     summary: 'Mark one notification read',
     returns: '{ unread }',
   },
+  'GET /api/product/suggest': {
+    summary:
+      'Search as you type (?q=, 2–40 characters): up to 6 products, best matches first, and up to 3 categories',
+    returns: '{ products, categories }',
+  },
+  'GET /api/product/facets': {
+    summary:
+      'Filter counts for the same search and filters as GET /api/product: categories, brands, in stock, on sale, price range',
+    returns: '{ total, categories, brands, inStock, onSale, price, truncated }',
+  },
+  'GET /api/health/live': {
+    summary: 'Liveness: the process answers',
+    returns: '{ status }',
+  },
+  'GET /api/health/ready': {
+    summary: 'Readiness: 200 while the database (and Redis, when configured) answer, otherwise 503',
+    returns: '{ status, checks }',
+  },
+  'GET /api/admin/jobs': {
+    summary:
+      'Background jobs: counts by status and the latest 100 (payloads are never shown) (?status=)',
+    returns: '{ counts, items }',
+  },
+  'POST /api/admin/jobs/{id}/retry': {
+    summary: 'Retry a dead job from its first attempt (audited)',
+    returns: 'the job',
+  },
   'DELETE /api/cart/coupon': {
     summary: 'Remove your coupon code from the cart (automatic promotions still apply)',
     returns: 'the cart',

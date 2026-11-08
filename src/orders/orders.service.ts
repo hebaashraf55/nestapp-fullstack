@@ -16,6 +16,9 @@ import { TooManyAttemptsException } from '../auth/too-many-attempts.exception';
 import { CartService, CartView } from '../cart/cart.service';
 import { ProductsRepository } from '../catalogue/catalogue.repositories';
 import { ENV, Env } from '../config/env';
+import { CacheService } from '../cache/cache.service';
+import { JobsService } from '../jobs/jobs.service';
+import { RealtimeService } from '../realtime/realtime.service';
 import { CouponsRepository } from '../coupons/coupons.repository';
 import { InventoryService } from '../inventory/inventory.service';
 import { MailSender } from '../mail/mail-sender';
@@ -185,7 +188,28 @@ export class OrdersService {
     @Inject(ENV) private readonly env: Env,
     private readonly inventory: InventoryService,
     private readonly coupons: CouponsRepository,
+    private readonly cache: CacheService,
+    private readonly realtime: RealtimeService,
+    private readonly jobs: JobsService,
   ) {}
+
+  /** Live stock for open product pages (best effort; real-time is optional). */
+  private async pushStock(productIds: string[]) {
+    try {
+      for (const p of await this.products.findByIds([...new Set(productIds)]))
+        this.realtime.toProduct(p.id, 'product.stock', {
+          id: p.id,
+          stock: p.stock,
+          inStock: p.stock > 0,
+        });
+    } catch {
+      // stock pushes are a convenience; the page reloads stock from the API anyway
+    }
+  }
+
+  private pushOrder(order: OrderRecord) {
+    this.realtime.toUser(order.userId, 'order.updated', { id: order.id, status: order.status });
+  }
 
   private event(type: OrderEventType, note: string | null = null): OrderEvent {
     return { type, at: new Date(this.now()), note };
@@ -360,6 +384,13 @@ export class OrdersService {
       if (claimedCoupon) await this.coupons.release(claimedCoupon, owner).catch(() => undefined);
       throw error;
     }
+    await this.cache.invalidate('catalogue:home'); // stock changed: "sold out" badges may be stale
+    await this.pushStock(created.items.map((i) => i.productId));
+    this.realtime.toStaff('order.placed', {
+      id: created.id,
+      totalCents: created.totalCents,
+      currency: created.currency,
+    });
     await this.inventory.record(
       created.items.map((i) => ({
         productId: i.productId,
@@ -377,7 +408,9 @@ export class OrdersService {
     if (this.env.MAIL_TRANSPORT === 'disabled') return;
     const origin = this.env.CORS_ORIGINS[0] ?? '';
     try {
-      await this.mail.send({
+      // Queued, so a mail outage is retried instead of losing the confirmation. The job's text (with
+      // the tracking link) is deleted as soon as it is sent.
+      await this.jobs.enqueue('mail.send', {
         to: email,
         subject: `NOMA order …${order.id.slice(-6)} (simulated checkout)`,
         text: [
@@ -392,7 +425,7 @@ export class OrdersService {
         ].join('\n'),
       });
     } catch (error) {
-      this.logger.warn(`Could not send the guest confirmation for ${order.id}: ${String(error)}`);
+      this.logger.warn(`Could not queue the guest confirmation for ${order.id}: ${String(error)}`);
     }
   }
 
@@ -467,6 +500,8 @@ export class OrdersService {
       const latest = (await this.orders.findById(order.id)) ?? order;
       throw new ConflictException(this.notPayable(latest));
     }
+    await this.cache.invalidate('catalogue:home'); // best sellers may have changed
+    this.pushOrder(paid);
     return paid;
   }
 
@@ -598,6 +633,7 @@ export class OrdersService {
       throw new ConflictException('The order was changed by someone else. Please reload.');
     if (dto.status === 'CANCELLED') await this.restoreStock(updated);
     await this.notify(updated, dto.status, note ?? '');
+    this.pushOrder(updated);
     return this.view(updated);
   }
 
@@ -675,6 +711,7 @@ export class OrdersService {
       throw new ConflictException('The return was changed by someone else. Please reload.');
     if (dto.decision === 'RECEIVED') await this.restoreStock(updated, 'RETURN_RESTOCK');
     await this.notify(updated, type, dto.note ?? '');
+    this.pushOrder(updated);
     return this.view(updated);
   }
 
@@ -724,6 +761,9 @@ export class OrdersService {
     reason: 'ORDER_RELEASED' | 'RETURN_RESTOCK' = 'ORDER_RELEASED',
   ): Promise<void> {
     await this.release(order.items);
+    await this.cache.invalidate('catalogue:home');
+    await this.pushStock(order.items.map((i) => i.productId));
+    this.pushOrder(order);
     if (reason === 'ORDER_RELEASED' && order.couponId) {
       try {
         await this.coupons.release(order.couponId, order.userId);

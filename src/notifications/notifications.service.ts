@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { AuthenticatedUser } from '../auth/auth.types';
+import { RealtimeService } from '../realtime/realtime.service';
 import { NotificationType } from './notification.schema';
 import { NotificationRecord, NotificationsRepository } from './notifications.repository';
 
@@ -28,7 +29,10 @@ const view = (n: NotificationRecord): NotificationView => ({
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly repo: NotificationsRepository) {}
+  constructor(
+    private readonly repo: NotificationsRepository,
+    private readonly realtime: RealtimeService,
+  ) {}
 
   /**
    * Best effort: a notification that cannot be saved is logged, never allowed to fail the action that
@@ -40,13 +44,14 @@ export class NotificationsService {
   ): Promise<void> {
     if (!userId || userId.startsWith('guest:')) return;
     try {
-      await this.repo.create({
+      const saved = await this.repo.create({
         userId,
         type: n.type,
         title: n.title.slice(0, 120),
         body: (n.body ?? '').slice(0, 500),
         link: n.link && n.link.startsWith('/') && !n.link.startsWith('//') ? n.link : null,
       });
+      this.realtime.toUser(userId, 'notification', view(saved));
     } catch (error) {
       this.logger.warn(`Could not save a ${n.type} notification: ${String(error)}`);
     }

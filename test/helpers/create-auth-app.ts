@@ -33,6 +33,14 @@ import {
   InMemoryNotificationsRepository,
 } from './in-memory-batch3.repositories';
 import { InventoryModule } from '../../src/inventory/inventory.module';
+import { CacheModule } from '../../src/cache/cache.module';
+import { CacheService } from '../../src/cache/cache.service';
+import { JobsModule } from '../../src/jobs/jobs.module';
+import { JobsRepository } from '../../src/jobs/jobs.repository';
+import { JobsService } from '../../src/jobs/jobs.service';
+import { RealtimeModule } from '../../src/realtime/realtime.module';
+import { RealtimeService } from '../../src/realtime/realtime.service';
+import { InMemoryJobsRepository } from './in-memory-batch5.repositories';
 import { InventoryRepository } from '../../src/inventory/inventory.repository';
 import { INestApplication, Type } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -117,6 +125,10 @@ export interface AuthTestApp {
   addresses: InMemoryAddressesRepository;
   notifications: InMemoryNotificationsRepository;
   inventory: InMemoryInventoryRepository;
+  cache: CacheService;
+  jobs: InMemoryJobsRepository;
+  jobsService: JobsService;
+  realtime: RealtimeService;
   guestLimiter: GuestOrderLimiter;
   /** The request throttle's counters, so tests can inspect or move its clock. */
   throttler: RateLimiter;
@@ -157,6 +169,7 @@ export async function createAuthApp(
   const addresses = new InMemoryAddressesRepository();
   const notifications = new InMemoryNotificationsRepository();
   const inventory = new InMemoryInventoryRepository();
+  const jobs = new InMemoryJobsRepository();
   const moduleRef = await Test.createTestingModule({
     imports: [
       UsersModule.register(env),
@@ -175,6 +188,9 @@ export async function createAuthApp(
       AddressesModule.register(env),
       NotificationsModule.register(env),
       InventoryModule.register(env),
+      CacheModule.register(env),
+      JobsModule.register(env),
+      RealtimeModule,
       AdminModule.register(),
       OpenApiModule.register(env),
     ],
@@ -221,6 +237,8 @@ export async function createAuthApp(
     .useValue(notifications)
     .overrideProvider(InventoryRepository)
     .useValue(inventory)
+    .overrideProvider(JobsRepository)
+    .useValue(jobs)
     .compile();
   const app = moduleRef.createNestApplication();
   configureApp(app, env, throttler);
@@ -251,6 +269,10 @@ export async function createAuthApp(
     addresses,
     notifications,
     inventory,
+    cache: moduleRef.get(CacheService),
+    jobs,
+    jobsService: moduleRef.get(JobsService),
+    realtime: moduleRef.get(RealtimeService),
     guestLimiter: moduleRef.get(GuestOrderLimiter),
     throttler,
     ordersService: moduleRef.get(OrdersService),

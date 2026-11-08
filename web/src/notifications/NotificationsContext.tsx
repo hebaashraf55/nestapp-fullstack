@@ -1,6 +1,7 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { type AppNotification, getNotifications, markAllNotificationsRead, markNotificationRead } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { getSocket } from '../realtime/socket';
 
 interface NotificationsValue {
   items: AppNotification[];
@@ -39,9 +40,17 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     };
     load();
     const timer = window.setInterval(load, POLL_MS);
+    // Live: a new notification appears at once; polling stays as the fallback.
+    const socket = getSocket();
+    const onNote = (n: AppNotification) => {
+      setItems((list) => (list.some((x) => x.id === n.id) ? list : [n, ...list].slice(0, 50)));
+      setUnread((u) => u + 1);
+    };
+    socket?.on('notification', onNote);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
+      socket?.off('notification', onNote);
     };
   }, [customer, user?.id, nonce]);
 

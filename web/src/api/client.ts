@@ -31,6 +31,8 @@ export class ApiError extends Error {
 import { getSession, setSession } from '../auth/session';
 
 const BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+/** Where the API lives ('' = this site, through the dev proxy). Used for the real-time connection. */
+export const API_ORIGIN = BASE;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -201,7 +203,7 @@ export interface ProductPage {
   totalPages: number;
 }
 
-export type ProductSort = 'newest' | 'price-asc' | 'price-desc' | 'name';
+export type ProductSort = 'newest' | 'price-asc' | 'price-desc' | 'name' | 'relevance';
 
 export interface ProductQuery {
   q?: string;
@@ -1050,3 +1052,52 @@ export interface Analytics {
   returns: { requested: number; received: number; rate: number | null };
 }
 export const getAnalytics = (days: 7 | 30 | 90, signal?: AbortSignal) => apiGet<Analytics>(`/api/admin/analytics?days=${days}`, signal);
+
+// ---------------------------------------------------------------------------------------------
+// Search suggestions, filter counts, background jobs
+// ---------------------------------------------------------------------------------------------
+
+export interface Suggestions {
+  products: { id: string; name: string; image: string | null; salePriceCents: number; currency: string }[];
+  categories: { id: string; name: string; slug: string }[];
+}
+export const getSuggestions = (q: string, signal?: AbortSignal) =>
+  apiGet<Suggestions>(`/api/product/suggest?q=${encodeURIComponent(q)}`, signal);
+
+export interface FacetOption {
+  id: string;
+  name: string;
+  slug: string;
+  count: number;
+}
+export interface Facets {
+  total: number;
+  categories: FacetOption[];
+  brands: FacetOption[];
+  inStock: number;
+  onSale: number;
+  price: { minCents: number; maxCents: number } | null;
+  truncated: boolean;
+}
+/** Filter counts for the same search and filters as getProducts (paging and sort are ignored). */
+export const getFacets = (query: ProductQuery, signal?: AbortSignal) => {
+  const rest = { ...query, page: undefined, limit: undefined, sort: undefined };
+  return apiGet<Facets>(`/api/product/facets${toQueryString(rest)}`, signal);
+};
+
+export type JobStatus = 'PENDING' | 'RUNNING' | 'DONE' | 'DEAD';
+export interface JobItem {
+  id: string;
+  type: string;
+  status: JobStatus;
+  attempts: number;
+  maxAttempts: number;
+  runAt: string;
+  lastError: string | null;
+  requestId: string | null;
+  createdAt: string;
+  finishedAt: string | null;
+}
+export const getJobs = (status: JobStatus | '', signal?: AbortSignal) =>
+  apiGet<{ counts: Record<JobStatus, number>; items: JobItem[] }>(`/api/admin/jobs${status ? `?status=${status}` : ''}`, signal);
+export const retryJob = (id: string) => apiSend<JobItem>('POST', `/api/admin/jobs/${encodeURIComponent(id)}/retry`, {});

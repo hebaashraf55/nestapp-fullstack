@@ -88,7 +88,8 @@ export type ProductPatch = Partial<
   >
 >;
 
-export type ProductSort = 'newest' | 'price-asc' | 'price-desc' | 'name';
+/** `relevance` ranks by the text index when there is a search; without one it means newest. */
+export type ProductSort = 'newest' | 'price-asc' | 'price-desc' | 'name' | 'relevance';
 
 export interface ProductFilter {
   q?: string;

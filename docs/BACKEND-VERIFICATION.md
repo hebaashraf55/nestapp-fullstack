@@ -54,6 +54,13 @@ How each backend feature is proven. Three kinds of automated evidence exist:
 | Inventory history (opening, received, correction, damaged, lost, reserved, released, return restock) | Yes | Yes (append-only; invalid entries refused) | Admin and viewer read (viewer: synthetic only) | batch4, batch4.mongo | Real; written after the atomic stock change, failures logged |
 | Fulfilment: carrier, tracking number, printable label | Yes | Yes (shipment stored, carrier validated) | Admin-only | batch4, batch4.mongo | **Simulated carriers** (Demo Post, Demo Express); the label says it is not valid for postage |
 | Sales analytics (7/30/90 days) | Yes | Yes (activity query) | Admin and viewer (viewer: synthetic only) | batch4 | Real: computed from stored orders only; payments simulated |
+| API versioning (/api/v1, /api alias, API-Version header) | Yes | Yes (e2e on the full app) | Unchanged | batch5 | Real |
+| Request ids, structured logs, redaction | Yes | — | — | batch5 (incl. redaction unit tests) | Real |
+| Liveness and readiness | Yes | Yes (e2e: database up) | Public, reveals up/down only | batch5, e2e | Real |
+| Cache (Redis optional, in-memory fallback, invalidation) | Yes | — | Public reads only | batch5 | Real; Redis path not exercised in CI (no Redis service), falls back by design |
+| Background jobs (durable, retries with back-off, dead jobs, admin retry) | Yes | Yes (10 racing workers → each job once; expired lock takeover) | Admin-only; payloads never shown | batch5, batch5.mongo | Real |
+| Search: weighted text index, relevance, suggestions, facets | Yes | Yes (real $text ranking, operator text) | Public | batch5, batch5.mongo | Real |
+| Real-time (Socket.io) | Yes (real sockets: own events only, revoked token anonymous, staff-only events) | — | Token checked like HTTP | batch5 | Real |
 | Validation, 404, 409, error envelope | Yes | Yes | — | app, catalogue, orders, e2e | Real |
 | Rate limiting | Yes | In-memory counters | — | throttle, auth | Real, per process (not shared across instances) |
 | OpenAPI accuracy | Generated from the running app; a test fails if a route lacks a summary or the file drifts | — | — | openapi | Real |

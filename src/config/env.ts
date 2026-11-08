@@ -77,6 +77,17 @@ const envObject = z.object({
     z.string().regex(/^smtps?:\/\/\S+$/, { error: 'must be an smtp:// or smtps:// URL' }),
   ),
   MAIL_FROM: optionalString(z.string().min(3).max(200)),
+  /** json: one JSON object per log line (default in production); text: readable lines (default otherwise). */
+  LOG_FORMAT: z.enum(['json', 'text']).optional(),
+  /**
+   * Optional shared cache. Unset: an in-memory cache per process. If Redis becomes unreachable the API
+   * keeps working on the in-memory cache and logs the switch.
+   */
+  REDIS_URL: optionalString(
+    z.string().regex(/^rediss?:\/\/\S+$/, { error: 'must be a redis:// or rediss:// URL' }),
+  ),
+  /** Runs the background job worker in this process (on by default; set "off" on extra web instances). */
+  JOBS_WORKER: z.enum(['on', 'off']).default('on'),
 });
 
 const envSchema = envObject.superRefine((env, ctx) => {

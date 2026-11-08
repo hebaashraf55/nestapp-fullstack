@@ -10,6 +10,7 @@ import { TrackOrder } from './pages/TrackOrder';
 import { AdminReturns } from './pages/admin/AdminReturns';
 import { Analytics } from './pages/admin/Analytics';
 import { Inventory } from './pages/admin/Inventory';
+import { Jobs } from './pages/admin/Jobs';
 import { ShippingLabel } from './pages/admin/ShippingLabel';
 import { Compare } from './pages/Compare';
 import { Wishlist } from './pages/Wishlist';
@@ -75,6 +76,7 @@ export function App() {
               <Route path="orders/:id/label" element={<ShippingLabel />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="inventory" element={<Inventory />} />
+              <Route path="jobs" element={<Jobs />} />
               <Route path="coupons" element={<AdminCoupons />} />
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="returns" element={<AdminReturns />} />

@@ -624,6 +624,14 @@ td[data-sign='down'] { color: var(--bad); }
   .label { border-color: #000; color: #000; background: #fff; }
 }
 
+/* Search suggestions */
+.field--grow { position: relative; }
+.suggest { position: absolute; z-index: 5; top: 100%; left: 0; right: 0; margin: .25rem 0 0; padding: .35rem 0; list-style: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: var(--shadow); text-transform: none; letter-spacing: 0; }
+.suggest a { display: flex; align-items: center; gap: .6rem; padding: .45rem .8rem; text-decoration: none; color: var(--ink); font: 400 .9rem var(--sans); }
+.suggest a:hover, .suggest a:focus-visible { background: var(--surface-soft); }
+.suggest a > span:nth-child(2) { flex: 1; }
+.suggest img { width: 32px; height: 40px; object-fit: cover; border-radius: var(--radius); }
+
 @media (max-width: 64rem) {
   .products--four { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

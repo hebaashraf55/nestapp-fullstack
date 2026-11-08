@@ -186,6 +186,7 @@ const SORTS = {
   'price-asc': { salePriceCents: 1, _id: 1 },
   'price-desc': { salePriceCents: -1, _id: 1 },
   name: { name: 1, _id: 1 },
+  relevance: { createdAt: -1, _id: -1 },
 } as const;
 
 @Injectable()
@@ -247,6 +248,22 @@ export class MongoProductsRepository extends ProductsRepository {
         ...(filter.minPriceCents !== undefined ? { $gte: filter.minPriceCents } : {}),
         ...(filter.maxPriceCents !== undefined ? { $lte: filter.maxPriceCents } : {}),
       };
+    }
+    // Relevance: the weighted text index ranks whole-word matches. If it finds nothing (a half-typed
+    // word, a brand or category name), the literal search below takes over.
+    if (filter.sort === 'relevance' && filter.q) {
+      const textQuery = { ...query, $text: { $search: filter.q.slice(0, 80) } };
+      const [docs, total] = await Promise.all([
+        this.model
+          .find(textQuery, { score: { $meta: 'textScore' } })
+          .sort({ score: { $meta: 'textScore' }, _id: 1 })
+          .skip((filter.page - 1) * filter.limit)
+          .limit(filter.limit)
+          .exec(),
+        this.model.countDocuments(textQuery).exec(),
+      ]);
+      if (total > 0)
+        return { items: docs.map((d) => toProduct(d as unknown as ProductDoc)), total };
     }
     // The search text is escaped, so it is always matched literally (no regex injection, no ReDoS).
     // Name, description, material and colour are searched; ids of matching brands and categories

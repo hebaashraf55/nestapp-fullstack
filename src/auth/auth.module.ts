@@ -1,4 +1,4 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Global, Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ENV, Env } from '../config/env';
@@ -18,6 +18,8 @@ import {
   UnavailableRefreshTokenRepository,
 } from './unavailable-auth.repositories';
 
+/** Global so the real-time gateway can verify access tokens with the same TokenService. */
+@Global()
 @Module({})
 export class AuthModule {
   /** Order of the global guards matters: authenticate, then the demo read-only rule, then roles. */

@@ -190,18 +190,14 @@ describe('route matrix: original endpoints that were deliberately removed', () =
     },
   );
 
-  it('MATRIX|removed-dependency|no file-upload, Stripe or WebSocket package is installed', () => {
+  // Socket.io was added back on purpose (live updates, authorized with the API's tokens: see
+  // realtime.spec); payments and file uploads stay out.
+  it('MATRIX|removed-dependency|no file-upload or Stripe package is installed', () => {
     const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8')) as {
       dependencies: Record<string, string>;
       devDependencies?: Record<string, string>;
     };
     const names = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
-    expect(
-      names.filter((n) =>
-        /^(stripe|socket\.io|ws|@nestjs\/websockets|@nestjs\/platform-socket\.io|multer|@nestjs\/serve-static)$/.test(
-          n,
-        ),
-      ),
-    ).toEqual([]);
+    expect(names.filter((n) => /^(stripe|multer|@nestjs\/serve-static)$/.test(n))).toEqual([]);
   });
 });

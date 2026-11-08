@@ -99,6 +99,16 @@ export class Product {
   createdBy!: string;
 }
 export const ProductSchema = SchemaFactory.createForClass(Product);
+// Relevance search: one weighted text index (MongoDB allows one per collection).
+ProductSchema.index(
+  { name: 'text', 'specs.material': 'text', 'specs.color': 'text', description: 'text' },
+  {
+    name: 'product_text',
+    weights: { name: 10, 'specs.material': 4, 'specs.color': 4, description: 1 },
+    default_language: 'english',
+  },
+);
+ProductSchema.index({ name: 1 });
 ProductSchema.index({ createdAt: -1 });
 ProductSchema.index({ categoryId: 1, createdAt: -1 });
 ProductSchema.index({ discountPercent: -1 });

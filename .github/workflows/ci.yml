@@ -1,0 +1,72 @@
+# Runs every quality gate on each push and pull request: API lint, types, formatting, build, unit and
+# HTTP tests, the real-MongoDB suites (against a throwaway MongoDB service container) and the
+# storefront's lint, types, tests and build. No secrets are needed: every test value is generated here.
+name: CI
+
+on:
+  push:
+    branches: [main, 'phase-*/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mongo:
+        image: mongo:8.0
+        ports: ['27017:27017']
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run format:check
+      - run: npm run build
+      - name: Unit and HTTP tests (includes the OpenAPI drift check)
+        run: npx jest --ci
+      - name: Real-MongoDB suites
+        # Throwaway database inside the CI container; the suites empty it first. Set only here so the
+        # step above never runs these suites in parallel against the same database.
+        env:
+          MONGODB_TEST_URI: mongodb://127.0.0.1:27017/nestapp_test
+        run: npm run test:db -- --ci
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+  web:
+    name: Storefront
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npx vitest run
+      - run: npm run build

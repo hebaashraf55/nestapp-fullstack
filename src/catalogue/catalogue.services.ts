@@ -25,6 +25,8 @@ import type {
   TaxonomyUpdateDto,
 } from './dto';
 import { MAX_STOCK } from './dto';
+import { CacheService } from '../cache/cache.service';
+import { RealtimeService } from '../realtime/realtime.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { OrdersRepository } from '../orders/orders.repository';
 import { uniqueSlug } from './slug';
@@ -220,7 +222,103 @@ export class ProductsService {
     private readonly categories: CategoriesRepository,
     private readonly orders: OrdersRepository,
     private readonly inventory: InventoryService,
+    private readonly cache: CacheService,
+    private readonly realtime: RealtimeService,
   ) {}
+
+  /** Anything shown on the homepage may have changed. */
+  private changed() {
+    return this.cache.invalidate('catalogue:');
+  }
+
+  private async filterFor(query: ProductQueryDto, user?: AuthenticatedUser) {
+    return {
+      q: query.q,
+      matchTaxonomyIds: query.q
+        ? await this.taxonomyIdsMatching(query.q, demoOnly(user))
+        : undefined,
+      featured: query.featured === 'true' ? true : undefined,
+      onSale: query.onSale === 'true' ? true : undefined,
+      categoryId: query.categoryId?.toLowerCase(),
+      brandId: query.brandId?.toLowerCase(),
+      minPriceCents: query.minPrice,
+      maxPriceCents: query.maxPrice,
+      inStock: query.inStock === undefined ? undefined : query.inStock === 'true',
+      demoOnly: demoOnly(user),
+    };
+  }
+
+  /**
+   * Counts for the shop's filters, for the same search and filters as the listing. Category counts
+   * ignore the chosen category (and brand counts the chosen brand), so the other options show how many
+   * pieces they would give. Reads at most 5,000 matching products; `truncated` says when there were more.
+   */
+  async facets(query: ProductQueryDto, user?: AuthenticatedUser) {
+    const LIMIT = 5000;
+    const filter = await this.filterFor(query, user);
+    const { items, total } = await this.products.findPage({
+      ...filter,
+      categoryId: undefined,
+      brandId: undefined,
+      sort: 'newest',
+      page: 1,
+      limit: LIMIT,
+    });
+    const inBrand = (p: ProductRecord) => !filter.brandId || p.brandId === filter.brandId;
+    const inCategory = (p: ProductRecord) =>
+      !filter.categoryId || p.categoryId === filter.categoryId;
+    const count = (list: ProductRecord[], key: 'categoryId' | 'brandId') => {
+      const m = new Map<string, number>();
+      for (const p of list) m.set(p[key], (m.get(p[key]) ?? 0) + 1);
+      return m;
+    };
+    const catCounts = count(items.filter(inBrand), 'categoryId');
+    const brandCounts = count(items.filter(inCategory), 'brandId');
+    const matching = items.filter((p) => inBrand(p) && inCategory(p));
+    const [cats, brands] = await Promise.all([
+      this.categories.findByIds([...catCounts.keys()]),
+      this.brands.findByIds([...brandCounts.keys()]),
+    ]);
+    const named = (records: TaxonomyRecord[], counts: Map<string, number>) =>
+      records
+        .map((r) => ({ id: r.id, name: r.name, slug: r.slug, count: counts.get(r.id) ?? 0 }))
+        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    const prices = matching.map((p) => p.salePriceCents);
+    return {
+      total: matching.length,
+      categories: named(cats, catCounts),
+      brands: named(brands, brandCounts),
+      inStock: matching.filter((p) => p.stock > 0).length,
+      onSale: matching.filter((p) => p.discountPercent > 0).length,
+      price: prices.length
+        ? { minCents: Math.min(...prices), maxCents: Math.max(...prices) }
+        : null,
+      truncated: total > LIMIT,
+    };
+  }
+
+  /** Search-as-you-type: up to six products (best matches first) and up to three categories. */
+  async suggest(q: string, user?: AuthenticatedUser) {
+    const scope = demoOnly(user);
+    const [page, cats] = await Promise.all([
+      this.products.findPage({ q, demoOnly: scope, sort: 'relevance', page: 1, limit: 6 }),
+      this.categories.findAll(scope),
+    ]);
+    const needle = q.toLowerCase();
+    return {
+      products: page.items.map((p) => ({
+        id: p.id,
+        name: p.name,
+        image: p.images[0] ?? null,
+        salePriceCents: p.salePriceCents,
+        currency: CURRENCY,
+      })),
+      categories: cats
+        .filter((c) => c.name.toLowerCase().includes(needle))
+        .slice(0, 3)
+        .map((c) => ({ id: c.id, name: c.name, slug: c.slug })),
+    };
+  }
 
   async list(query: ProductQueryDto, user?: AuthenticatedUser): Promise<ProductPage> {
     const { items, total } = await this.products.findPage({
@@ -269,8 +367,15 @@ export class ProductsService {
    * products, plus featured, new, on-sale and best-selling rows. Best sellers come only from real
    * paid orders; the row is empty (and hidden) until something has sold.
    */
+  /** Cached for a minute per audience (everyone / demo viewer); cleared by every catalogue write. */
   async home(user?: AuthenticatedUser): Promise<HomeView> {
     const scope = demoOnly(user);
+    return this.cache.wrap(`catalogue:home:${scope ? 'demo' : 'all'}`, 60, () =>
+      this.buildHome(scope, user),
+    );
+  }
+
+  private async buildHome(scope: boolean, user?: AuthenticatedUser): Promise<HomeView> {
     const page = (extra: Partial<Parameters<ProductsRepository['findPage']>[0]>) =>
       this.products.findPage({ demoOnly: scope, sort: 'newest', page: 1, limit: 8, ...extra });
     const cats = (await this.categories.findAll(scope)).sort((a, b) =>
@@ -378,6 +483,7 @@ export class ProductsService {
             actorId: adminId,
           },
         ]);
+        await this.changed();
         return (await this.toViews([created]))[0] as ProductView;
       } catch (error) {
         if (!(error instanceof DuplicateKeyError) || attempt >= 2) throw error;
@@ -438,6 +544,7 @@ export class ProductsService {
             isDemo: updated.isDemo,
           },
         ]);
+      await this.changed();
       return (await this.toViews([updated]))[0] as ProductView;
     } catch (error) {
       if (error instanceof DuplicateKeyError)
@@ -476,6 +583,12 @@ export class ProductsService {
     ]);
     const updated = await this.products.findById(id);
     if (!updated) throw new NotFoundException('Product not found');
+    await this.changed();
+    this.realtime.toProduct(id, 'product.stock', {
+      id,
+      stock: updated.stock,
+      inStock: updated.stock > 0,
+    });
     return (await this.toViews([updated]))[0] as ProductView;
   }
 
@@ -493,6 +606,7 @@ export class ProductsService {
       );
     }
     if (!(await this.products.delete(id))) throw new NotFoundException('Product not found');
+    await this.changed();
     return { deleted: true };
   }
 
