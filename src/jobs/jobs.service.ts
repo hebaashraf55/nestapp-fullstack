@@ -83,6 +83,9 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
       runAt: new Date(this.now() + (opts.delayMs ?? 0)),
       requestId: currentRequestId() ?? null,
     });
+    // Serverless (Vercel) has no worker between requests: try it right away; if it fails, the job stays
+    // queued and can be retried from Admin -> Jobs.
+    if (process.env.VERCEL) await this.runDue(1).catch(() => undefined);
     return job.id;
   }
 
@@ -144,7 +147,12 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
   }
 
   onApplicationBootstrap() {
-    if (this.env.JOBS_WORKER === 'off' || this.env.NODE_ENV === 'test' || !this.env.MONGODB_URI)
+    if (
+      this.env.JOBS_WORKER === 'off' ||
+      this.env.NODE_ENV === 'test' ||
+      !this.env.MONGODB_URI ||
+      process.env.VERCEL
+    )
       return;
     this.timer = setInterval(() => {
       if (this.running) return;

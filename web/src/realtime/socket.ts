@@ -11,7 +11,9 @@ import { getSession } from '../auth/session';
 let socket: Socket | null = null;
 let connectedAs: string | null = null;
 
-const enabled = () => import.meta.env.MODE !== 'test' && typeof window !== 'undefined';
+// VITE_REALTIME=off: the API is serverless (Vercel) and cannot keep sockets open, so do not try.
+const enabled = () =>
+  import.meta.env.MODE !== 'test' && import.meta.env.VITE_REALTIME !== 'off' && typeof window !== 'undefined';
 
 export function getSocket(): Socket | null {
   if (!enabled()) return null;

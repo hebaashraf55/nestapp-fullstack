@@ -17,7 +17,8 @@ export class OrderExpirySweeper implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit(): void {
     // Needs a database, and tests drive `expireOverdue()` directly instead of waiting on a timer.
-    if (this.env.MONGODB_URI === undefined || this.env.NODE_ENV === 'test') return;
+    if (this.env.MONGODB_URI === undefined || this.env.NODE_ENV === 'test' || process.env.VERCEL)
+      return;
     this.timer = setInterval(() => {
       this.orders.expireOverdue().catch((error: unknown) => {
         this.logger.error(`Order expiry sweep failed: ${String(error)}`);
