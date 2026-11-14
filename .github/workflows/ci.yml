@@ -24,9 +24,6 @@ jobs:
       mongo:
         image: mongo:8.0
         ports: ['27017:27017']
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
-          --health-interval 5s --health-timeout 5s --health-retries 20
     env:
       NODE_ENV: test
     steps:
@@ -35,6 +32,13 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Wait for MongoDB
+        run: |
+          for i in $(seq 1 30); do
+            (echo > /dev/tcp/127.0.0.1/27017) 2>/dev/null && exit 0
+            sleep 2
+          done
+          echo "MongoDB did not start" >&2; exit 1
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
